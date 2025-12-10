@@ -49,9 +49,13 @@ export function useClienteCotizaciones() {
   /**
    * Acepta una cotización del cliente autenticado
    * @param id - ID de la cotización a aceptar
+   * @param trabajadores - Array de trabajadores para la orden de trabajo
    */
-  const aceptarCotizacion = async (id: string): Promise<void> => {
-    await clienteCotizacionesStore.aceptarCotizacion(id);
+  const aceptarCotizacion = async (
+    id: string,
+    trabajadores: any[],
+  ): Promise<void> => {
+    await clienteCotizacionesStore.aceptarCotizacion(id, trabajadores);
   };
 
   /**

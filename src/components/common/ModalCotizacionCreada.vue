@@ -2,7 +2,6 @@
   <div
     v-if="cotizacion"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-    @click.self="$emit('close')"
   >
     <div class="bg-white rounded-lg p-6 w-full max-w-sm mx-4" @click.stop>
       <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -13,12 +12,20 @@
           <span class="font-medium">Folio:</span> {{ cotizacion.folio }}
         </p>
         <p class="text-gray-700">
-          <span class="font-medium">Total:</span>
+          <span class="font-medium">Subtotal:</span>
           ${{
             cotizacion.total.toLocaleString('es-MX', {
               minimumFractionDigits: 2,
+            }) 
+          }} <span class="text-gray-500 text-xs">*No incluye IVA</span>
+        </p>
+        <p class="text-gray-700">
+          <span class="font-medium">Total:</span>
+          ${{
+            (cotizacion.total + (cotizacion.total * 0.16)).toLocaleString('es-MX', {
+              minimumFractionDigits: 2,
             })
-          }}
+          }} <span class="text-gray-500 text-xs">*IVA incluido</span>
         </p>
         <p class="text-gray-700">
           <span class="font-medium">Fecha de vencimiento:</span>

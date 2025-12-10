@@ -568,6 +568,14 @@
       @ver-cotizaciones="verCotizaciones"
       @ver-detalles="verDetallesNuevaCotizacion"
     />
+
+    <!-- Modal de trabajadores -->
+    <ModalTrabajadores
+      :mostrar="mostrarModalTrabajadores"
+      :max-trabajadores="maxTrabajadores"
+      @close="mostrarModalTrabajadores = false"
+      @confirm="handleConfirmarTrabajadores"
+    />
   </section>
 </template>
 
@@ -589,6 +597,8 @@ import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
 import BasePageHeader from '../../components/base/BasePageHeader.vue';
 import ModalCotizacionCreada from '../../components/common/ModalCotizacionCreada.vue';
+import ModalTrabajadores from '../../components/common/ModalTrabajadores.vue';
+import type { CreateTrabajadorDto } from '../../types/backend';
 
 const route = useRoute();
 const router = useRouter();
@@ -612,6 +622,18 @@ const successMessage = ref<string | null>(null);
 
 // Estado para la nueva cotización creada (para el modal de repetir)
 const nuevaCotizacionCreada = ref<CotizacionDetalleDto | null>(null);
+
+// Estado para el modal de trabajadores
+const mostrarModalTrabajadores = ref(false);
+
+// Calcular máximo de trabajadores (igual a cantidad de servicios)
+const maxTrabajadores = computed(() => {
+  if (!detalle.value?.items) return 1;
+  return detalle.value.items.reduce(
+    (sum, item) => sum + item.cantidad,
+    0,
+  );
+});
 
 // Función para cargar el detalle de la cotización
 async function cargarDetalleCotizacion(cotizacionId: string) {
@@ -858,25 +880,43 @@ const totalConIva = computed(() => {
 // Manejo de acciones
 async function handleAceptar(): Promise<void> {
   if (!detalle.value?._id) return;
+  mostrarModalTrabajadores.value = true;
+}
 
-  const confirmacion = window.confirm(
-    '¿Está seguro de que desea aceptar esta cotización? Se generará automáticamente una orden de trabajo.',
-  );
+async function handleConfirmarTrabajadores(
+  trabajadores: CreateTrabajadorDto[],
+): Promise<void> {
+  console.log('handleConfirmarTrabajadores llamado con:', trabajadores?.length, trabajadores);
+  
+  if (!detalle.value?._id) {
+    console.error('No hay ID de cotización disponible');
+    return;
+  }
 
-  if (!confirmacion) return;
+  if (!trabajadores || trabajadores.length === 0) {
+    console.error('No se proporcionaron trabajadores');
+    alert('Debe agregar al menos un trabajador.');
+    return;
+  }
 
+  mostrarModalTrabajadores.value = false;
   successMessage.value = null;
+
   try {
-    await aceptarCotizacion(detalle.value._id);
+    console.log('Llamando a aceptarCotizacion con:', detalle.value._id, trabajadores);
+    await aceptarCotizacion(detalle.value._id, trabajadores);
+    console.log('Cotización aceptada exitosamente');
     // Recargar el detalle para mostrar el nuevo estado
     await fetchCotizacion(detalle.value._id);
     successMessage.value =
-      'cotización aceptada exitosamente. Se ha generado una orden de trabajo.';
+      'Cotización aceptada exitosamente. Se ha generado una orden de trabajo.';
     setTimeout(() => {
       successMessage.value = null;
     }, 5000);
   } catch (err) {
     console.error('Error al aceptar la cotización:', err);
+    // Reabrir el modal si hay error para que el usuario pueda intentar de nuevo
+    mostrarModalTrabajadores.value = true;
     // El error ya se maneja en el store y se muestra en el template
   }
 }

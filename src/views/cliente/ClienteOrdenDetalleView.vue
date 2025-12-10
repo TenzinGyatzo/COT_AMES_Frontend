@@ -381,6 +381,99 @@
         </div>
       </div>
 
+      <!-- Trabajadores -->
+      <div
+        v-if="detalle.trabajadores && detalle.trabajadores.length > 0"
+        class="rounded-lg border border-gray-200 bg-white shadow-md p-6"
+      >
+        <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-200">
+          <h2 class="text-lg font-semibold text-gray-800">
+            Trabajadores ({{ detalle.trabajadores.length }})
+          </h2>
+        </div>
+
+        <div class="space-y-4">
+          <div
+            v-for="(trabajador, index) in detalle.trabajadores"
+            :key="index"
+            class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Nombre Completo
+                  </label>
+                  <p class="text-sm font-medium text-gray-900">
+                    {{ trabajador.nombre }}
+                    {{ trabajador.primerApellido }}
+                    {{ trabajador.segundoApellido || '' }}
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Puesto
+                  </label>
+                  <p class="text-sm text-gray-900">{{ trabajador.puesto }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Fecha de Nacimiento
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ formatDate(trabajador.fechaNacimiento) }}
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Sexo
+                  </label>
+                  <p class="text-sm text-gray-900">{{ trabajador.sexo }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Escolaridad
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ trabajador.escolaridad }}
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Estado Civil
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ trabajador.estadoCivil }}
+                  </p>
+                </div>
+                <div v-if="trabajador.fechaIngreso">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Fecha de Ingreso
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ formatDate(trabajador.fechaIngreso) }}
+                  </p>
+                </div>
+                <div v-if="trabajador.telefono">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Teléfono
+                  </label>
+                  <p class="text-sm text-gray-900">{{ trabajador.telefono }}</p>
+                </div>
+                <div v-if="trabajador.curp">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    CURP
+                  </label>
+                  <p class="text-sm text-gray-900 font-mono uppercase">
+                    {{ trabajador.curp }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- Bitácora de Observaciones -->
         <div

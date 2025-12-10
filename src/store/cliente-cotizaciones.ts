@@ -121,13 +121,17 @@ export const useClienteCotizacionesStore = defineStore('cliente-cotizaciones', {
     /**
      * Acepta una cotización del cliente autenticado
      * @param id - ID de la cotización a aceptar
+     * @param trabajadores - Array de trabajadores para la orden de trabajo
      */
-    async aceptarCotizacion(id: string): Promise<void> {
+    async aceptarCotizacion(
+      id: string,
+      trabajadores: any[],
+    ): Promise<void> {
       this.isActionLoading = true;
       this.error = null;
 
       try {
-        const response = await aceptarCotizacion(id);
+        const response = await aceptarCotizacion(id, trabajadores);
 
         // Actualizar el detalle si está cargado
         if (this.detalle && this.detalle._id === id) {

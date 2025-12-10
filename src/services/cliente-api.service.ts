@@ -11,6 +11,7 @@ import type {
   CotizacionDetalleDto,
   PaginatedOrdenesTrabajoResponseDto,
   OrdenTrabajoDetalleDto,
+  CreateTrabajadorDto,
 } from '../types/backend';
 
 /**
@@ -97,9 +98,11 @@ export async function updateMiPerfil(
  */
 export async function aceptarCotizacion(
   id: string,
+  trabajadores: CreateTrabajadorDto[],
 ): Promise<CotizacionDetalleDto> {
   const { data } = await httpClient.patch<CotizacionDetalleDto>(
     `/cliente-portal/mis-cotizaciones/${id}/aceptar`,
+    { trabajadores },
   );
 
   return data;

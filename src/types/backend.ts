@@ -212,6 +212,64 @@ export interface PaginatedCotizacionesResponseDto {
   totalPages: number;
 }
 
+// Tipo para un trabajador
+export interface Trabajador {
+  primerApellido: string;
+  segundoApellido?: string;
+  nombre: string;
+  fechaNacimiento: Date | string;
+  sexo: 'Masculino' | 'Femenino';
+  escolaridad:
+    | 'Primaria'
+    | 'Secundaria'
+    | 'Preparatoria'
+    | 'Licenciatura'
+    | 'Maestría'
+    | 'Doctorado'
+    | 'Nula';
+  puesto: string;
+  fechaIngreso?: Date | string;
+  telefono?: string;
+  estadoCivil:
+    | 'Soltero/a'
+    | 'Casado/a'
+    | 'Unión libre'
+    | 'Separado/a'
+    | 'Divorciado/a'
+    | 'Viudo/a';
+  curp?: string;
+}
+
+// DTO para crear un trabajador
+export interface CreateTrabajadorDto {
+  primerApellido: string;
+  segundoApellido?: string;
+  nombre: string;
+  fechaNacimiento: string;
+  sexo: string;
+  escolaridad: string;
+  puesto: string;
+  fechaIngreso?: string;
+  telefono?: string;
+  estadoCivil: string;
+  curp?: string;
+}
+
+// DTO para actualizar un trabajador
+export interface UpdateTrabajadorDto {
+  primerApellido?: string;
+  segundoApellido?: string;
+  nombre?: string;
+  fechaNacimiento?: string;
+  sexo?: string;
+  escolaridad?: string;
+  puesto?: string;
+  fechaIngreso?: string;
+  telefono?: string;
+  estadoCivil?: string;
+  curp?: string;
+}
+
 // Tipo para el perfil del cliente autenticado
 export interface MiPerfilResponse {
   usuario: {
@@ -344,6 +402,7 @@ export interface OrdenTrabajoDetalleDto {
   fechaEstadoCompletada?: Date | string;
   fechaEstadoCancelada?: Date | string;
   observaciones?: Array<{ texto: string; timestamp: Date | string }> | string;
+  trabajadores?: Trabajador[];
   createdAt: Date | string;
   updatedAt: Date | string;
 }

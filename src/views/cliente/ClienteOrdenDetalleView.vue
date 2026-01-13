@@ -574,7 +574,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useClienteOrdenes } from '../../composables/useClienteOrdenes';
 import { useClientePerfil } from '../../composables/useClientePerfil';
-import { downloadDummyPDF } from '../../utils/pdfHelper';
+import { downloadOrdenTrabajoPDF } from '../../utils/pdfHelper';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseEmptyState from '../../components/base/BaseEmptyState.vue';
@@ -797,15 +797,9 @@ function getEstadoTimestamp(estado: string): Date | string | undefined {
 }
 
 // Handler para descargar PDF
-function handleDownloadPDF(): void {
+// Handler para descargar PDF
+async function handleDownloadPDF(): Promise<void> {
   if (!detalle.value) return;
-
-  const filename = `${detalle.value.folio}.pdf`;
-  const title = `${detalle.value.folio}`;
-  const content = ['Este es un PDF dummy generado para el MVP.'].filter(
-    Boolean,
-  );
-
-  downloadDummyPDF(filename, title, content);
+  await downloadOrdenTrabajoPDF(detalle.value);
 }
 </script>

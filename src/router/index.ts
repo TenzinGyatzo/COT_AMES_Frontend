@@ -16,7 +16,11 @@ import ClienteLayout from '../layouts/ClienteLayout.vue';
 import HomeView from '../views/HomeView.vue';
 import CotizadorView from '../views/CotizadorView.vue';
 import LoginView from '../views/LoginView.vue';
+import ForgotPasswordView from '../views/ForgotPasswordView.vue';
+import ResetPasswordView from '../views/ResetPasswordView.vue';
 import ClienteLoginView from '../views/ClienteLoginView.vue';
+import ClienteForgotPasswordView from '../views/ClienteForgotPasswordView.vue';
+import ClienteResetPasswordView from '../views/ClienteResetPasswordView.vue';
 import ClienteRegisterView from '../views/ClienteRegisterView.vue';
 
 // Importar vistas de administración
@@ -55,9 +59,29 @@ const routes: RouteRecordRaw[] = [
         component: LoginView,
       },
       {
+        path: 'admin/forgot-password',
+        name: 'admin-forgot-password',
+        component: ForgotPasswordView,
+      },
+      {
+        path: 'admin/reset-password',
+        name: 'admin-reset-password',
+        component: ResetPasswordView,
+      },
+      {
         path: 'cliente/login',
         name: 'cliente-login',
         component: ClienteLoginView,
+      },
+      {
+        path: 'cliente/forgot-password',
+        name: 'cliente-forgot-password',
+        component: ClienteForgotPasswordView,
+      },
+      {
+        path: 'cliente/reset-password',
+        name: 'cliente-reset-password',
+        component: ClienteResetPasswordView,
       },
       {
         path: 'cliente/register',

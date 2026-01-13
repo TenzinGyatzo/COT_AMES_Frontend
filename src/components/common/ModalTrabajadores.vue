@@ -354,39 +354,94 @@
           </div>
         </div>
 
-        <!-- Modo Excel -->
-        <div v-if="modo === 'excel'" class="space-y-4">
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 class="font-medium text-blue-900 mb-2">
-              Instrucciones para carga masiva
-            </h4>
-            <ol class="list-decimal list-inside space-y-1 text-sm text-blue-800">
-              <li>Descargue la plantilla Excel</li>
-              <li>Complete los datos de los trabajadores</li>
-              <li>Suba el archivo completado</li>
-              <li>Revise los errores si los hay</li>
-              <li>Confirme para agregar los trabajadores</li>
-            </ol>
-          </div>
-
-          <div class="flex gap-3">
-            <button
-              @click="descargarPlantilla"
-              class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors font-medium"
-            >
-              Descargar Plantilla
-            </button>
-            <label
-              class="px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors font-medium cursor-pointer"
+        <div v-if="modo === 'excel'" class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+             <!-- Columna Izquierda: Zona de Carga (Drop Zone) -->
+            <div
+              class="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer"
+              :class="[
+                isDragging
+                  ? 'border-medical-blue-500 bg-medical-blue-50'
+                  : 'border-gray-300 hover:border-medical-blue-400 hover:bg-gray-50'
+              ]"
+              @dragover.prevent="isDragging = true"
+              @dragleave.prevent="isDragging = false"
+              @drop.prevent="handleDrop"
+              @click="triggerFileInput"
             >
               <input
+                ref="fileInputRef"
                 type="file"
                 accept=".xlsx,.xls"
                 @change="procesarArchivoExcel"
                 class="hidden"
               />
-              Subir Archivo Excel
-            </label>
+              <div class="mb-4 p-4 rounded-full bg-blue-100 text-blue-600">
+                <svg
+                  class="w-10 h-10"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+              </div>
+              <p class="text-lg font-medium text-gray-900 mb-1">
+                Sube tu archivo Excel
+              </p>
+              <p class="text-sm text-gray-500 mb-4">
+                Arrastra y suelta tu archivo aquí o haz clic para examinar
+              </p>
+              <button
+                type="button"
+                class="text-sm font-semibold text-medical-blue-600 hover:text-medical-blue-800"
+              >
+                Seleccionar archivo
+              </button>
+            </div>
+
+            <!-- Columna Derecha: Instrucciones -->
+            <div class="space-y-4">
+               <div class="bg-blue-50 border border-blue-200 rounded-lg p-5 h-full">
+                <h4 class="font-medium text-blue-900 mb-3 flex items-center gap-2">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Instrucciones
+                </h4>
+                <ol class="list-decimal list-inside space-y-3 text-sm text-blue-800">
+                  <li class="pl-2">
+                    <span class="font-semibold">Descargue</span> la plantilla oficial para asegurar el formato correcto.
+                  </li>
+                  <li class="pl-2">
+                    <span class="font-semibold">Llene</span> los datos de los trabajadores respetando las columnas.
+                  </li>
+                  <li class="pl-2">
+                    <span class="font-semibold">Guarde</span> el archivo en su computadora.
+                  </li>
+                  <li class="pl-2">
+                    <span class="font-semibold">Arrastre</span> el archivo al recuadro de la izquierda.
+                  </li>
+                </ol>
+                
+                <div class="mt-6 pt-4 border-t border-blue-200">
+                   <button
+                    @click.stop="descargarPlantilla"
+                    class="w-full flex items-center justify-center px-4 py-2 bg-white border border-blue-300 text-blue-700 rounded-md hover:bg-blue-50 transition-colors text-sm font-medium shadow-sm"
+                  >
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Descargar Plantilla Excel
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div v-if="erroresExcel.length > 0" class="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -543,6 +598,82 @@ const shouldValidateForm = ref(false);
 const isFormValid = ref(true); // Inicialmente true para permitir intentar avanzar
 const hasAttemptedSubmit = ref(false); // Indica si se ha intentado avanzar
 const mostrarMensajeInfo = ref(true); // Controla la visibilidad del mensaje informativo
+
+// Funcionalidad Drag & Drop
+const isDragging = ref(false);
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+function triggerFileInput() {
+  fileInputRef.value?.click();
+}
+
+function handleDrop(e: DragEvent) {
+  isDragging.value = false;
+  const files = e.dataTransfer?.files;
+  if (files && files.length > 0) {
+    const file = files[0];
+    if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+      procesarArchivo(file);
+    } else {
+      alert('Por favor, sube un archivo Excel válido (.xlsx o .xls)');
+    }
+  }
+}
+
+// Wrapper para input change normal
+function procesarArchivoExcel(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (file) {
+    procesarArchivo(file);
+  }
+}
+
+// Lógica principal de procesamiento (separada/refactorizada)
+async function procesarArchivo(file: File) {
+  erroresExcel.value = [];
+  trabajadoresExcel.value = [];
+  
+  try {
+    const { trabajadores: trabajadoresLeidos, errores } = await leerArchivoExcel(file);
+    
+    if (errores.length > 0) {
+      erroresExcel.value = errores;
+    }
+    
+    if (trabajadoresLeidos.length > 0) {
+      trabajadoresExcel.value = trabajadoresLeidos;
+    }
+
+    // Validar que no haya errores de formato antes de validar cantidad
+    if (errores.length === 0 && trabajadoresLeidos.length > 0) {
+      // Validar cantidad exacta requerida (incluyendo trabajadores ya agregados manualmente)
+      const totalTrabajadores = trabajadores.value.length + trabajadoresLeidos.length;
+      
+      if (totalTrabajadores > props.maxTrabajadores) {
+        erroresExcel.value.push({
+          row: 0,
+          field: 'cantidad',
+          message: `Se requieren exactamente ${props.maxTrabajadores} trabajador${props.maxTrabajadores > 1 ? 'es' : ''}. El total excedería el límite. Ya tienes ${trabajadores.value.length} trabajador${trabajadores.value.length !== 1 ? 'es' : ''} agregado${trabajadores.value.length !== 1 ? 's' : ''}.`,
+        });
+      } else if (totalTrabajadores < props.maxTrabajadores) {
+        erroresExcel.value.push({
+          row: 0,
+          field: 'cantidad',
+          message: `Se requieren exactamente ${props.maxTrabajadores} trabajador${props.maxTrabajadores > 1 ? 'es' : ''}. Faltan ${props.maxTrabajadores - totalTrabajadores} trabajador${props.maxTrabajadores - totalTrabajadores > 1 ? 'es' : ''}.`,
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error al procesar Excel:', error);
+    erroresExcel.value = [{
+       row: 0,
+       field: 'archivo',
+       message: 'Error al procesar el archivo Excel. Asegúrese de que el formato sea correcto.',
+    }];
+  }
+}
+
 
 function crearTrabajadorVacio(): CreateTrabajadorDto {
   return {
@@ -925,46 +1056,7 @@ async function descargarPlantilla() {
   await generarPlantillaExcel();
 }
 
-async function procesarArchivoExcel(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (!file) return;
 
-  try {
-    const { trabajadores: trabajadoresLeidos, errores } =
-      await leerArchivoExcel(file);
-
-    trabajadoresExcel.value = trabajadoresLeidos;
-    erroresExcel.value = errores;
-
-    if (errores.length === 0 && trabajadoresLeidos.length > 0) {
-      // Validar cantidad exacta requerida (incluyendo trabajadores ya agregados manualmente)
-      const totalTrabajadores =
-        trabajadores.value.length + trabajadoresLeidos.length;
-      if (totalTrabajadores > props.maxTrabajadores) {
-        erroresExcel.value.push({
-          row: 0,
-          field: 'cantidad',
-          message: `Se requieren exactamente ${props.maxTrabajadores} trabajador${props.maxTrabajadores > 1 ? 'es' : ''}. El total excedería el límite. Ya tienes ${trabajadores.value.length} trabajador${trabajadores.value.length !== 1 ? 'es' : ''} agregado${trabajadores.value.length !== 1 ? 's' : ''}.`,
-        });
-      } else if (totalTrabajadores < props.maxTrabajadores) {
-        erroresExcel.value.push({
-          row: 0,
-          field: 'cantidad',
-          message: `Se requieren exactamente ${props.maxTrabajadores} trabajador${props.maxTrabajadores > 1 ? 'es' : ''}. Faltan ${props.maxTrabajadores - totalTrabajadores} trabajador${props.maxTrabajadores - totalTrabajadores > 1 ? 'es' : ''}.`,
-        });
-      }
-    }
-  } catch (error) {
-    erroresExcel.value = [
-      {
-        row: 0,
-        field: 'archivo',
-        message: 'Error al procesar el archivo Excel',
-      },
-    ];
-  }
-}
 
 function eliminarTrabajadorExcel(index: number) {
   trabajadoresExcel.value.splice(index, 1);

@@ -10,21 +10,22 @@
       class="px-6 py-4 text-sm text-gray-500 max-w-xs relative group"
       v-if="servicio.descripcion && servicio.descripcion.length > 0"
     >
-      <div class="truncate">
+      <div> <!-- Opcionalmente se puede agregar la clase truncate aquí -->
         {{ servicio.descripcion }}
       </div>
-      <!-- Tooltip personalizado -->
-      <div
+      <!-- Tooltip personalizado 
+       <div
         class="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg pointer-events-none"
       >
         <div class="whitespace-normal break-words">
           {{ servicio.descripcion }}
         </div>
-        <!-- Flecha del tooltip -->
+        
         <div
           class="absolute top-full left-4 border-4 border-transparent border-t-gray-900"
-        ></div>
-      </div>
+        ></div> 
+      </div> 
+      -->
     </td>
     <td class="px-6 py-4 text-sm text-gray-500 max-w-xs" v-else>
       <div class="truncate">-</div>

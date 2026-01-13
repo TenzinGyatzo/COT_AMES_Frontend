@@ -534,7 +534,7 @@
 import { onMounted, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAdmin } from '../../composables/useAdmin';
-import { downloadDummyPDF } from '../../utils/pdfHelper';
+import { downloadCotizacionPDF } from '../../utils/pdfHelper';
 import type { Servicio, UsuarioCliente } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
@@ -743,13 +743,8 @@ function formatDateTime(date: Date | string | undefined): string {
   });
 }
 
-function handleDownloadPDF(): void {
+async function handleDownloadPDF(): Promise<void> {
   if (!cotizacionDetalle.value) return;
-
-  const filename = `${cotizacionDetalle.value.folio}.pdf`;
-  const title = `${cotizacionDetalle.value.folio}`;
-  const content = ['Este es un PDF dummy generado para el MVP.'];
-
-  downloadDummyPDF(filename, title, content);
+  await downloadCotizacionPDF(cotizacionDetalle.value);
 }
 </script>

@@ -35,7 +35,7 @@
 
     <div v-else>
       <BaseEmptyState
-        v-if="ordenes.length === 0"
+        v-if="sortedOrdenes.length === 0"
         title="No se encontraron órdenes de trabajo"
         description="No hay órdenes de trabajo que coincidan con los criterios seleccionados."
         size="md"
@@ -82,7 +82,7 @@
           </thead>
           <tbody class="divide-y divide-gray-200">
             <tr
-              v-for="orden in ordenes"
+              v-for="orden in sortedOrdenes"
               :key="orden.id"
               class="hover:bg-gray-50"
             >
@@ -153,17 +153,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useClienteOrdenes } from '../../composables/useClienteOrdenes';
-import { downloadDummyPDF } from '../../utils/pdfHelper';
+import { downloadOrdenTrabajoPDF } from '../../utils/pdfHelper';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseEmptyState from '../../components/base/BaseEmptyState.vue';
 import BaseBadge from '../../components/base/BaseBadge.vue';
 import BasePageHeader from '../../components/base/BasePageHeader.vue';
 import type { OrdenTrabajoListItemDto } from '../../types/backend';
 
-const { ordenes, isLoading, error, pagination, fetchMisOrdenes } =
-  useClienteOrdenes();
+const {
+  ordenes,
+  detalle,
+  isLoading,
+  error,
+  pagination,
+  fetchMisOrdenes,
+  fetchOrden,
+} = useClienteOrdenes();
+
+// Computed property para ordenar por fecha (más reciente primero)
+const sortedOrdenes = computed(() => {
+  return [...ordenes.value].sort((a, b) => {
+    const dateA = new Date(a.fechaCreacion).getTime();
+    const dateB = new Date(b.fechaCreacion).getTime();
+    return dateB - dateA; // Descendente: más reciente primero
+  });
+});
 
 const selectedEstado = ref<
   '' | 'pendiente' | 'en_proceso' | 'completada' | 'cancelada'
@@ -229,14 +245,24 @@ function formatShortDate(iso: string | Date | undefined): string {
   });
 }
 
-// Handler para descargar PDF
-function handleDownloadPDF(orden: OrdenTrabajoListItemDto): void {
-  const filename = `${orden.folio}.pdf`;
-  const title = `${orden.folio}`;
-  const content = ['Este es un PDF dummy generado para el MVP.'].filter(
-    Boolean,
-  );
+// Estado de carga para descarga
+const isDownloading = ref<string | null>(null);
 
-  downloadDummyPDF(filename, title, content);
+// Handler para descargar PDF
+async function handleDownloadPDF(orden: OrdenTrabajoListItemDto): Promise<void> {
+  try {
+    isDownloading.value = orden.id;
+    // Cargar detalle completo
+    await fetchOrden(orden.id);
+    
+    if (detalle.value) {
+      await downloadOrdenTrabajoPDF(detalle.value);
+    }
+  } catch (err) {
+    console.error('Error al descargar PDF:', err);
+    alert('No se pudo generar el PDF. Intente nuevamente.');
+  } finally {
+    isDownloading.value = null;
+  }
 }
 </script>

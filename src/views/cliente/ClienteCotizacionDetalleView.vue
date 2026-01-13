@@ -28,7 +28,7 @@
         :class="getEstadoBannerClass(detalle.estado)"
         class="rounded-lg border-2 shadow-lg p-6"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div class="flex items-center gap-4">
             <div
               :class="getEstadoIconClass(detalle.estado)"
@@ -104,11 +104,69 @@
               </p>
             </div>
           </div>
-          <div class="text-right">
-            <p class="text-sm font-medium opacity-75 mb-1">Folio</p>
-            <p class="text-lg font-mono font-bold">
-              {{ detalle.folio }}
-            </p>
+          
+          <div class="flex flex-col md:items-end gap-3 w-full md:w-auto">
+            <!-- Folio -->
+            <div class="text-left md:text-right">
+              <p class="text-sm font-medium opacity-75 mb-1">Folio</p>
+              <p class="text-lg font-mono font-bold">
+                {{ detalle.folio }}
+              </p>
+            </div>
+
+             <!-- Botones de Acción (Solo Vigente) -->
+            <div v-if="esCotizacionPendiente" class="flex flex-col sm:flex-row gap-2">
+              <BaseButtonLoader
+                type="button"
+                variant="primary"
+                size="sm"
+                :disabled="!esCotizacionPendiente"
+                :loading="isActionLoading"
+                custom-class="bg-green-600 hover:bg-green-700 focus:ring-green-500 w-full sm:w-auto justify-center"
+                @click="handleAceptar"
+              >
+                <svg
+                  v-if="!isActionLoading"
+                  class="-ml-1 mr-2 h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Aceptar
+              </BaseButtonLoader>
+              <BaseButtonLoader
+                type="button"
+                variant="danger"
+                size="sm"
+                :disabled="!esCotizacionPendiente"
+                :loading="isActionLoading"
+                custom-class="w-full sm:w-auto justify-center"
+                @click="handleRechazar"
+              >
+                <svg
+                  v-if="!isActionLoading"
+                  class="-ml-1 mr-2 h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                Rechazar
+              </BaseButtonLoader>
+            </div>
           </div>
         </div>
       </div>
@@ -179,7 +237,7 @@
             </p>
           </div>
 
-          <div v-if="detalle.fechaAceptacion">
+          <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Descargar
             </label>
@@ -584,7 +642,7 @@ import { onMounted, onUnmounted, computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClienteCotizaciones } from '../../composables/useClienteCotizaciones';
 import { useClientePerfil } from '../../composables/useClientePerfil';
-import { downloadDummyPDF } from '../../utils/pdfHelper';
+import { downloadCotizacionPDF } from '../../utils/pdfHelper';
 import type {
   Cliente,
   Sede,
@@ -994,13 +1052,9 @@ function verDetallesNuevaCotizacion(): void {
 }
 
 // Handler para descargar PDF
-function handleDownloadPDF(): void {
+// Handler para descargar PDF
+async function handleDownloadPDF(): Promise<void> {
   if (!detalle.value) return;
-
-  const filename = `${detalle.value.folio}.pdf`;
-  const title = `${detalle.value.folio}`;
-  const content = ['Este es un PDF dummy generado para el MVP.'];
-
-  downloadDummyPDF(filename, title, content);
+  await downloadCotizacionPDF(detalle.value);
 }
 </script>

@@ -163,15 +163,22 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { useClienteCotizaciones } from '../../composables/useClienteCotizaciones';
-import { downloadDummyPDF } from '../../utils/pdfHelper';
+import { downloadCotizacionPDF } from '../../utils/pdfHelper';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseEmptyState from '../../components/base/BaseEmptyState.vue';
 import BaseBadge from '../../components/base/BaseBadge.vue';
 import BasePageHeader from '../../components/base/BasePageHeader.vue';
 import type { CotizacionListItemDto } from '../../types/backend';
 
-const { listado, isLoading, error, pagination, fetchMisCotizaciones } =
-  useClienteCotizaciones();
+const {
+  listado,
+  detalle,
+  isLoading,
+  error,
+  pagination,
+  fetchMisCotizaciones,
+  fetchCotizacion,
+} = useClienteCotizaciones();
 
 const selectedEstado = ref<
   | 'todas'
@@ -254,12 +261,24 @@ function formatCurrency(value: number | undefined): string {
   });
 }
 
-// Handler para descargar PDF
-function handleDownloadPDF(cotizacion: CotizacionListItemDto): void {
-  const filename = `${cotizacion.folio}.pdf`;
-  const title = `${cotizacion.folio}`;
-  const content = ['Este es un PDF dummy generado para el MVP.'];
+// Estado de carga para descarga
+const isDownloading = ref<string | null>(null);
 
-  downloadDummyPDF(filename, title, content);
+// Handler para descargar PDF
+async function handleDownloadPDF(cotizacion: CotizacionListItemDto): Promise<void> {
+  try {
+    isDownloading.value = cotizacion.id;
+    // Cargar detalle completo
+    await fetchCotizacion(cotizacion.id);
+    
+    if (detalle.value) {
+      await downloadCotizacionPDF(detalle.value);
+    }
+  } catch (err) {
+    console.error('Error al descargar PDF:', err);
+    alert('No se pudo generar el PDF. Intente nuevamente.');
+  } finally {
+    isDownloading.value = null;
+  }
 }
 </script>

@@ -1,32 +1,71 @@
-/**
- * Utilidad para generar PDFs dummy (temporal para MVP)
- * En el futuro se reemplazará con pdf-make
- */
+
+import pdfMake from 'pdfmake/build/pdfmake';
+import pdfFonts from 'pdfmake/build/vfs_fonts';
+import type { CotizacionDetalleDto, OrdenTrabajoDetalleDto } from '../types/backend';
+import { getCotizacionDefinition } from './cotizacionPdfTemplate';
+import { getOrdenTrabajoDefinition } from './ordenTrabajoPdfTemplate';
+import { getBase64ImageFromURL } from './pdfUtils';
+import logoImg from '../assets/logos/exin-cv-salud-laboral-logo.png';
+
+// Inicializar vfs para fuentes (necesario para pdfmake en cliente)
+if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
+  pdfMake.vfs = pdfFonts.pdfMake.vfs;
+} else if (pdfFonts && (pdfFonts as any).vfs) {
+  // Fallback si la estructura es diferente
+  pdfMake.vfs = (pdfFonts as any).vfs;
+} else {
+  console.warn('Advertencia: No se pudo asignar pdfMake.vfs. La generación de PDF podría fallar si usa fuentes personalizadas o estándar embebidas.');
+}
+
 
 /**
- * Genera un PDF dummy simple y lo descarga
- * @param filename - Nombre del archivo PDF a descargar
- * @param title - Título del documento
- * @param content - Contenido adicional del documento (array de líneas)
+ * Genera y descarga el PDF de una cotización
+ */
+export async function downloadCotizacionPDF(cotizacion: CotizacionDetalleDto): Promise<void> {
+  try {
+    const logoBase64 = await getBase64ImageFromURL(logoImg);
+    const docDefinition = getCotizacionDefinition(cotizacion, logoBase64);
+    
+    const filename = `${cotizacion.folio}.pdf`;
+    pdfMake.createPdf(docDefinition).download(filename);
+  } catch (error) {
+    console.error('Error al generar PDF de cotización:', error);
+    alert('Ocurrió un error al generar el PDF. Por favor intenta de nuevo.');
+  }
+}
+
+/**
+ * Genera y descarga el PDF de una orden de trabajo
+ */
+export async function downloadOrdenTrabajoPDF(orden: OrdenTrabajoDetalleDto): Promise<void> {
+  try {
+    const logoBase64 = await getBase64ImageFromURL(logoImg);
+    const docDefinition = getOrdenTrabajoDefinition(orden, logoBase64);
+    
+    const filename = `${orden.folio}.pdf`;
+    pdfMake.createPdf(docDefinition).download(filename);
+  } catch (error) {
+    console.error('Error al generar PDF de orden de trabajo:', error);
+    alert('Ocurrió un error al generar el PDF. Por favor intenta de nuevo.');
+  }
+}
+
+
+/**
+ * @deprecated Mantener por compatibilidad si es usado en otros lados,
+ * idealmente migrar todo a los nuevos métodos
  */
 export function downloadDummyPDF(
   filename: string,
   title: string = 'Documento',
-  content: string[] = [
-    'Este es un PDF dummy generado para el MVP.',
-    '',
-    'En el futuro próximo se implementará la generación real de PDFs usando pdf-make.',
-  ],
+  content: string[] = []
 ): void {
-  // Crear un PDF mínimo válido usando una estructura básica
-  // Este PDF es funcional pero básico, suficiente para MVP
-
+    // Implementación original dummy para fallback extrema
   const escapedTitle = title.replace(/[()\\]/g, (m) => '\\' + m);
   const escapedContent = content
     .map((line) => line.replace(/[()\\]/g, (m) => '\\' + m))
     .join('\\n');
 
-  // Estructura PDF mínima válida
   const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -93,7 +132,6 @@ startxref
 650
 %%EOF`;
 
-  // Crear blob y descargar
   const blob = new Blob([pdfContent], { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

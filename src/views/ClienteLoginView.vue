@@ -100,6 +100,14 @@
           <span v-else>Iniciar sesión</span>
         </button>
       </form>
+      <div class="mt-4 text-center">
+        <router-link
+          to="/cliente/forgot-password"
+          class="text-sm text-medical-blue-600 hover:text-medical-blue-700"
+        >
+          ¿Olvidaste tu contraseña?
+        </router-link>
+      </div>
       <div
         v-if="error"
         class="mt-4 p-3 bg-red-50 text-red-700 rounded-md text-sm"

@@ -680,7 +680,7 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useAdmin } from '../../composables/useAdmin';
-import { downloadDummyPDF } from '../../utils/pdfHelper';
+import { downloadOrdenTrabajoPDF } from '../../utils/pdfHelper';
 import type { UsuarioCliente } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
@@ -1031,13 +1031,8 @@ function getEstadoTimestamp(estado: string): Date | string | undefined {
   }
 }
 
-function handleDownloadPDF(): void {
+async function handleDownloadPDF(): Promise<void> {
   if (!ordenDetalle.value) return;
-
-  const filename = `${ordenDetalle.value.folio}.pdf`;
-  const title = `${ordenDetalle.value.folio}`;
-  const content = ['Este es un PDF dummy generado para el MVP.'];
-
-  downloadDummyPDF(filename, title, content);
+  await downloadOrdenTrabajoPDF(ordenDetalle.value);
 }
 </script>

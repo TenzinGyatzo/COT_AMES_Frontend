@@ -42,9 +42,9 @@ export const ESTADO_LABELS: Record<EstadoBadge, string> = {
 export const ESTADO_BADGE_CLASSES: Record<EstadoBadge, string> = {
   // Estados de cotización
   vigente: 'bg-green-100 text-green-800',
-  vencida: 'bg-red-100 text-red-800',
+  vencida: 'bg-gray-100 text-gray-800',
   aceptada: 'bg-blue-100 text-blue-800',
-  rechazada: 'bg-gray-100 text-gray-800',
+  rechazada: 'bg-red-100 text-red-800',
   en_proceso: 'bg-yellow-100 text-yellow-800',
   completada: 'bg-green-100 text-green-800',
   // Estados de orden

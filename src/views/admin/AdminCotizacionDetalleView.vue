@@ -101,11 +101,66 @@
               </p>
             </div>
           </div>
-          <div class="text-left md:text-right">
-            <p class="text-xs md:text-sm font-medium opacity-75 mb-1">Folio</p>
-            <p class="text-base md:text-lg font-mono font-bold">
-              {{ cotizacionDetalle.folio }}
-            </p>
+          <div class="flex flex-col md:items-end gap-3 w-full md:w-auto">
+            <div class="text-left md:text-right">
+              <p class="text-xs md:text-sm font-medium opacity-75 mb-1">Folio</p>
+              <p class="text-base md:text-lg font-mono font-bold">
+                {{ cotizacionDetalle.folio }}
+              </p>
+            </div>
+
+            <div v-if="cotizacionDetalle.estado === 'vigente' && esCotizacionGuest" class="flex flex-col sm:flex-row gap-2">
+              <BaseButtonLoader
+                type="button"
+                variant="primary"
+                size="sm"
+                :disabled="isProcessing"
+                :loading="isProcessing"
+                custom-class="bg-green-600 hover:bg-green-700 focus:ring-green-500 w-full sm:w-auto justify-center"
+                @click="handleAceptar"
+              >
+                <svg
+                  v-if="!isProcessing"
+                  class="-ml-1 mr-2 h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Cliente Aceptó
+              </BaseButtonLoader>
+              <BaseButtonLoader
+                type="button"
+                variant="danger"
+                size="sm"
+                :disabled="isProcessing"
+                :loading="isProcessing"
+                custom-class="w-full sm:w-auto justify-center"
+                @click="handleRechazar"
+              >
+                <svg
+                  v-if="!isProcessing"
+                  class="-ml-1 mr-2 h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                Cliente Rechazó
+              </BaseButtonLoader>
+            </div>
           </div>
         </div>
       </div>
@@ -230,6 +285,7 @@
               Descargar PDF
             </button>
           </div>
+
 
           <div v-if="cotizacionDetalle.ordenTrabajoId">
             <label
@@ -363,6 +419,78 @@
             </router-link>
           </div>
         </div>
+      </div>
+
+      <!-- Acciones de Administración -->
+      <div
+        v-if="cotizacionDetalle.estado === 'vigente' && esCotizacionGuest"
+        class="bg-white shadow-md rounded-lg p-4 md:p-6 mb-6"
+      >
+        <h2
+          class="text-lg md:text-xl font-semibold text-gray-800 mb-4 pb-4 border-b border-gray-200"
+        >
+          Acciones
+        </h2>
+        <p class="text-sm text-gray-600 mb-4">
+          Puede aceptar o rechazar esta cotización por parte del cliente. Una vez aceptada, se generará una orden de trabajo.
+        </p>
+        <div class="flex gap-3">
+          <BaseButtonLoader
+            type="button"
+            variant="primary"
+            :disabled="isProcessing"
+            :loading="isProcessing"
+            custom-class="bg-green-600 hover:bg-green-700 focus:ring-green-500"
+            @click="handleAceptar"
+          >
+            <svg
+              v-if="!isProcessing"
+              class="-ml-1 mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            Aceptar cotización
+          </BaseButtonLoader>
+          <BaseButtonLoader
+            type="button"
+            variant="danger"
+            :disabled="isProcessing"
+            :loading="isProcessing"
+            @click="handleRechazar"
+          >
+            <svg
+              v-if="!isProcessing"
+              class="-ml-1 mr-2 h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Rechazar cotización
+          </BaseButtonLoader>
+        </div>
+      </div>
+
+      <!-- Mensaje de éxito -->
+      <div
+        v-if="successMessage"
+        class="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700"
+      >
+        {{ successMessage }}
       </div>
 
       <!-- Items de la cotización -->
@@ -520,13 +648,36 @@
     </div>
 
     <div
-      v-else-if="!isLoadingCotizaciones"
+      v-if="!isLoadingCotizaciones"
       class="bg-white shadow-md rounded-lg p-8 text-center"
     >
       <p class="text-gray-500">
         No se pudo cargar la información de la cotización
       </p>
     </div>
+
+    <!-- Modal de trabajadores -->
+    <ModalTrabajadores
+      :mostrar="showModalTrabajadores"
+      :max-trabajadores="totalTrabajadoresRequeridos"
+      info-title="Información de Trabajadores"
+      info-description="Si ya cuentas con la información de los trabajadores, puedes registrarlos aquí. Si no, igualmente puedes continuar con la aceptación de la cotización sin registrarlos, pero no se tendrá la información en la orden de trabajo."
+      permitir-omitir
+      @close="showModalTrabajadores = false"
+      @confirm="handleConfirmarTrabajadores"
+    />
+
+    <!-- Modal de confirmación para rechazo -->
+    <ConfirmationModal
+      :show="showConfirmRechazo"
+      title="¿Rechazar cotización?"
+      message="¿Está seguro de rechazar esta cotización? NO se enviará notificación por correo."
+      type="danger"
+      confirm-text="Sí, rechazar"
+      cancel-text="Cancelar"
+      @confirm="confirmarRechazo"
+      @cancel="showConfirmRechazo = false"
+    />
   </div>
 </template>
 
@@ -535,9 +686,12 @@ import { onMounted, onUnmounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAdmin } from '../../composables/useAdmin';
 import { downloadCotizacionPDF } from '../../utils/pdfHelper';
-import type { Servicio, UsuarioCliente } from '../../types/backend';
+import type { Servicio, UsuarioCliente, CreateTrabajadorDto } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
+import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
+import ModalTrabajadores from '../../components/common/ModalTrabajadores.vue';
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 
 const route = useRoute();
 const {
@@ -558,6 +712,13 @@ const iva = computed(() => {
 const totalConIva = computed(() => {
   if (!cotizacionDetalle.value?.total) return 0;
   return cotizacionDetalle.value.total + iva.value;
+});
+
+// Computed para identificar si es una cotización de guest (creada por admin)
+const esCotizacionGuest = computed(() => {
+  if (!cotizacionDetalle.value) return false;
+  // Si no tiene clienteId, es una cotización guest creada por admin
+  return !cotizacionDetalle.value.clienteId;
 });
 
 // Cargar cotización al montar el componente
@@ -596,6 +757,10 @@ function getClienteNombre(): string {
   if (typeof cliente === 'object' && cliente !== null) {
     return cliente.empresa || '';
   }
+  // Fallback para cotizaciones guest
+  if ((cotizacionDetalle.value as any).nombreEmpresa) {
+    return (cotizacionDetalle.value as any).nombreEmpresa;
+  }
   return '';
 }
 
@@ -617,7 +782,7 @@ function getClienteRfc(): string {
   if (typeof cliente === 'object' && cliente !== null) {
     return cliente.rfc || '';
   }
-  return '';
+  return '-'; // Guest quotations no tienen RFC
 }
 
 function getSedeNombre(): string {
@@ -634,6 +799,10 @@ function getUsuarioClienteNombre(): string {
   const usuarioCliente = cotizacionDetalle.value.usuarioClienteId;
   if (typeof usuarioCliente === 'object' && usuarioCliente !== null) {
     return (usuarioCliente as UsuarioCliente).nombre || '';
+  }
+  // Fallback para cotizaciones guest
+  if ((cotizacionDetalle.value as any).nombreContacto) {
+    return (cotizacionDetalle.value as any).nombreContacto;
   }
   return '';
 }
@@ -652,6 +821,10 @@ function getUsuarioClienteTelefono(): string {
   const usuarioCliente = cotizacionDetalle.value.usuarioClienteId;
   if (typeof usuarioCliente === 'object' && usuarioCliente !== null) {
     return (usuarioCliente as UsuarioCliente).telefono || '';
+  }
+  // Fallback para cotizaciones guest
+  if ((cotizacionDetalle.value as any).telefonoContacto) {
+    return (cotizacionDetalle.value as any).telefonoContacto;
   }
   return '';
 }
@@ -677,9 +850,9 @@ function getEstadoLabel(estado: string): string {
 function getEstadoBannerClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'bg-green-50 border-green-300',
-    vencida: 'bg-red-50 border-red-300',
+    vencida: 'bg-gray-50 border-gray-300',
     aceptada: 'bg-blue-50 border-blue-300',
-    rechazada: 'bg-gray-50 border-gray-300',
+    rechazada: 'bg-red-50 border-red-300',
   };
   return classes[estado] || 'bg-gray-50 border-gray-300';
 }
@@ -687,9 +860,9 @@ function getEstadoBannerClass(estado: string): string {
 function getEstadoIconClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'bg-green-100 text-green-600',
-    vencida: 'bg-red-100 text-red-600',
+    vencida: 'bg-gray-100 text-gray-600',
     aceptada: 'bg-blue-100 text-blue-600',
-    rechazada: 'bg-gray-100 text-gray-600',
+    rechazada: 'bg-red-100 text-red-600',
   };
   return classes[estado] || 'bg-gray-100 text-gray-600';
 }
@@ -697,9 +870,9 @@ function getEstadoIconClass(estado: string): string {
 function getEstadoTextClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'text-green-700',
-    vencida: 'text-red-700',
+    vencida: 'text-gray-700',
     aceptada: 'text-blue-700',
-    rechazada: 'text-gray-700',
+    rechazada: 'text-red-700',
   };
   return classes[estado] || 'text-gray-700';
 }
@@ -707,9 +880,9 @@ function getEstadoTextClass(estado: string): string {
 function getEstadoBadgeClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'bg-green-100 text-green-800',
-    vencida: 'bg-red-100 text-red-800',
+    vencida: 'bg-gray-100 text-gray-800',
     aceptada: 'bg-blue-100 text-blue-800',
-    rechazada: 'bg-gray-100 text-gray-800',
+    rechazada: 'bg-red-100 text-red-800',
   };
   return classes[estado] || 'bg-gray-100 text-gray-800';
 }
@@ -746,5 +919,83 @@ function formatDateTime(date: Date | string | undefined): string {
 async function handleDownloadPDF(): Promise<void> {
   if (!cotizacionDetalle.value) return;
   await downloadCotizacionPDF(cotizacionDetalle.value);
+}
+
+// Logic for Acceptance/Rejection
+import { aceptarCotizacionAdmin, rechazarCotizacionAdmin, type AceptarCotizacionAdminPayload } from '../../services/admin-api.service';
+import { ref } from 'vue';
+
+const isProcessing = ref(false);
+const showModalTrabajadores = ref(false);
+const showConfirmRechazo = ref(false);
+const successMessage = ref<string | null>(null);
+
+const totalTrabajadoresRequeridos = computed(() => {
+  if (!cotizacionDetalle.value?.items) return 0;
+  return cotizacionDetalle.value.items.reduce((acc, item) => acc + item.cantidad, 0);
+});
+
+async function handleAceptar() {
+  if (!cotizacionDetalle.value) return;
+  
+  // Validar si hay trabajadores requeridos
+  if (totalTrabajadoresRequeridos.value > 0) {
+    showModalTrabajadores.value = true;
+    return;
+  }
+
+  await procesarAceptacion([]);
+}
+
+async function handleConfirmarTrabajadores(trabajadores: CreateTrabajadorDto[]) {
+  showModalTrabajadores.value = false;
+  await procesarAceptacion(trabajadores);
+}
+
+async function procesarAceptacion(trabajadores: CreateTrabajadorDto[]) {
+  if (!cotizacionDetalle.value) return;
+
+  isProcessing.value = true;
+  successMessage.value = null;
+  try {
+    const payload: AceptarCotizacionAdminPayload = { trabajadores };
+    await aceptarCotizacionAdmin(cotizacionDetalle.value._id, payload);
+    await obtenerCotizacionAdmin(cotizacionDetalle.value._id); // Refresh
+    successMessage.value = 'Cotización aceptada correctamente. Se ha creado la Orden de Trabajo.';
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 5000);
+  } catch (error) {
+    console.error('Error al aceptar cotización:', error);
+    alert('Ocurrió un error al aceptar la cotización.');
+  } finally {
+    isProcessing.value = false;
+  }
+}
+
+async function handleRechazar() {
+  if (!cotizacionDetalle.value) return;
+  showConfirmRechazo.value = true;
+}
+
+async function confirmarRechazo() {
+  if (!cotizacionDetalle.value) return;
+  showConfirmRechazo.value = false;
+
+  isProcessing.value = true;
+  successMessage.value = null;
+  try {
+    await rechazarCotizacionAdmin(cotizacionDetalle.value._id);
+    await obtenerCotizacionAdmin(cotizacionDetalle.value._id); // Refresh
+    successMessage.value = 'Cotización rechazada correctamente.';
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 5000);
+  } catch (error) {
+    console.error('Error al rechazar cotización:', error);
+    alert('Ocurrió un error al rechazar la cotización.');
+  } finally {
+    isProcessing.value = false;
+  }
 }
 </script>

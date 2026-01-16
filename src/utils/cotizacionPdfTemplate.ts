@@ -8,7 +8,17 @@ export const getCotizacionDefinition = (
   
   // Helpers para obtener datos de forma segura
   const getCliente = (): Partial<Cliente> => {
+    // Si hay clienteId poblado, usarlo
     if (typeof detalle.clienteId === 'object') return detalle.clienteId as Cliente;
+    
+    // Si es cotización guest, usar campos embebidos
+    if ((detalle as any).nombreEmpresa) {
+      return {
+        empresa: (detalle as any).nombreEmpresa,
+        rfc: undefined // Guest quotations no tienen RFC
+      };
+    }
+    
     return { empresa: 'Cliente no disponible' };
   };
 
@@ -18,10 +28,20 @@ export const getCotizacionDefinition = (
   };
 
   const getUsuarioCliente = (): { nombre?: string; email?: string; telefono?: string } => {
-    // Si viene el objeto poblado
+    // Si viene el objeto poblado (cotización de cliente registrado)
     if (detalle.usuarioClienteId && typeof detalle.usuarioClienteId === 'object') {
         return detalle.usuarioClienteId as any;
     }
+    
+    // Si es cotización guest, usar campos embebidos
+    if ((detalle as any).nombreContacto) {
+      return {
+        nombre: (detalle as any).nombreContacto,
+        email: detalle.emailContacto || undefined,
+        telefono: (detalle as any).telefonoContacto || undefined
+      };
+    }
+    
     // Fallback básico con el email de contacto de la cotización
     return { email: detalle.emailContacto };
   };
@@ -292,8 +312,8 @@ function getColorForEstado(estado: string): string {
   switch (estado) {
     case 'vigente': return '#059669'; // green-600
     case 'aceptada': return '#2563EB'; // blue-600
-    case 'rechazada': return '#4B5563'; // gray-600
-    case 'vencida': return '#DC2626'; // red-600
+    case 'rechazada': return '#DC2626'; // red-600
+    case 'vencida': return '#4B5563'; // gray-600
     default: return '#000000';
   }
 }

@@ -94,13 +94,13 @@
                   <p class="text-sm font-medium text-gray-600 mb-1">
                     Rechazadas
                   </p>
-                  <p class="text-3xl font-bold text-gray-600">
+                  <p class="text-3xl font-bold text-red-600">
                     {{ counters.cotizaciones.rechazadas }}
                   </p>
                 </div>
-                <div class="p-3 bg-gray-100 rounded-full">
+                <div class="p-3 bg-red-100 rounded-full">
                   <svg
-                    class="w-6 h-6 text-gray-600"
+                    class="w-6 h-6 text-red-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -124,13 +124,13 @@
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm font-medium text-gray-600 mb-1">Vencidas</p>
-                  <p class="text-3xl font-bold text-red-600">
+                  <p class="text-3xl font-bold text-gray-600">
                     {{ counters.cotizaciones.vencidas }}
                   </p>
                 </div>
-                <div class="p-3 bg-red-100 rounded-full">
+                <div class="p-3 bg-gray-100 rounded-full">
                   <svg
-                    class="w-6 h-6 text-red-600"
+                    class="w-6 h-6 text-gray-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

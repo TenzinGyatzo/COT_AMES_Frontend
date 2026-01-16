@@ -128,15 +128,15 @@
             </div>
           </div>
 
-          <!-- Cotizaciones Vencidas -->
+          <!-- Cotizaciones Rechazadas -->
           <div
             class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
           >
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600 mb-1">Vencidas</p>
+                <p class="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
                 <p class="text-3xl font-bold text-red-600">
-                  {{ dashboardCounters.cotizaciones.vencidas }}
+                  {{ dashboardCounters.cotizaciones.rechazadas }}
                 </p>
               </div>
               <div class="p-3 bg-red-100 rounded-full">
@@ -151,7 +151,7 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
               </div>
@@ -188,15 +188,15 @@
             </div>
           </div>
 
-          <!-- Cotizaciones Rechazadas -->
+          <!-- Cotizaciones Vencidas -->
           <div
             class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
           >
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
+                <p class="text-sm font-medium text-gray-600 mb-1">Vencidas</p>
                 <p class="text-3xl font-bold text-gray-600">
-                  {{ dashboardCounters.cotizaciones.rechazadas }}
+                  {{ dashboardCounters.cotizaciones.vencidas }}
                 </p>
               </div>
               <div class="p-3 bg-gray-100 rounded-full">
@@ -211,12 +211,13 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
               </div>
             </div>
           </div>
+
         </div>
       </div>
 

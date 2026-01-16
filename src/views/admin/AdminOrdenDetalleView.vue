@@ -410,6 +410,135 @@
         </div>
       </div>
 
+      <!-- Trabajadores -->
+      <div
+        v-if="ordenDetalle.trabajadores && ordenDetalle.trabajadores.length > 0"
+        class="bg-white shadow-md rounded-lg p-4 md:p-6"
+      >
+        <div class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+          <h2 class="text-lg md:text-xl font-semibold text-gray-800">
+            Trabajadores ({{ ordenDetalle.trabajadores.length }})
+          </h2>
+        </div>
+
+        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+          <div
+            v-for="(trabajador, index) in ordenDetalle.trabajadores"
+            :key="index"
+            class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Nombre Completo
+                  </label>
+                  <p class="text-sm font-medium text-gray-900">
+                    {{ trabajador.nombre }}
+                    {{ trabajador.primerApellido }}
+                    {{ trabajador.segundoApellido || '' }}
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Puesto
+                  </label>
+                  <p class="text-sm text-gray-900">{{ trabajador.puesto }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Fecha de Nacimiento
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ formatOnlyDate(trabajador.fechaNacimiento) }}
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Sexo
+                  </label>
+                  <p class="text-sm text-gray-900">{{ trabajador.sexo }}</p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Escolaridad
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ trabajador.escolaridad }}
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Estado Civil
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ trabajador.estadoCivil }}
+                  </p>
+                </div>
+                <div v-if="trabajador.fechaIngreso">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Fecha de Ingreso a la Empresa
+                  </label>
+                  <p class="text-sm text-gray-900">
+                    {{ formatOnlyDate(trabajador.fechaIngreso) }}
+                  </p>
+                </div>
+                <div v-if="trabajador.telefono">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    Teléfono
+                  </label>
+                  <p class="text-sm text-gray-900">{{ trabajador.telefono }}</p>
+                </div>
+                <div v-if="trabajador.curp">
+                  <label class="block text-xs font-medium text-gray-500 mb-1">
+                    CURP
+                  </label>
+                  <p class="text-sm text-gray-900 font-mono uppercase">
+                    {{ trabajador.curp }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div
+        v-else
+        class="bg-white shadow-md rounded-lg p-4 md:p-6"
+      >
+        <div v-if="ordenDetalle.trabajadores?.length === 1" class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+          <h2 class="text-lg md:text-xl font-semibold text-gray-800">
+            Trabajador
+            <span class="text-xs italic text-gray-500 ml-2">No se registró al momento de crear la orden.</span>
+          </h2>
+        </div>
+        <div v-else class="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
+          <h2 class="text-lg md:text-xl font-semibold text-gray-800">
+            Trabajadores
+            <span class="text-xs italic text-gray-500 ml-2">No se registraron al momento de crear la orden.</span>
+          </h2>
+        </div>
+
+        <div class="space-y-4">
+          <div
+            class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
+          >
+            <div class="flex items-start justify-between">
+              <div class="flex-1 grid grid-cols-1 gap-4">
+                <div>
+                  <p class="text-sm text-gray-900">
+                    Solicitar información directamente al cliente.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      
       <!-- Estado y Observaciones (Combinado) -->
       <div class="bg-white shadow-md rounded-lg p-4 md:p-6">
         <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
@@ -898,6 +1027,16 @@ function formatDate(date: Date | string | undefined): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+  });
+}
+
+function formatOnlyDate(date: Date | string | undefined): string {
+  if (!date) return '-';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 }
 

@@ -357,9 +357,9 @@ function getEstadoLabel(estado: string): string {
 function getEstadoBadgeClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'bg-green-100 text-green-800',
-    vencida: 'bg-red-100 text-red-800',
+    vencida: 'bg-gray-100 text-gray-800',
     aceptada: 'bg-blue-100 text-blue-800',
-    rechazada: 'bg-gray-100 text-gray-800',
+    rechazada: 'bg-red-100 text-red-800',
   };
   return classes[estado] || 'bg-gray-100 text-gray-800';
 }

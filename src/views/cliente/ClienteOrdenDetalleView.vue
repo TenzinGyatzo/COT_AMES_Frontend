@@ -392,7 +392,7 @@
           </h2>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
           <div
             v-for="(trabajador, index) in detalle.trabajadores"
             :key="index"
@@ -421,7 +421,7 @@
                     Fecha de Nacimiento
                   </label>
                   <p class="text-sm text-gray-900">
-                    {{ formatDate(trabajador.fechaNacimiento) }}
+                    {{ formatOnlyDate(trabajador.fechaNacimiento) }}
                   </p>
                 </div>
                 <div>
@@ -448,10 +448,10 @@
                 </div>
                 <div v-if="trabajador.fechaIngreso">
                   <label class="block text-xs font-medium text-gray-500 mb-1">
-                    Fecha de Ingreso
+                    Fecha de Ingreso a la Empresa
                   </label>
                   <p class="text-sm text-gray-900">
-                    {{ formatDate(trabajador.fechaIngreso) }}
+                    {{ formatOnlyDate(trabajador.fechaIngreso) }}
                   </p>
                 </div>
                 <div v-if="trabajador.telefono">
@@ -714,6 +714,16 @@ function formatDate(date: Date | string | undefined): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+  });
+}
+
+function formatOnlyDate(date: Date | string | undefined): string {
+  if (!date) return '-';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return d.toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 }
 

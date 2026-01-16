@@ -1,13 +1,13 @@
 <template>
   <div class="max-w-6xl mx-auto p-5">
     <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">
-      Crear Nueva Cotización
+      Crear Cotización para Cliente No Registrado
     </h1>
 
     <!-- Sección de selección de sede -->
     <div class="mb-8">
       <label for="sede" class="block text-sm font-medium text-gray-700 mb-2">
-        Seleccionar Sede
+        Seleccionar Sede *
       </label>
       <select
         id="sede"
@@ -45,7 +45,7 @@
                   <div class="w-32">Servicio</div>
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
+                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[251px]"
                 >
                   Descripción
                 </th>
@@ -116,7 +116,7 @@
       </div>
     </div>
 
-    <!-- Sección de datos del cliente -->
+    <!-- Sección de datos del cliente NO REGISTRADO -->
     <div class="mb-8">
       <h2 class="text-xl font-semibold text-gray-900 mb-4">
         Datos del Cliente
@@ -128,14 +128,14 @@
               for="empresa"
               class="block text-sm font-medium text-gray-700 mb-1"
             >
-              Empresa
+              Nombre Empresa *
             </label>
             <input
               id="empresa"
               v-model="datosCliente.empresa"
               type="text"
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               placeholder="Nombre de la empresa"
             />
           </div>
@@ -144,14 +144,14 @@
               for="nombreContacto"
               class="block text-sm font-medium text-gray-700 mb-1"
             >
-              Nombre del usuario
+              Nombre del Contacto *
             </label>
             <input
               id="nombreContacto"
               v-model="datosCliente.nombreContacto"
               type="text"
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               placeholder="Nombre completo"
             />
           </div>
@@ -160,15 +160,13 @@
               for="correo"
               class="block text-sm font-medium text-gray-700 mb-1"
             >
-              Correo electrónico
+              Correo electrónico (opcional)
             </label>
             <input
               id="correo"
               v-model="datosCliente.correo"
               type="email"
-              required
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               placeholder="correo@ejemplo.com"
             />
           </div>
@@ -177,26 +175,39 @@
               for="telefono"
               class="block text-sm font-medium text-gray-700 mb-1"
             >
-              Teléfono
+              Teléfono (opcional)
             </label>
             <input
               id="telefono"
               v-model="datosCliente.telefono"
               type="tel"
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               placeholder="+52 662 123 4567"
             />
           </div>
         </div>
-        <p class="mt-3 text-sm text-gray-500">
-          Estos datos provienen de tu perfil. Para modificarlos, ve a
-          <router-link
-            :to="{ name: 'cliente-perfil' }"
-            class="text-medical-blue-600 hover:text-medical-blue-700 underline"
-            >Mi perfil</router-link
-          >.
-        </p>
+        
+        <!-- Checkbox para enviar email -->
+        <div class="mt-4">
+          <label class="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              v-model="enviarEmail"
+              :disabled="!datosCliente.correo"
+              class="w-4 h-4 text-medical-blue-600 border-gray-300 rounded focus:ring-medical-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <span class="ml-2 text-sm text-gray-700">
+              Enviar cotización por correo electrónico
+            </span>
+          </label>
+          <p v-if="!datosCliente.correo" class="mt-1 text-xs text-gray-500">
+            Ingresa un correo electrónico para habilitar esta opción
+          </p>
+        </div>
+
+        <!-- <p class="mt-3 text-sm text-gray-500">
+          Esta cotización será para un cliente no registrado en el sistema.
+        </p> -->
       </div>
     </div>
 
@@ -205,14 +216,14 @@
       {{ error }}
     </div>
 
-    <!-- Botón Solicitar Cotización -->
+    <!-- Botón Generar Cotización -->
     <div class="flex flex-col items-center">
       <button
-        @click="solicitarCotizacion"
-        :disabled="isLoading"
+        @click="crearCotizacion"
+        :disabled="isCreating"
         class="px-8 py-3 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span v-if="isLoading">Enviando cotización...</span>
+        <span v-if="isCreating">Generando cotización...</span>
         <span v-else>Generar Cotización</span>
       </button>
       <!-- Mensaje de validación -->
@@ -247,16 +258,12 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import ServiceItemRow from '../components/common/ServiceItemRow.vue';
-import ModalSeleccionServicios from '../components/common/ModalSeleccionServicios.vue';
-import ModalCotizacionCreada from '../components/common/ModalCotizacionCreada.vue';
-import { useCotizador } from '../composables/useCotizador';
-import { useClientePerfil } from '../composables/useClientePerfil';
-import type { Servicio } from '../types/backend';
-
-// Vista del cotizador: orquesta la lógica usando el composable useCotizador
-// Toda la lógica de negocio está en el composable, la vista solo maneja UI
-// Esta vista solo es accesible desde rutas autenticadas del portal cliente
+import ServiceItemRow from '../../components/common/ServiceItemRow.vue';
+import ModalSeleccionServicios from '../../components/common/ModalSeleccionServicios.vue';
+import ModalCotizacionCreada from '../../components/common/ModalCotizacionCreada.vue';
+import { useCotizador } from '../../composables/useCotizador';
+import type { Servicio } from '../../types/backend';
+import { createAdminCotizacion } from '../../services/admin-api.service';
 
 const router = useRouter();
 
@@ -267,20 +274,15 @@ const {
   cantidadesPorServicio,
   isLoading,
   error,
-  ultimaRespuesta,
   cargarSedes,
   cargarServiciosPorSede,
   actualizarCantidad,
-  enviarCotizacion,
-  validarFormulario,
 } = useCotizador();
 
 // Servicios disponibles (para el modal) y servicios seleccionados (para la tabla)
 const serviciosDisponibles = ref<Servicio[]>([]);
 const isLoadingServicios = ref(false);
 const modalAbierto = ref(false);
-
-const { data: perfilCliente, fetchMiPerfil } = useClientePerfil();
 
 const sedeSeleccionada = ref<string>('');
 const datosCliente = ref({
@@ -289,27 +291,15 @@ const datosCliente = ref({
   correo: '',
   telefono: '',
 });
+const enviarEmail = ref(false);
 const mensajeValidacion = ref<string>('');
+const isCreating = ref(false);
+const ultimaRespuesta = ref<any>(null);
 
-// Cargar sedes y perfil del cliente autenticado
+// Cargar sedes al montar el componente
 onMounted(async () => {
   try {
     await cargarSedes();
-
-    // Cargar y prellenar datos del cliente desde su perfil
-    try {
-      await fetchMiPerfil();
-      if (perfilCliente.value?.cliente && perfilCliente.value?.usuario) {
-        datosCliente.value = {
-          empresa: perfilCliente.value.cliente.empresa || '',
-          nombreContacto: perfilCliente.value.usuario.nombre || '',
-          correo: perfilCliente.value.usuario.email || '',
-          telefono: perfilCliente.value.usuario.telefono || '',
-        };
-      }
-    } catch (err) {
-      // Si falla cargar el perfil, continuar sin prellenar
-    }
   } catch (err) {
     // El error ya está manejado en el store/composable
   }
@@ -319,6 +309,13 @@ onMounted(async () => {
 watch(sedeSeleccionada, (newValue) => {
   if (newValue) {
     selectedSedeId.value = newValue;
+  }
+});
+
+// Desactivar checkbox de email si no hay correo
+watch(() => datosCliente.value.correo, (newCorreo) => {
+  if (!newCorreo) {
+    enviarEmail.value = false;
   }
 });
 
@@ -343,16 +340,15 @@ watch(
   { deep: true },
 );
 
-// Cargar servicios cuando cambia la sede seleccionada (solo para el modal, no se muestran automáticamente)
+// Cargar servicios cuando cambia la sede seleccionada
 const onSedeChange = async () => {
-  mensajeValidacion.value = ''; // Limpiar mensaje al cambiar de sede
+  mensajeValidacion.value = '';
   // Limpiar servicios seleccionados al cambiar de sede
   Object.keys(cantidadesPorServicio.value).forEach((key) => {
     actualizarCantidad(key, 0);
   });
 
   if (sedeSeleccionada.value) {
-    // Cargar servicios disponibles para el modal
     await cargarServiciosDisponibles();
   } else {
     serviciosDisponibles.value = [];
@@ -366,7 +362,6 @@ const cargarServiciosDisponibles = async () => {
   isLoadingServicios.value = true;
   try {
     await cargarServiciosPorSede(sedeSeleccionada.value);
-    // Copiar servicios al array local para el modal
     serviciosDisponibles.value = [...servicios.value];
   } catch (err) {
     serviciosDisponibles.value = [];
@@ -379,7 +374,6 @@ const cargarServiciosDisponibles = async () => {
 const abrirModal = async () => {
   if (!sedeSeleccionada.value) return;
 
-  // Si no hay servicios cargados, cargarlos ahora
   if (serviciosDisponibles.value.length === 0 && !isLoadingServicios.value) {
     await cargarServiciosDisponibles();
   }
@@ -397,7 +391,6 @@ const agregarServiciosSeleccionados = (
   serviciosParaAgregar: Record<string, number>,
 ) => {
   Object.entries(serviciosParaAgregar).forEach(([servicioId, cantidad]) => {
-    // Reemplazar la cantidad (el usuario puede ajustar desde la tabla principal)
     actualizarCantidad(servicioId, cantidad);
   });
 };
@@ -407,35 +400,65 @@ const eliminarServicio = (servicioId: string) => {
   actualizarCantidad(servicioId, 0);
 };
 
-// Enviar cotización al backend
-const solicitarCotizacion = async () => {
-  // Limpiar mensaje de validación anterior
+// Crear cotización admin
+const crearCotizacion = async () => {
   mensajeValidacion.value = '';
 
-  // Validar formulario usando el composable
-  if (!validarFormulario(datosCliente.value)) {
-    // Verificar qué falta específicamente para dar feedback más preciso
-    const tieneServicios = Object.values(cantidadesPorServicio.value).some(
-      (cantidad) => cantidad > 0,
-    );
-
-    if (!tieneServicios) {
-      mensajeValidacion.value =
-        'Por favor, selecciona al menos un servicio para continuar';
-    } else if (!selectedSedeId.value) {
-      mensajeValidacion.value = 'Por favor, selecciona una sede';
-    } else if (!datosCliente.value.correo) {
-      mensajeValidacion.value = 'Por favor, completa tu correo electrónico';
-    }
+  // Validación de campos requeridos
+  if (!datosCliente.value.empresa.trim()) {
+    mensajeValidacion.value = 'Por favor, ingresa el nombre de la empresa';
     return;
   }
 
+  if (!datosCliente.value.nombreContacto.trim()) {
+    mensajeValidacion.value = 'Por favor, ingresa el nombre del contacto';
+    return;
+  }
+
+  if (!sedeSeleccionada.value) {
+    mensajeValidacion.value = 'Por favor, selecciona una sede';
+    return;
+  }
+
+  const tieneServicios = Object.values(cantidadesPorServicio.value).some(
+    (cantidad) => cantidad > 0,
+  );
+
+  if (!tieneServicios) {
+    mensajeValidacion.value =
+      'Por favor, selecciona al menos un servicio para continuar';
+    return;
+  }
+
+  // Preparar payload
+  const items = Object.entries(cantidadesPorServicio.value)
+    .filter(([, cantidad]) => cantidad > 0)
+    .map(([servicioId, cantidad]) => ({
+      servicioId,
+      cantidad,
+    }));
+
+  const payload = {
+    sedeId: sedeSeleccionada.value,
+    nombreEmpresa: datosCliente.value.empresa,
+    nombreContacto: datosCliente.value.nombreContacto,
+    emailContacto: datosCliente.value.correo || undefined,
+    telefonoContacto: datosCliente.value.telefono || undefined,
+    items,
+    enviarEmail: enviarEmail.value,
+  };
+
+  isCreating.value = true;
   try {
-    await enviarCotizacion(datosCliente.value);
-    // El modal se mostrará automáticamente con ultimaRespuesta
-    mensajeValidacion.value = ''; // Limpiar mensaje si todo está bien
-  } catch (err) {
-    // El error ya está manejado en el store/composable
+    const response = await createAdminCotizacion(payload);
+    ultimaRespuesta.value = response;
+    mensajeValidacion.value = '';
+  } catch (err: any) {
+    error.value =
+      err.response?.data?.message ||
+      'Error al crear la cotización. Por favor intenta de nuevo.';
+  } finally {
+    isCreating.value = false;
   }
 };
 
@@ -447,7 +470,7 @@ const cerrarModal = () => {
 // Ver lista de cotizaciones
 const verCotizaciones = () => {
   ultimaRespuesta.value = null;
-  router.push({ name: 'cliente-cotizaciones' });
+  router.push({ name: 'admin-cotizaciones' });
 };
 
 // Ver detalles de la cotización creada
@@ -457,13 +480,12 @@ const verDetalles = () => {
     return;
   }
 
-  // El backend puede devolver _id o id, manejar ambos casos
   const cotizacionId = ultimaRespuesta.value._id || ultimaRespuesta.value.id;
 
   if (cotizacionId) {
     ultimaRespuesta.value = null;
     router.push({
-      name: 'cliente-cotizacion-detalle',
+      name: 'admin-cotizacion-detalle',
       params: { id: String(cotizacionId) },
     });
   } else {

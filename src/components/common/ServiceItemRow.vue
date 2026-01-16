@@ -3,11 +3,11 @@
     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
       {{ index }}
     </td>
-    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-      {{ servicio.nombre }}
+    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+      <div class="w-32 break-words">{{ servicio.nombre }}</div>
     </td>
     <td
-      class="px-6 py-4 text-sm text-gray-500 max-w-xs relative group"
+      class="px-6 py-4 text-sm text-gray-500 relative group"
       v-if="servicio.descripcion && servicio.descripcion.length > 0"
     >
       <div> <!-- Opcionalmente se puede agregar la clase truncate aquí -->
@@ -27,7 +27,7 @@
       </div> 
       -->
     </td>
-    <td class="px-6 py-4 text-sm text-gray-500 max-w-xs" v-else>
+    <td class="px-6 py-4 text-sm text-gray-500" v-else>
       <div class="truncate">-</div>
     </td>
     <td class="px-6 py-4 whitespace-nowrap">

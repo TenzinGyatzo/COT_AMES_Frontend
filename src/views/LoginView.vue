@@ -2,7 +2,7 @@
   <div class="max-w-md mx-auto mt-16">
     <div class="bg-white shadow-lg rounded-lg p-8">
       <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">
-        Acceso interno – Panel de administración
+        Administración
       </h2>
       <p class="text-sm text-gray-600 mb-6 text-center">
         Solo para personal autorizado

@@ -343,7 +343,7 @@ export interface OrdenTrabajoListItemDto {
   fechaCreacion: Date | string;
   estado: 'pendiente' | 'en_proceso' | 'completada' | 'cancelada';
   empresa?: string;
-  nombreUsuario?: string;
+  nombreSolicitante?: string;
   nombreSede?: string;
   folioCotizacion?: string;
 }

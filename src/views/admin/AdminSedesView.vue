@@ -263,6 +263,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de confirmación para activar/desactivar sede -->
+    <ConfirmationModal
+      :show="mostrarConfirmacion"
+      :title="confirmacionTitulo"
+      :message="confirmacionMensaje"
+      :type="confirmacionTipo"
+      confirm-text="Aceptar"
+      cancel-text="Cancelar"
+      @confirm="ejecutarToggleActivo"
+      @cancel="mostrarConfirmacion = false"
+    />
   </div>
 </template>
 
@@ -278,6 +290,7 @@ import {
 } from '../../services/admin-api.service';
 import type { Sede } from '../../types/backend';
 import { EstadoMexico } from '../../types/estado-mexico.enum';
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 
 const sedes = ref<Sede[]>([]);
 const isLoading = ref(false);
@@ -300,6 +313,13 @@ const formulario = ref<CreateSedePayload>({
   estado: undefined,
   activo: true,
 });
+
+// Estado para el modal de confirmación
+const mostrarConfirmacion = ref(false);
+const confirmacionTitulo = ref('');
+const confirmacionMensaje = ref('');
+const confirmacionTipo = ref<'info' | 'warning' | 'danger'>('info');
+const sedeSeleccionada = ref<Sede | null>(null);
 
 /**
  * Carga todas las sedes
@@ -407,14 +427,19 @@ const guardarSede = async () => {
 const toggleActivo = async (sede: Sede) => {
   if (!sede._id) return;
 
-  const confirmar = window.confirm(
-    `¿Estás seguro de que deseas ${sede.activo ? 'desactivar' : 'activar'} la sede "${sede.ciudad}"?`,
-  );
+  sedeSeleccionada.value = sede;
+  confirmacionTitulo.value = sede.activo ? 'Desactivar sede' : 'Activar sede';
+  confirmacionMensaje.value = `¿Estás seguro de que deseas ${sede.activo ? 'desactivar' : 'activar'} la sede "${sede.ciudad}"?`;
+  confirmacionTipo.value = sede.activo ? 'warning' : 'info';
+  mostrarConfirmacion.value = true;
+};
 
-  if (!confirmar) return;
+const ejecutarToggleActivo = async () => {
+  if (!sedeSeleccionada.value?._id) return;
 
+  mostrarConfirmacion.value = false;
   try {
-    await toggleSedeActivo(sede._id);
+    await toggleSedeActivo(sedeSeleccionada.value._id);
     // Recargar sedes después de cambiar el estado
     await cargarSedes();
   } catch (err: any) {
@@ -423,6 +448,8 @@ const toggleActivo = async (sede: Sede) => {
       err.response?.data?.message ||
         'No fue posible cambiar el estado de la sede',
     );
+  } finally {
+    sedeSeleccionada.value = null;
   }
 };
 

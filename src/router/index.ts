@@ -22,11 +22,13 @@ import ClienteLoginView from '../views/ClienteLoginView.vue';
 import ClienteForgotPasswordView from '../views/ClienteForgotPasswordView.vue';
 import ClienteResetPasswordView from '../views/ClienteResetPasswordView.vue';
 import ClienteRegisterView from '../views/ClienteRegisterView.vue';
+import GuestCotizacionDetalleView from '../views/GuestCotizacionDetalleView.vue';
 
 // Importar vistas de administración
 import AdminDashboardView from '../views/admin/AdminDashboardView.vue';
 import AdminCotizacionesView from '../views/admin/AdminCotizacionesView.vue';
 import AdminCotizacionDetalleView from '../views/admin/AdminCotizacionDetalleView.vue';
+import AdminCotizadorView from '../views/admin/AdminCotizadorView.vue';
 import AdminClientesView from '../views/admin/AdminClientesView.vue';
 import AdminClienteDetalleView from '../views/admin/AdminClienteDetalleView.vue';
 import AdminOrdenesView from '../views/admin/AdminOrdenesView.vue';
@@ -88,6 +90,11 @@ const routes: RouteRecordRaw[] = [
         name: 'cliente-register',
         component: ClienteRegisterView,
       },
+      {
+        path: 'cotizacion-publica/:token',
+        name: 'guest-cotizacion-detalle',
+        component: GuestCotizacionDetalleView,
+      },
     ],
   },
   {
@@ -117,6 +124,12 @@ const routes: RouteRecordRaw[] = [
         path: 'cotizaciones',
         name: 'admin-cotizaciones',
         component: AdminCotizacionesView,
+        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+      },
+      {
+        path: 'cotizaciones/nueva',
+        name: 'admin-cotizacion-nueva',
+        component: AdminCotizadorView,
         meta: { requiresAuth: true, allowedRoles: ['admin'] },
       },
       {

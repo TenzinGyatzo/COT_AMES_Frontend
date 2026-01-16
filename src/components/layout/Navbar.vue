@@ -12,175 +12,180 @@
         <!-- Enlaces de navegación - Desktop -->
         <div class="hidden md:block">
           <div class="flex items-baseline space-x-4">
-            <!-- Enlaces siempre visibles -->
-            <RouterLink
-              to="/"
-              class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              :class="
-                $route.name === 'home'
-                  ? 'bg-medical-blue-100 text-medical-blue-700'
-                  : 'text-gray-700 hover:bg-gray-100'
-              "
-            >
-              Inicio
-            </RouterLink>
-            <template v-if="!isAuthenticated">
+            <!-- Solo mostrar links si NO estamos en la vista de cotización pública -->
+            <template v-if="$route.name !== 'guest-cotizacion-detalle'">
               <RouterLink
-                to="/cliente/login"
+                to="/"
                 class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 :class="
-                  $route.name === 'cliente-login'
-                    ? 'text-white bg-medical-blue-600 hover:bg-medical-blue-700'
+                  $route.name === 'home'
+                    ? 'bg-medical-blue-100 text-medical-blue-700'
                     : 'text-gray-700 hover:bg-gray-100'
                 "
               >
-                Acceso Cliente
+                Inicio
               </RouterLink>
-              <RouterLink
-                to="/cliente/register"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'cliente-register'
-                    ? 'text-white bg-medical-blue-600 hover:bg-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Registrarse
-              </RouterLink>
-            </template>
 
-            <!-- Enlaces para administradores -->
-            <template v-if="isAdmin">
-              <RouterLink
-                to="/admin/cotizaciones"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'admin-cotizaciones'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Historial
-              </RouterLink>
-              <RouterLink
-                to="/admin/metricas"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'admin-metricas'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Métricas de Uso
-              </RouterLink>
-              <RouterLink
-                to="/admin/servicios"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'admin-servicios'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Servicios
-              </RouterLink>
-              <RouterLink
-                to="/admin/sedes"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'admin-sedes'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Sedes
-              </RouterLink>
-              <RouterLink
-                to="/admin/citas"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100"
-              >
-                Citas
-              </RouterLink>
-            </template>
+              <template v-if="!isAuthenticated">
+                <RouterLink
+                  to="/cliente/login"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'cliente-login'
+                      ? 'text-white bg-medical-blue-600 hover:bg-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Acceso Cliente
+                </RouterLink>
+                <RouterLink
+                  to="/cliente/register"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'cliente-register'
+                      ? 'text-white bg-medical-blue-600 hover:bg-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Registrarse
+                </RouterLink>
+              </template>
 
-            <!-- Enlaces para clientes -->
-            <template v-else-if="isCliente">
-              <RouterLink
-                :to="{ name: 'cliente-dashboard' }"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'cliente-dashboard'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Panel
-              </RouterLink>
-              <RouterLink
-                :to="{ name: 'cliente-cotizacion-nueva' }"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'cliente-cotizacion-nueva'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Crear Cotización
-              </RouterLink>
-              <RouterLink
-                :to="{ name: 'cliente-cotizaciones' }"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'cliente-cotizaciones'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Mis cotizaciones
-              </RouterLink>
-              <RouterLink
-                :to="{ name: 'cliente-ordenes' }"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'cliente-ordenes'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Mis órdenes
-              </RouterLink>
-              <RouterLink
-                :to="{ name: 'cliente-perfil' }"
-                class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
-                :class="
-                  $route.name === 'cliente-perfil'
-                    ? 'bg-medical-blue-100 text-medical-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                "
-              >
-                Mi perfil
-              </RouterLink>
+              <!-- Enlaces para administradores -->
+              <template v-if="isAdmin">
+                <RouterLink
+                  to="/admin/cotizaciones"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'admin-cotizaciones'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Historial
+                </RouterLink>
+                <RouterLink
+                  to="/admin/metricas"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'admin-metricas'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Métricas de Uso
+                </RouterLink>
+                <RouterLink
+                  to="/admin/servicios"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'admin-servicios'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Servicios
+                </RouterLink>
+                <RouterLink
+                  to="/admin/sedes"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'admin-sedes'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Sedes
+                </RouterLink>
+                <RouterLink
+                  to="/admin/citas"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors text-gray-700 hover:bg-gray-100"
+                >
+                  Citas
+                </RouterLink>
+              </template>
+
+              <!-- Enlaces para clientes -->
+              <template v-else-if="isCliente">
+                <RouterLink
+                  :to="{ name: 'cliente-dashboard' }"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'cliente-dashboard'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Panel
+                </RouterLink>
+                <RouterLink
+                  :to="{ name: 'cliente-cotizacion-nueva' }"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'cliente-cotizacion-nueva'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Crear Cotización
+                </RouterLink>
+                <RouterLink
+                  :to="{ name: 'cliente-cotizaciones' }"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'cliente-cotizaciones'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Mis cotizaciones
+                </RouterLink>
+                <RouterLink
+                  :to="{ name: 'cliente-ordenes' }"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'cliente-ordenes'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Mis órdenes
+                </RouterLink>
+                <RouterLink
+                  :to="{ name: 'cliente-perfil' }"
+                  class="px-3 py-2 rounded-md text-sm font-medium transition-colors"
+                  :class="
+                    $route.name === 'cliente-perfil'
+                      ? 'bg-medical-blue-100 text-medical-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  "
+                >
+                  Mi perfil
+                </RouterLink>
+              </template>
             </template>
           </div>
         </div>
 
         <!-- Botones Desktop: Admin Login y Cerrar Sesión -->
         <div class="hidden md:flex items-center gap-3">
-          <RouterLink
-            v-if="!isAuthenticated"
-            to="/admin/login"
-            class="px-3 py-1.5 text-xs font-normal text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 rounded-md hover:bg-gray-50"
-          >
-            Admin
-          </RouterLink>
-          <button
-            v-if="isAuthenticated"
-            type="button"
-            class="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
-            @click="handleLogout"
-          >
-            Cerrar Sesión
-          </button>
+          <template v-if="$route.name !== 'guest-cotizacion-detalle'">
+            <RouterLink
+              v-if="!isAuthenticated"
+              to="/admin/login"
+              class="px-3 py-1.5 text-xs font-normal text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 rounded-md hover:bg-gray-50"
+            >
+              Admin
+            </RouterLink>
+            <button
+              v-if="isAuthenticated"
+              type="button"
+              class="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"
+              @click="handleLogout"
+            >
+              Cerrar Sesión
+            </button>
+          </template>
         </div>
 
         <!-- Botón Menú Móvil -->
@@ -227,7 +232,7 @@
 
     <!-- Menú Móvil -->
     <div v-show="isMobileMenuOpen" class="md:hidden border-t border-gray-200">
-      <div class="px-2 pt-2 pb-3 space-y-1">
+      <div v-if="$route.name !== 'guest-cotizacion-detalle'" class="px-2 pt-2 pb-3 space-y-1">
         <!-- Enlaces siempre visibles -->
         <RouterLink
           to="/"
@@ -413,6 +418,9 @@
             Cerrar Sesión
           </button>
         </div>
+      </div>
+      <div v-else class="px-4 py-6 text-center text-gray-500 italic">
+        Menú no disponible en vista pública
       </div>
     </div>
   </nav>

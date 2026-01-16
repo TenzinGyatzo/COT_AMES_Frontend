@@ -73,8 +73,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { useAuthStore } from '../../store/auth';
 import { useClienteCotizaciones } from '../../composables/useClienteCotizaciones';
+import { getCotizacionAdminById } from '../../services/admin-api.service';
 import { downloadCotizacionPDF } from '../../utils/pdfHelper';
 
 // Tipo mínimo requerido para mostrar el modal
@@ -98,7 +100,10 @@ defineEmits<{
   'ver-detalles': [];
 }>();
 
-const { fetchCotizacion, detalle } = useClienteCotizaciones();
+const authStore = useAuthStore();
+const isAdmin = computed(() => authStore.isAdmin);
+
+const { fetchCotizacion, detalle: detalleCliente } = useClienteCotizaciones();
 const isDownloading = ref(false);
 
 const handleDownloadPDF = async () => {
@@ -111,12 +116,21 @@ const handleDownloadPDF = async () => {
 
   try {
     isDownloading.value = true;
-    // Cargar detalle completo si no lo tenemos o es diferente
-    // Nota: fetchCotizacion actualiza 'detalle' en el store
-    await fetchCotizacion(id);
     
-    if (detalle.value) {
-      await downloadCotizacionPDF(detalle.value);
+    let cotizacionDetalle;
+    
+    // Usar endpoint correcto según el rol del usuario
+    if (isAdmin.value) {
+      // Admin: usar endpoint de admin
+      cotizacionDetalle = await getCotizacionAdminById(id);
+    } else {
+      // Cliente: usar endpoint de cliente
+      await fetchCotizacion(id);
+      cotizacionDetalle = detalleCliente.value;
+    }
+    
+    if (cotizacionDetalle) {
+      await downloadCotizacionPDF(cotizacionDetalle);
     }
   } catch (error) {
     console.error('Error al generar PDF:', error);

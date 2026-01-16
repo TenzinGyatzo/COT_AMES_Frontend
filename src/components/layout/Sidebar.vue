@@ -102,6 +102,17 @@
           Cotizaciones
         </router-link>
         <router-link
+          to="/admin/cotizaciones/nueva"
+          class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          :class="
+            $route.name === 'admin-cotizacion-nueva'
+              ? 'bg-medical-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+          "
+        >
+          Crear Cotización
+        </router-link>
+        <router-link
           to="/admin/ordenes"
           class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
           :class="

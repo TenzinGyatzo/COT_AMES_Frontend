@@ -460,6 +460,18 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal de confirmación para eliminar servicio -->
+    <ConfirmationModal
+      :show="mostrarConfirmEliminar"
+      title="Eliminar Servicio"
+      :message="mensajeConfirmEliminar"
+      type="danger"
+      confirm-text="Eliminar"
+      cancel-text="Cancelar"
+      @confirm="ejecutarEliminacion"
+      @cancel="mostrarConfirmEliminar = false"
+    />
   </div>
 </template>
 
@@ -477,6 +489,7 @@ import {
   type UpdateServicioPayload,
 } from '../../services/admin-api.service';
 import type { Servicio, Sede } from '../../types/backend';
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 
 const servicios = ref<Servicio[]>([]);
 const sedes = ref<Sede[]>([]);
@@ -491,7 +504,6 @@ const servicioEditando = ref<Servicio | null>(null);
 const isSubmitting = ref(false);
 const errorCrear = ref<string | null>(null);
 
-// Formulario para crear/editar servicio
 const formulario = ref<CreateServicioPayload>({
   sedeId: '',
   nombre: '',
@@ -500,6 +512,11 @@ const formulario = ref<CreateServicioPayload>({
   moneda: 'MXN',
   activo: true,
 });
+
+// Estado para el modal de confirmación de eliminación
+const mostrarConfirmEliminar = ref(false);
+const mensajeConfirmEliminar = ref('');
+const servicioParaEliminar = ref<Servicio | null>(null);
 
 // Opción para crear en todas las sedes
 const crearEnTodasLasSedes = ref(false);
@@ -690,22 +707,27 @@ const guardarServicio = async () => {
 /**
  * Elimina completamente un servicio de la base de datos
  */
-const eliminarServicio = async (servicio: Servicio) => {
+const eliminarServicio = (servicio: Servicio) => {
   if (!servicio._id) return;
 
-  const confirmar = window.confirm(
-    `¿Estás seguro de que deseas eliminar permanentemente el servicio "${servicio.nombre}"?\n\nEsta acción no se puede deshacer y el servicio será eliminado completamente de la base de datos.`,
-  );
+  servicioParaEliminar.value = servicio;
+  mensajeConfirmEliminar.value = `¿Estás seguro de que deseas eliminar permanentemente el servicio "${servicio.nombre}"?\n\nEsta acción no se puede deshacer y el servicio será eliminado completamente de la base de datos.`;
+  mostrarConfirmEliminar.value = true;
+};
 
-  if (!confirmar) return;
+const ejecutarEliminacion = async () => {
+  if (!servicioParaEliminar.value?._id) return;
 
+  mostrarConfirmEliminar.value = false;
   try {
-    await deleteServicio(servicio._id);
+    await deleteServicio(servicioParaEliminar.value._id);
     // Recargar servicios después de eliminar
     await cargarServicios();
   } catch (err: any) {
     console.error('Error al eliminar servicio:', err);
     alert(err.response?.data?.message || 'No fue posible eliminar el servicio');
+  } finally {
+    servicioParaEliminar.value = null;
   }
 };
 

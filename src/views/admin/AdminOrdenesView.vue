@@ -158,7 +158,7 @@
                 <td
                   class="table-cell md:hidden xl:table-cell px-6 py-4 text-sm text-gray-900"
                 >
-                  {{ orden.nombreUsuario || '-' }}
+                  {{ orden.nombreSolicitante || '-' }}
                 </td>
                 <td
                   class="table-cell md:hidden lg:table-cell px-6 py-4 text-sm text-gray-500 font-mono"

@@ -634,6 +634,18 @@
       @close="mostrarModalTrabajadores = false"
       @confirm="handleConfirmarTrabajadores"
     />
+
+    <!-- Modal de confirmación genérico -->
+    <ConfirmationModal
+      :show="confirmModal.show"
+      :title="confirmModal.title"
+      :message="confirmModal.message"
+      :type="confirmModal.type"
+      :confirm-text="confirmModal.confirmText"
+      :cancel-text="confirmModal.cancelText"
+      @confirm="confirmModal.onConfirm"
+      @cancel="confirmModal.show = false"
+    />
   </section>
 </template>
 
@@ -656,6 +668,7 @@ import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
 import BasePageHeader from '../../components/base/BasePageHeader.vue';
 import ModalCotizacionCreada from '../../components/common/ModalCotizacionCreada.vue';
 import ModalTrabajadores from '../../components/common/ModalTrabajadores.vue';
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import type { CreateTrabajadorDto } from '../../types/backend';
 
 const route = useRoute();
@@ -683,6 +696,17 @@ const nuevaCotizacionCreada = ref<CotizacionDetalleDto | null>(null);
 
 // Estado para el modal de trabajadores
 const mostrarModalTrabajadores = ref(false);
+
+// Estado para el modal de confirmación
+const confirmModal = ref({
+  show: false,
+  title: '',
+  message: '',
+  type: 'info' as 'info' | 'warning' | 'danger',
+  confirmText: 'Confirmar',
+  cancelText: 'Cancelar',
+  onConfirm: () => {},
+});
 
 // Calcular máximo de trabajadores (igual a cantidad de servicios)
 const maxTrabajadores = computed(() => {
@@ -843,9 +867,9 @@ function getEstadoLabel(estado: string): string {
 function getEstadoBannerClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'bg-green-50 border-green-300',
-    vencida: 'bg-red-50 border-red-300',
+    vencida: 'bg-gray-50 border-gray-300',
     aceptada: 'bg-blue-50 border-blue-300',
-    rechazada: 'bg-gray-50 border-gray-300',
+    rechazada: 'bg-red-50 border-red-300',
   };
   return classes[estado] || 'bg-gray-50 border-gray-300';
 }
@@ -853,9 +877,9 @@ function getEstadoBannerClass(estado: string): string {
 function getEstadoIconClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'bg-green-100 text-green-600',
-    vencida: 'bg-red-100 text-red-600',
+    vencida: 'bg-gray-100 text-gray-600',
     aceptada: 'bg-blue-100 text-blue-600',
-    rechazada: 'bg-gray-100 text-gray-600',
+    rechazada: 'bg-red-100 text-red-600',
   };
   return classes[estado] || 'bg-gray-100 text-gray-600';
 }
@@ -863,9 +887,9 @@ function getEstadoIconClass(estado: string): string {
 function getEstadoTextClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'text-green-700',
-    vencida: 'text-red-700',
+    vencida: 'text-gray-700',
     aceptada: 'text-blue-700',
-    rechazada: 'text-gray-700',
+    rechazada: 'text-red-700',
   };
   return classes[estado] || 'text-gray-700';
 }
@@ -873,9 +897,9 @@ function getEstadoTextClass(estado: string): string {
 function getEstadoBadgeClass(estado: string): string {
   const classes: Record<string, string> = {
     vigente: 'bg-green-100 text-green-800',
-    vencida: 'bg-red-100 text-red-800',
+    vencida: 'bg-gray-100 text-gray-800',
     aceptada: 'bg-blue-100 text-blue-800',
-    rechazada: 'bg-gray-100 text-gray-800',
+    rechazada: 'bg-red-100 text-red-800',
   };
   return classes[estado] || 'bg-gray-100 text-gray-800';
 }
@@ -982,11 +1006,20 @@ async function handleConfirmarTrabajadores(
 async function handleRechazar(): Promise<void> {
   if (!detalle.value?._id) return;
 
-  const confirmacion = window.confirm(
-    '¿Está seguro de que desea rechazar esta cotización? Esta acción no se puede deshacer.',
-  );
+  confirmModal.value = {
+    show: true,
+    title: '¿Rechazar cotización?',
+    message: '¿Está seguro de que desea rechazar esta cotización? Esta acción no se puede deshacer.',
+    type: 'danger',
+    confirmText: 'Sí, rechazar',
+    cancelText: 'Cancelar',
+    onConfirm: ejecutarRechazo,
+  };
+}
 
-  if (!confirmacion) return;
+async function ejecutarRechazo(): Promise<void> {
+  if (!detalle.value?._id) return;
+  confirmModal.value.show = false;
 
   successMessage.value = null;
   try {
@@ -999,18 +1032,26 @@ async function handleRechazar(): Promise<void> {
     }, 5000);
   } catch (err) {
     console.error('Error al rechazar la cotización:', err);
-    // El error ya se maneja en el store y se muestra en el template
   }
 }
 
 async function handleRepetir(): Promise<void> {
   if (!detalle.value?._id) return;
 
-  const confirmacion = window.confirm(
-    '¿Desea generar una nueva cotización basada en esta? Se creará una nueva cotización con precios actualizados y un nuevo folio.',
-  );
+  confirmModal.value = {
+    show: true,
+    title: 'Repetir cotización',
+    message: '¿Desea generar una nueva cotización basada en esta? Se creará una nueva cotización con precios actualizados y un nuevo folio.',
+    type: 'info',
+    confirmText: 'Sí, repetir',
+    cancelText: 'Cancelar',
+    onConfirm: ejecutarRepeticion,
+  };
+}
 
-  if (!confirmacion) return;
+async function ejecutarRepeticion(): Promise<void> {
+  if (!detalle.value?._id) return;
+  confirmModal.value.show = false;
 
   nuevaCotizacionCreada.value = null;
   try {
@@ -1019,7 +1060,6 @@ async function handleRepetir(): Promise<void> {
     nuevaCotizacionCreada.value = nuevaCotizacion;
   } catch (err) {
     console.error('Error al repetir la cotización:', err);
-    // El error ya se maneja en el store y se muestra en el template
   }
 }
 

@@ -190,6 +190,92 @@ export async function getCotizacionAdminById(
 }
 
 /**
+ * Payload para crear una cotización admin (para clientes no registrados)
+ */
+export interface CreateAdminCotizacionPayload {
+  sedeId: string;
+  nombreEmpresa: string;
+  nombreContacto: string;
+  emailContacto?: string;
+  telefonoContacto?: string;
+  items: Array<{
+    servicioId: string;
+    cantidad: number;
+  }>;
+  moneda?: string;
+  fechaVencimiento?: string;
+  enviarEmail?: boolean;
+}
+
+/**
+ * Crea una nueva cotización para un cliente no registrado
+ * @param payload Datos de la cotización y del cliente guest
+ * @returns Cotización creada
+ */
+export async function createAdminCotizacion(
+  payload: CreateAdminCotizacionPayload,
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.post<CotizacionDetalleDto>(
+    '/cotizaciones/admin',
+    payload,
+  );
+
+  return data;
+}
+
+/**
+ * Payload para aceptar cotización (admin)
+ */
+export interface AceptarCotizacionAdminPayload {
+  trabajadores: Array<{
+    primerApellido: string;
+    segundoApellido?: string;
+    nombre: string;
+    fechaNacimiento: string;
+    sexo: string;
+    escolaridad: string;
+    puesto: string;
+    fechaIngreso?: string;
+    telefono?: string;
+    estadoCivil: string;
+    curp?: string;
+  }>;
+}
+
+/**
+ * Acepta una cotización como administrador
+ * @param id ID de la cotización
+ * @param payload Datos para aceptar (trabajadores)
+ * @returns Cotización actualizada
+ */
+export async function aceptarCotizacionAdmin(
+  id: string,
+  payload: AceptarCotizacionAdminPayload,
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.patch<CotizacionDetalleDto>(
+    `/cotizaciones/${id}/admin/aceptar`,
+    payload,
+  );
+
+  return data;
+}
+
+/**
+ * Rechaza una cotización como administrador
+ * @param id ID de la cotización
+ * @returns Cotización actualizada
+ */
+export async function rechazarCotizacionAdmin(
+  id: string,
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.patch<CotizacionDetalleDto>(
+    `/cotizaciones/${id}/admin/rechazar`,
+  );
+
+  return data;
+}
+
+/**
  * Obtiene el listado de órdenes de trabajo admin con filtros y paginación
  * @param filters Filtros opcionales (clienteId, sedeId, estado, fechas, página, límite)
  * @returns Respuesta paginada con las órdenes de trabajo

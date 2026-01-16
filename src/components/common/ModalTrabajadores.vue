@@ -56,10 +56,13 @@
           </svg>
           <div>
             <h4 class="font-medium text-blue-900 text-sm mb-1">
-              Información requerida
+              {{ infoTitle || 'Información requerida' }}
             </h4>
             <p class="text-xs text-blue-800">
-              <template v-if="maxTrabajadores === 1">
+              <template v-if="infoDescription">
+                {{ infoDescription }}
+              </template>
+              <template v-else-if="maxTrabajadores === 1">
                 Para aceptar esta cotización es necesario incluir la información del trabajador que será evaluado. 
                 Al confirmar, la cotización será aceptada y se generará una orden de trabajo. Con esta información podremos gestionar su evaluación médica de manera adecuada.
               </template>
@@ -546,6 +549,13 @@
         </div>
         <div class="flex gap-3">
           <button
+            v-if="permitirOmitir"
+            @click="$emit('confirm', [])"
+            class="px-4 py-2 text-medical-blue-600 hover:bg-medical-blue-50 rounded-md transition-colors font-medium border border-medical-blue-200"
+          >
+            {{ maxTrabajadores === 1 ? 'Continuar sin registrar trabajador' : 'Continuar sin registrar trabajadores' }}
+          </button>
+          <button
             @click="$emit('close')"
             class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors font-medium"
           >
@@ -577,6 +587,9 @@ import TrabajadorForm from './TrabajadorForm.vue';
 interface Props {
   mostrar: boolean;
   maxTrabajadores: number;
+  infoTitle?: string;
+  infoDescription?: string;
+  permitirOmitir?: boolean;
 }
 
 const props = defineProps<Props>();
@@ -1176,13 +1189,17 @@ function confirmar() {
   emit('confirm', trabajadoresLimpios);
 }
 
-// Resetear cuando se cierra el modal
+// Ajustar el modo inicial y resetear cuando se cambia la visibilidad del modal
 watch(
   () => props.mostrar,
   (nuevoValor, valorAnterior) => {
-    // Solo resetear si el modal se está cerrando (de true a false)
-    // y no si se está abriendo (de false a true)
-    if (!nuevoValor && valorAnterior) {
+    // Cuando el modal SE ABRE (de false a true)
+    if (nuevoValor && !valorAnterior) {
+      // Si son más de 5 trabajadores, mostrar Carga Masiva (Excel) por defecto
+      modo.value = props.maxTrabajadores > 5 ? 'excel' : 'manual';
+    }
+    // Solo resetear si el modal SE ESTÁ CERRANDO (de true a false)
+    else if (!nuevoValor && valorAnterior) {
       // Usar setTimeout para asegurar que el evento 'confirm' se procese primero
       setTimeout(() => {
         trabajadores.value = [];

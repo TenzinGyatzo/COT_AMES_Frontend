@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <BaseBackButton to="/admin/cotizaciones" class="mb-4" />
+    <BaseBackButton to="/admin/cotizaciones" class="mb-4" default-text="Volver a Cotizaciones" />
 
     <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
       Detalle de Cotización
@@ -648,7 +648,7 @@
     </div>
 
     <div
-      v-if="!isLoadingCotizaciones"
+      v-if="!isLoadingCotizaciones && !cotizacionDetalle"
       class="bg-white shadow-md rounded-lg p-8 text-center"
     >
       <p class="text-gray-500">

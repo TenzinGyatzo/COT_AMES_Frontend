@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <BaseBackButton to="/admin/ordenes" class="mb-4" />
+    <BaseBackButton to="/admin/ordenes" class="mb-4" default-text="Volver a Órdenes de Trabajo"/>
 
     <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
       Detalle de Orden de Trabajo

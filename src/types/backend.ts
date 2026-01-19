@@ -284,6 +284,7 @@ export interface MiPerfilResponse {
     _id: string;
     empresa: string;
     correo: string;
+    rfc: string;
     sedeId?: string;
     clave?: string;
   };

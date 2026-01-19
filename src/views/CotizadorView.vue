@@ -1,226 +1,162 @@
 <template>
-  <div class="max-w-6xl mx-auto p-5">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">
-      Crear Nueva Cotización
-    </h1>
+  <div class="max-w-6xl mx-auto p-5 animate-in fade-in duration-700">
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">
+        Generador de Cotizaciones
+      </h1>
+      <p class="mt-2 text-gray-500 text-lg">Selecciona los servicios que deseas para obtener tu presupuesto oficial.</p>
+    </div>
 
-    <!-- Sección de selección de sede -->
-    <div class="mb-8">
-      <label for="sede" class="block text-sm font-medium text-gray-700 mb-2">
-        Seleccionar Sede
-      </label>
-      <select
-        id="sede"
-        v-model="sedeSeleccionada"
-        @change="onSedeChange"
-        :disabled="isLoading"
-        class="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 disabled:opacity-50"
+    <!-- PASO 1: Selección de sede (Con resaltado si está vacío) -->
+    <div 
+      class="mb-10 transition-all duration-500 transform relative"
+      :class="[!sedeSeleccionada ? 'scale-[1.02] z-30' : 'z-10']"
+    >
+      <div 
+        class="bg-white rounded-2xl p-6 shadow-xl border-2 transition-all duration-300"
+        :class="[!sedeSeleccionada ? 'border-medical-blue-400 ring-4 ring-medical-blue-50 animate-pulse-subtle' : 'border-transparent shadow-md']"
       >
-        <option value="">Seleccione una sede</option>
-        <option v-for="sede in sedes" :key="sede._id" :value="sede._id">
-          {{ sede.ciudad }}
-        </option>
-      </select>
-      <p v-if="isLoading" class="mt-2 text-sm text-gray-500">
-        Cargando sedes...
-      </p>
-    </div>
-
-    <!-- Tabla de servicios seleccionados -->
-    <div class="mb-8">
-      <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <!-- Contenedor con scroll horizontal para dispositivos pequeños -->
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                >
-                  #
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  <div class="w-32">Servicio</div>
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                >
-                  Descripción
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                >
-                  Unidades
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap"
-                >
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr v-if="serviciosSeleccionados.length === 0">
-                <td colspan="5" class="px-6 py-8 text-center text-gray-500">
-                  <div
-                    class="flex flex-col items-center transition-colors duration-200"
-                    :class="sedeSeleccionada ? 'cursor-pointer hover:text-medical-blue-600' : 'opacity-70'"
-                    @click="abrirModal"
-                  >
-                    <svg
-                      class="w-12 h-12 text-gray-400 mb-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    <p class="text-sm">No hay servicios seleccionados</p>
-                    <p class="text-xs text-gray-400 mt-1">
-                      Haz clic en "Agregar" para seleccionar servicios
-                    </p>
-                  </div>
-                </td>
-              </tr>
-              <ServiceItemRow
-                v-else
-                v-for="(servicio, index) in serviciosSeleccionados"
-                :key="servicio._id"
-                :servicio="servicio"
-                :index="index + 1"
-                :cantidad="cantidadesPorServicio[servicio._id || ''] || 0"
-                @update:cantidad="
-                  (value) => actualizarCantidad(servicio._id || '', value)
-                "
-                @remove="eliminarServicio(servicio._id || '')"
-              />
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div class="mt-4 flex justify-end">
-        <button
-          @click="abrirModal"
-          :disabled="!sedeSeleccionada || isLoadingServicios"
-          class="px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          + Agregar Servicios
-        </button>
-      </div>
-    </div>
-
-    <!-- Sección de datos del cliente -->
-    <div class="mb-8">
-      <h2 class="text-xl font-semibold text-gray-900 mb-4">
-        Datos del Cliente
-      </h2>
-      <div class="bg-white shadow-md rounded-lg p-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label
-              for="empresa"
-              class="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Empresa
-            </label>
-            <input
-              id="empresa"
-              v-model="datosCliente.empresa"
-              type="text"
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
-              placeholder="Nombre de la empresa"
-            />
+        <div class="flex items-center gap-3 mb-4">
+          <div 
+            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors"
+            :class="[sedeSeleccionada ? 'bg-green-100 text-green-600' : 'bg-medical-blue-600 text-white']"
+          >
+            <svg v-if="sedeSeleccionada" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <span v-else>1</span>
           </div>
           <div>
-            <label
-              for="nombreContacto"
-              class="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Nombre del usuario
-            </label>
-            <input
-              id="nombreContacto"
-              v-model="datosCliente.nombreContacto"
-              type="text"
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
-              placeholder="Nombre completo"
-            />
-          </div>
-          <div>
-            <label
-              for="correo"
-              class="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Correo electrónico
-            </label>
-            <input
-              id="correo"
-              v-model="datosCliente.correo"
-              type="email"
-              required
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
-              placeholder="correo@ejemplo.com"
-            />
-          </div>
-          <div>
-            <label
-              for="telefono"
-              class="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Teléfono
-            </label>
-            <input
-              id="telefono"
-              v-model="datosCliente.telefono"
-              type="tel"
-              readonly
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-gray-50 cursor-not-allowed"
-              placeholder="+52 662 123 4567"
-            />
+            <h2 class="text-xl font-bold text-gray-800">Seleccionar Sede de Atención</h2>
+            <p class="text-sm text-gray-500">¿En qué ubicación requieres los servicios médicos?</p>
           </div>
         </div>
-        <p class="mt-3 text-sm text-gray-500">
-          Estos datos provienen de tu perfil. Para modificarlos, ve a
-          <router-link
-            :to="{ name: 'cliente-perfil' }"
-            class="text-medical-blue-600 hover:text-medical-blue-700 underline"
-            >Mi perfil</router-link
-          >.
+
+        <CustomSedeSelect
+          v-model="sedeSeleccionada"
+          :sedes="sedes"
+          placeholder="Seleccione una ciudad o sede..."
+          :disabled="isLoading"
+          @change="onSedeChange"
+        />
+        
+        <p v-if="isLoading" class="mt-3 text-sm text-medical-blue-600 flex items-center gap-2">
+          <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+          </svg>
+          Cargando opciones...
         </p>
       </div>
     </div>
 
-    <!-- Mensaje de error -->
-    <div v-if="error" class="mb-4 p-4 bg-red-50 text-red-700 rounded-md">
-      {{ error }}
+    <!-- CONTENEDOR BLOQUEADO HASTA SELECCIONAR SEDE -->
+    <div 
+      class="transition-all duration-700"
+      :class="[!sedeSeleccionada ? 'opacity-40 grayscale pointer-events-none blur-[1px]' : 'opacity-100']"
+    >
+      <!-- PASO 2: Selección de servicios (Extraído a componente) -->
+      <TablaServiciosCotizador
+        :servicios-seleccionados="serviciosSeleccionados"
+        :cantidades-por-servicio="cantidadesPorServicio"
+        :sede-seleccionada="sedeSeleccionada"
+        :is-loading="isLoadingServicios"
+        titulo="Servicios a Cotizar"
+        subtitulo="Agrega los estudios o servicios médicos a cotizar."
+        texto-vacio="Aún no has agregado servicios"
+        ayuda-vacia="Tu selección aparecerá aquí para que la revises antes de enviar."
+        @abrir-modal="abrirModal"
+        @actualizar-cantidad="actualizarCantidad"
+        @eliminar-servicio="eliminarServicio"
+      />
     </div>
 
-    <!-- Botón Solicitar Cotización -->
-    <div class="flex flex-col items-center">
-      <button
-        @click="solicitarCotizacion"
-        :disabled="isLoading"
-        class="px-8 py-3 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors font-medium text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        <span v-if="isLoading">Enviando cotización...</span>
-        <span v-else>Generar Cotización</span>
-      </button>
-      <!-- Mensaje de validación -->
-      <div
-        v-if="mensajeValidacion"
-        class="mt-3 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-md text-sm max-w-md text-center"
-      >
-        {{ mensajeValidacion }}
+    <!-- PASO 3 y FINALIZAR: Bloqueados hasta agregar al menos 1 servicio -->
+    <div 
+      class="transition-all duration-700"
+      :class="[serviciosSeleccionados.length === 0 ? 'opacity-40 grayscale pointer-events-none blur-[1px]' : 'opacity-100']"
+    >
+      <!-- PASO 3: Confirmación de Datos -->
+      <div class="mb-10 bg-white rounded-2xl shadow-md border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-lg">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Verificar Información</h2>
+            <p class="text-sm text-gray-500">Datos registrados en tu perfil para el documento PDF.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 bg-gray-50/50 p-3 rounded-2xl border border-gray-100">
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Empresa</span>
+            <p class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium shadow-sm overflow-y-auto">{{ datosCliente.empresa || 'N/A' }}</p>
+          </div>
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Nombre Solicitante</span>
+            <p class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium shadow-sm overflow-y-auto">{{ datosCliente.nombreContacto || 'N/A' }}</p>
+          </div>
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Correo</span>
+            <p class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium shadow-sm overflow-y-auto">{{ datosCliente.correo || 'N/A' }}</p>
+          </div>
+          <div class="space-y-1">
+            <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Teléfono</span>
+            <p class="px-4 py-3 bg-white border border-gray-200 rounded-xl text-gray-700 font-medium shadow-sm overflow-y-auto">{{ datosCliente.telefono || 'N/A' }}</p>
+          </div>
+        </div>
+        
+        <div class="mt-4 flex items-start gap-3 px-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-medical-blue-400 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-xs text-gray-500">
+            ¿Estos datos no son correctos? Puedes actualizarlos en 
+            <router-link :to="{ name: 'cliente-perfil' }" class="text-medical-blue-600 font-bold hover:underline">Mi Perfil</router-link>.
+          </p>
+        </div>
+      </div>
+
+      <!-- FINALIZAR -->
+      <div v-if="error" class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-xl flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="font-medium">{{ error }}</p>
+      </div>
+
+      <div class="flex flex-col items-center">
+        <button
+          @click="solicitarCotizacion"
+          :disabled="isLoading"
+          class="group relative px-12 py-4 bg-medical-blue-600 text-white rounded-2xl hover:bg-medical-blue-700 active:scale-95 transition-all font-extrabold text-xl shadow-2xl shadow-medical-blue-200 disabled:opacity-50 disabled:pointer-events-none"
+        >
+          <span v-if="isLoading" class="flex items-center gap-3">
+            <svg class="animate-spin h-6 w-6" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            Enviando...
+          </span>
+          <span v-else class="flex items-center gap-2">
+            Generar Cotización
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </span>
+        </button>
+        
+        <div v-if="mensajeValidacion" class="mt-4 animate-bounce">
+          <div class="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-xs font-bold border border-yellow-200 shadow-sm flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            {{ mensajeValidacion }}
+          </div>
+        </div>
       </div>
     </div>
 
@@ -247,9 +183,10 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import ServiceItemRow from '../components/common/ServiceItemRow.vue';
 import ModalSeleccionServicios from '../components/common/ModalSeleccionServicios.vue';
 import ModalCotizacionCreada from '../components/common/ModalCotizacionCreada.vue';
+import CustomSedeSelect from '../components/common/CustomSedeSelect.vue';
+import TablaServiciosCotizador from '../components/cotizador/TablaServiciosCotizador.vue';
 import { useCotizador } from '../composables/useCotizador';
 import { useClientePerfil } from '../composables/useClientePerfil';
 import type { Servicio } from '../types/backend';
@@ -273,6 +210,7 @@ const {
   actualizarCantidad,
   enviarCotizacion,
   validarFormulario,
+  resetSelection,
 } = useCotizador();
 
 // Servicios disponibles (para el modal) y servicios seleccionados (para la tabla)
@@ -317,9 +255,7 @@ onMounted(async () => {
 
 // Sincronizar sedeSeleccionada con el store
 watch(sedeSeleccionada, (newValue) => {
-  if (newValue) {
-    selectedSedeId.value = newValue;
-  }
+  selectedSedeId.value = newValue || null;
 });
 
 // Servicios seleccionados (solo los que tienen cantidad > 0)
@@ -439,14 +375,28 @@ const solicitarCotizacion = async () => {
   }
 };
 
-// Cerrar modal de éxito
+// Cerrar modal de éxito y limpiar selección
 const cerrarModal = () => {
   ultimaRespuesta.value = null;
+  resetSelection();
+  
+  // Limpiar datos locales de selección
+  sedeSeleccionada.value = '';
+  serviciosDisponibles.value = [];
+  mensajeValidacion.value = '';
+  
+  // No limpiamos datosCliente porque vienen del perfil del usuario
 };
 
 // Ver lista de cotizaciones
 const verCotizaciones = () => {
+  const needsReset = !!ultimaRespuesta.value;
   ultimaRespuesta.value = null;
+  
+  if (needsReset) {
+    cerrarModal();
+  }
+  
   router.push({ name: 'cliente-cotizaciones' });
 };
 
@@ -461,10 +411,13 @@ const verDetalles = () => {
   const cotizacionId = ultimaRespuesta.value._id || ultimaRespuesta.value.id;
 
   if (cotizacionId) {
-    ultimaRespuesta.value = null;
+    // Resetear antes de navegar
+    const id = String(cotizacionId);
+    cerrarModal();
+    
     router.push({
       name: 'cliente-cotizacion-detalle',
-      params: { id: String(cotizacionId) },
+      params: { id },
     });
   } else {
     console.error(

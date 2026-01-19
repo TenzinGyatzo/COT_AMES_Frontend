@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+
 
 // Componente autocontenido y reutilizable
 // Maneja la selección de cantidad con botones + y -

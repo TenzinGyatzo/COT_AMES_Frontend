@@ -276,7 +276,7 @@
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Crear nueva cotización
+            Solicitar cotización
           </router-link>
         </div>
       </div>

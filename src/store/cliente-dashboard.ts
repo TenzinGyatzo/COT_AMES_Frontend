@@ -9,10 +9,6 @@ import {
   getMisCotizaciones,
   getMisOrdenes,
 } from '../services/cliente-api.service';
-import type {
-  PaginatedCotizacionesResponseDto,
-  PaginatedOrdenesTrabajoResponseDto,
-} from '../types/backend';
 
 interface DashboardCounters {
   cotizaciones: {

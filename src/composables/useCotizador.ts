@@ -97,5 +97,6 @@ export function useCotizador() {
     actualizarCantidad,
     enviarCotizacion,
     validarFormulario,
+    resetSelection: () => cotizadorStore.resetSelection(),
   };
 }

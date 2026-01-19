@@ -12,7 +12,6 @@ import type {
   PaginatedCotizacionesResponseDto,
   OrdenTrabajoListItemDto,
   OrdenTrabajoDetalleDto,
-  PaginatedOrdenesTrabajoResponseDto,
   ClientMetricDto,
   ServiceMetricDto,
   TotalsMetricDto,
@@ -420,12 +419,9 @@ export const useAdminStore = defineStore('admin', {
         }
 
         // Actualizar en el listado si existe
-        const index = this.ordenes.findIndex((item) => item.id === id);
-        if (index !== -1) {
-          this.ordenes[index] = {
-            ...this.ordenes[index],
-            estado: response.estado,
-          };
+        const orden = this.ordenes.find((item) => item.id === id);
+        if (orden) {
+          orden.estado = response.estado;
         }
       } catch (error: any) {
         this.error =

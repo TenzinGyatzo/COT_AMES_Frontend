@@ -136,5 +136,16 @@ export const useCotizadorStore = defineStore('cotizador', {
         this.isLoading = false;
       }
     },
+
+    /**
+     * Limpia el estado de selección del cotizador
+     */
+    resetSelection(): void {
+      this.selectedSedeId = null;
+      this.cantidadesPorServicio = {};
+      this.servicios = [];
+      this.ultimaRespuesta = null;
+      this.error = null;
+    },
   },
 });

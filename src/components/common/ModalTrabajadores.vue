@@ -4,32 +4,27 @@
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
   >
     <div
-      class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+      class="bg-white w-full max-w-4xl h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform scale-100"
       @click.stop
     >
       <!-- Header -->
-      <div class="px-6 py-4 border-b border-gray-200">
-        <div class="flex items-center justify-between">
-          <h3 class="text-xl font-semibold text-gray-900">
+      <div class="px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+        <div class="flex items-center justify-between gap-4">
+          <h3 class="text-lg sm:text-xl font-bold text-gray-900 leading-tight">
             {{ maxTrabajadores === 1 ? 'Información del Trabajador' : 'Información de Trabajadores' }}
           </h3>
           <button
             @click="$emit('close')"
-            class="text-gray-400 hover:text-gray-600 transition-colors"
+            class="text-gray-400 hover:text-gray-600 p-2 hover:bg-white rounded-full transition-all flex-shrink-0"
           >
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <p class="text-sm text-gray-600 mt-1">
+        <p class="text-xs sm:text-sm text-gray-500 mt-1">
           {{ maxTrabajadores === 1 
-            ? 'Proporciona la información del trabajador para continuar' 
+            ? 'Proporciona la información del trabajador' 
             : `Agrega ${maxTrabajadores} trabajadores para continuar` }}
         </p>
       </div>
@@ -76,25 +71,25 @@
       </div>
 
       <!-- Tabs -->
-      <div class="px-6 py-3 border-b border-gray-200 flex gap-2">
+      <div class="px-4 sm:px-6 py-2 border-b border-gray-100 flex gap-2 overflow-x-auto no-scrollbar scroll-smooth whitespace-nowrap">
         <button
           @click="modo = 'manual'"
           :class="[
-            'px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            'px-4 py-2 rounded-xl text-sm font-bold transition-all flex-shrink-0',
             modo === 'manual'
-              ? 'bg-medical-blue-100 text-medical-blue-700'
-              : 'text-gray-600 hover:bg-gray-100',
+              ? 'bg-medical-blue-600 text-white shadow-md'
+              : 'text-gray-500 hover:bg-gray-100',
           ]"
         >
-          {{ maxTrabajadores === 1 ? 'Agregar Trabajador' : 'Agregar Trabajadores' }}
+          {{ maxTrabajadores === 1 ? 'Individual' : 'Registro Manual' }}
         </button>
         <button
           @click="modo = 'excel'"
           :class="[
-            'px-4 py-2 rounded-md text-sm font-medium transition-colors',
+            'px-4 py-2 rounded-xl text-sm font-bold transition-all flex-shrink-0',
             modo === 'excel'
-              ? 'bg-medical-blue-100 text-medical-blue-700'
-              : 'text-gray-600 hover:bg-gray-100',
+              ? 'bg-medical-blue-600 text-white shadow-md'
+              : 'text-gray-500 hover:bg-gray-100',
           ]"
         >
           Carga Masiva (Excel)
@@ -102,7 +97,7 @@
       </div>
 
       <!-- Content -->
-      <div class="flex-1 overflow-y-auto px-6 py-4">
+      <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-6">
 
         <!-- Modo Manual (Formulario + Lista combinados) -->
         <div v-if="modo === 'manual'" class="space-y-3">
@@ -246,74 +241,108 @@
 
           <!-- Versión compacta tipo tabla para múltiples trabajadores -->
           <template v-else-if="trabajadores.length > 0">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+            <!-- Mobile View: Cards -->
+            <div class="md:hidden space-y-4">
+              <div
+                v-for="(trabajador, index) in trabajadores"
+                :key="index"
+                class="border border-gray-100 rounded-2xl p-4 bg-gray-50/50 relative"
+                :class="{ 'ring-2 ring-medical-blue-300 bg-medical-blue-50/50': indiceEditando === index }"
+              >
+                <div class="flex justify-between items-start mb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-gray-400">#{{ index + 1 }}</span>
+                    <h4 class="font-bold text-gray-900">
+                      {{ trabajador.nombre }} {{ trabajador.primerApellido }}
+                    </h4>
+                  </div>
+                  <div class="flex gap-1">
+                    <button
+                      @click="editarTrabajador(index)"
+                      class="p-2 text-medical-blue-600 bg-white shadow-sm rounded-lg"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    <button
+                      @click="eliminarTrabajador(index)"
+                      class="p-2 text-red-600 bg-white shadow-sm rounded-lg"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-y-2 text-sm">
+                  <div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Puesto</span>
+                    <span class="text-gray-700 font-medium">{{ trabajador.puesto }}</span>
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Teléfono</span>
+                    <span class="text-gray-700 font-medium">{{ trabajador.telefono || '-' }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Desktop View: Table -->
+            <div class="hidden md:block overflow-x-auto border border-gray-100 rounded-xl">
+              <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50/50">
                   <tr>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Completo</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Puesto</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sexo</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Nacimiento</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">#</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre Completo</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Puesto</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Sexo</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Fecha Nacimiento</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Teléfono</th>
+                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody class="bg-white divide-y divide-gray-50">
                   <tr
                     v-for="(trabajador, index) in trabajadores"
                     :key="index"
                     class="hover:bg-gray-50 transition-colors"
                     :class="{ 'bg-medical-blue-50': indiceEditando === index }"
                   >
-                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-400">
                       {{ index + 1 }}
                     </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                      <div class="font-medium">
-                        {{ trabajador.primerApellido }} {{ trabajador.segundoApellido ? trabajador.segundoApellido + ' ' : '' }}{{ trabajador.nombre }}
-                      </div>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-bold">
+                      {{ trabajador.nombre }} {{ trabajador.primerApellido }}
                     </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                       {{ trabajador.puesto }}
                     </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                       {{ trabajador.sexo }}
                     </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono">
                       {{ formatDate(trabajador.fechaNacimiento) }}
                     </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                       {{ trabajador.telefono || '-' }}
                     </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                    <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                       <div class="flex items-center justify-end gap-2">
                         <button
                           @click="editarTrabajador(index)"
-                          class="p-1.5 text-medical-blue-600 hover:bg-medical-blue-50 rounded-md transition-colors"
-                          title="Editar trabajador"
+                          class="p-1.5 text-medical-blue-600 hover:bg-medical-blue-50 rounded-lg transition-all"
                         >
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
                         </button>
                         <button
                           @click="eliminarTrabajador(index)"
-                          class="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                          title="Eliminar trabajador"
+                          class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         >
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
                       </div>
@@ -459,64 +488,55 @@
             </ul>
           </div>
 
-          <div v-if="trabajadoresExcel.length > 0" class="border border-gray-200 rounded-lg bg-white shadow-sm">
-            <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 rounded-t-lg">
-              <h4 class="font-medium text-gray-900">
+          <div v-if="trabajadoresExcel.length > 0" class="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden">
+            <div class="px-5 py-4 bg-gray-50/50 border-b border-gray-100">
+              <h4 class="font-bold text-gray-900">
                 Vista previa ({{ trabajadoresExcel.length }} trabajador{{ trabajadoresExcel.length > 1 ? 'es' : '' }})
               </h4>
             </div>
+            
             <div class="max-h-96 overflow-y-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
+              <!-- Mobile View Cards -->
+              <div class="md:hidden divide-y divide-gray-50">
+                <div v-for="(trabajador, index) in trabajadoresExcel" :key="index" class="p-4 flex justify-between items-center">
+                  <div>
+                    <div class="text-xs font-bold text-gray-300">#{{ index + 1 }}</div>
+                    <div class="font-bold text-gray-900">{{ trabajador.nombre }} {{ trabajador.primerApellido }}</div>
+                    <div class="text-xs text-gray-500">{{ trabajador.puesto }}</div>
+                  </div>
+                  <button @click="eliminarTrabajadorExcel(index)" class="p-2 text-red-500 hover:bg-red-50 rounded-lg">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Desktop View Table -->
+              <table class="hidden md:table min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50/30">
                   <tr>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Completo</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Puesto</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sexo</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Nacimiento</th>
-                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                    <th class="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">#</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Nombre Completo</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Puesto</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">Sexo</th>
+                    <th class="px-4 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest">Fecha Nacimiento</th>
+                    <th class="px-4 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-widest">Acciones</th>
                   </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  <tr
-                    v-for="(trabajador, index) in trabajadoresExcel"
-                    :key="index"
-                    class="hover:bg-gray-50 transition-colors"
-                  >
-                    <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {{ index + 1 }}
+                <tbody class="bg-white divide-y divide-gray-50">
+                  <tr v-for="(trabajador, index) in trabajadoresExcel" :key="index" class="hover:bg-gray-50 transition-colors">
+                    <td class="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-400">{{ index + 1 }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-bold">
+                      {{ trabajador.nombre }} {{ trabajador.primerApellido }}
                     </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                      <div class="font-medium">
-                        {{ trabajador.primerApellido }} {{ trabajador.segundoApellido ? trabajador.segundoApellido + ' ' : '' }}{{ trabajador.nombre }}
-                      </div>
-                    </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
-                      {{ trabajador.puesto }}
-                    </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
-                      {{ trabajador.sexo }}
-                    </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
-                      {{ formatDate(trabajador.fechaNacimiento) }}
-                    </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-600">
-                      {{ trabajador.telefono || '-' }}
-                    </td>
-                    <td class="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        @click="eliminarTrabajadorExcel(index)"
-                        class="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                        title="Eliminar trabajador"
-                      >
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ trabajador.puesto }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600">{{ trabajador.sexo }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono">{{ formatDate(trabajador.fechaNacimiento) }}</td>
+                    <td class="px-4 py-3 whitespace-nowrap text-right">
+                      <button @click="eliminarTrabajadorExcel(index)" class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                          />
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
                       </button>
                     </td>
@@ -524,50 +544,74 @@
                 </tbody>
               </table>
             </div>
-            <div class="px-4 py-3 bg-gray-50 border-t border-gray-200 rounded-b-lg">
+            <div class="px-5 py-4 bg-gray-50/50 border-t border-gray-100">
               <button
                 @click="confirmarExcel"
                 :disabled="erroresExcel.length > 0"
-                class="w-full px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+                class="w-full px-6 py-3 bg-medical-blue-600 text-white rounded-xl hover:bg-medical-blue-700 active:scale-95 transition-all font-bold shadow-lg shadow-medical-blue-100 disabled:opacity-50"
               >
-                Agregar {{ trabajadoresExcel.length }} trabajador{{ trabajadoresExcel.length > 1 ? 'es' : '' }}
+                Cargar {{ trabajadoresExcel.length }} trabajador{{ trabajadoresExcel.length > 1 ? 'es' : '' }}
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Footer -->
-      <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-        <div class="text-sm text-gray-600">
-          <span :class="{ 'font-semibold text-green-600': trabajadores.length === maxTrabajadores }">
-            {{ trabajadores.length }} de {{ maxTrabajadores }} trabajadores
-          </span>
-          <span v-if="trabajadores.length < maxTrabajadores" class="text-gray-500 ml-2">
-            (Faltan {{ maxTrabajadores - trabajadores.length }})
-          </span>
-        </div>
-        <div class="flex gap-3">
-          <button
-            v-if="permitirOmitir"
-            @click="$emit('confirm', [])"
-            class="px-4 py-2 text-medical-blue-600 hover:bg-medical-blue-50 rounded-md transition-colors font-medium border border-medical-blue-200"
-          >
-            {{ maxTrabajadores === 1 ? 'Continuar sin registrar trabajador' : 'Continuar sin registrar trabajadores' }}
-          </button>
-          <button
-            @click="$emit('close')"
-            class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors font-medium"
-          >
-            Cancelar
-          </button>
-          <button
-            @click="confirmar"
-            :disabled="trabajadores.length !== maxTrabajadores"
-            class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Confirmar ({{ trabajadores.length }}/{{ maxTrabajadores }})
-          </button>
+      <!-- Footer Adaptativo (Ultra-compacto en móviles / Estándar en Desktop) -->
+      <div class="px-4 sm:px-6 py-3 sm:py-6 border-t border-gray-100 bg-gray-50/50">
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-6">
+          
+          <!-- Lado Izquierdo (Escritorio): Contador -->
+          <div class="hidden sm:block text-sm font-bold text-gray-500 bg-white px-4 py-2 rounded-full border border-gray-100 shadow-sm">
+            <span :class="{ 'text-medical-green-600': trabajadores.length === maxTrabajadores }">
+              {{ trabajadores.length }} / {{ maxTrabajadores }} registrados
+            </span>
+          </div>
+
+          <!-- Lado Derecho (Escritorio) / Todo el ancho (Móvil) -->
+          <div class="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
+            
+            <!-- Grupo Principal Móvil: Contador + Confirmar (Fila única) -->
+            <div class="flex sm:hidden flex-row items-center gap-2 w-full">
+              <div class="flex-shrink-0 text-[10px] font-bold text-gray-500 bg-white px-2 py-1.5 rounded-lg border border-gray-100 shadow-sm">
+                {{ trabajadores.length }}/{{ maxTrabajadores }}
+              </div>
+              <button
+                @click="confirmar"
+                :disabled="trabajadores.length !== maxTrabajadores"
+                class="flex-1 px-4 py-2 bg-medical-green-500 text-white rounded-lg hover:bg-medical-green-600 active:scale-95 transition-all font-bold text-xs shadow-lg shadow-medical-green-100 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                Confirmar Registro
+              </button>
+            </div>
+
+            <!-- Botones secundarios y de Escritorio -->
+            <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+              <button
+                v-if="permitirOmitir"
+                @click="$emit('confirm', [])"
+                class="w-full sm:w-auto px-5 py-2 sm:py-3 text-medical-blue-600 bg-white border border-medical-blue-100 rounded-xl hover:bg-medical-blue-50 transition-all font-bold text-xs sm:text-sm shadow-sm"
+              >
+                Omitir información
+              </button>
+              
+              <button
+                @click="$emit('close')"
+                class="hidden sm:block px-5 py-3 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 transition-all font-bold text-sm shadow-sm"
+              >
+                Cancelar
+              </button>
+
+              <!-- Botón Confirmar (Desktop) -->
+              <button
+                @click="confirmar"
+                :disabled="trabajadores.length !== maxTrabajadores"
+                class="hidden sm:block px-8 py-3 bg-medical-green-500 text-white rounded-xl hover:bg-medical-green-600 active:scale-95 transition-all font-bold text-sm shadow-lg shadow-medical-green-100 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                Confirmar Registro
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -611,6 +655,9 @@ const shouldValidateForm = ref(false);
 const isFormValid = ref(true); // Inicialmente true para permitir intentar avanzar
 const hasAttemptedSubmit = ref(false); // Indica si se ha intentado avanzar
 const mostrarMensajeInfo = ref(true); // Controla la visibilidad del mensaje informativo
+
+// Temporizador para el mensaje informativo
+let infoMessageTimeout: ReturnType<typeof setTimeout> | null = null;
 
 // Funcionalidad Drag & Drop
 const isDragging = ref(false);
@@ -1197,6 +1244,13 @@ watch(
     if (nuevoValor && !valorAnterior) {
       // Si son más de 5 trabajadores, mostrar Carga Masiva (Excel) por defecto
       modo.value = props.maxTrabajadores > 5 ? 'excel' : 'manual';
+      mostrarMensajeInfo.value = true;
+
+      // Auto-ocultar el mensaje informativo después de 10 segundos
+      if (infoMessageTimeout) clearTimeout(infoMessageTimeout);
+      infoMessageTimeout = setTimeout(() => {
+        mostrarMensajeInfo.value = false;
+      }, 20000); // 20 segundos
     }
     // Solo resetear si el modal SE ESTÁ CERRANDO (de true a false)
     else if (!nuevoValor && valorAnterior) {
@@ -1213,6 +1267,10 @@ watch(
         hasAttemptedSubmit.value = false; // Resetear intento de submit
         isFormValid.value = true; // Resetear estado de validación
         mostrarMensajeInfo.value = true; // Mostrar mensaje informativo al abrir de nuevo
+        if (infoMessageTimeout) {
+          clearTimeout(infoMessageTimeout);
+          infoMessageTimeout = null;
+        }
       }, 100);
     }
   },

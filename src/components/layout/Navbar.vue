@@ -5,7 +5,8 @@
         <!-- Logo -->
         <div class="flex-shrink-0">
           <RouterLink to="/" class="text-2xl font-bold text-medical-blue-600">
-            MOC
+            <!-- MOC -->
+            <img src="../../assets/logos/moc-caborca-logo.png" alt="Logo" class="w-24">
           </RouterLink>
         </div>
 
@@ -398,13 +399,13 @@
         </template>
 
         <!-- Botón Admin Login Móvil -->
-        <div class="pt-2 border-t border-gray-200">
+        <div class="pt-2 border-t border-gray-200 flex justify-end">
           <RouterLink
             to="/admin/login"
-            class="block px-3 py-2 rounded-md text-sm font-normal text-gray-500 hover:bg-gray-50 transition-colors border border-gray-200"
+            class="inline-block px-3 py-1.5 rounded-md text-xs font-normal text-gray-500 hover:text-gray-700 transition-colors border border-gray-200 hover:bg-gray-50"
             @click="closeMobileMenu"
           >
-            Admin Login
+            Admin
           </RouterLink>
         </div>
 

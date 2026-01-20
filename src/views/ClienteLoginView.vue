@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-md mx-auto mt-16">
+  <div class="max-w-md mx-auto mt-4">
     <div class="bg-white shadow-lg rounded-lg p-8">
       <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">
         Portal de Clientes

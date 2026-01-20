@@ -1,12 +1,13 @@
 <template>
   <div>
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900">Gestión de Sedes</h1>
+    <div class="flex justify-between items-center mb-6 gap-3">
+      <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">Gestión de Sedes</h1>
       <button
         @click="abrirModalCrear"
-        class="px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium"
+        class="px-3 sm:px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium text-sm sm:text-base whitespace-nowrap flex-shrink-0"
       >
-        + Agregar Sede
+        <span>+ Agregar</span>
+        <span class="hidden sm:inline"> Sede</span>
       </button>
     </div>
 
@@ -25,7 +26,7 @@
 
     <!-- Tabla de sedes -->
     <div v-else class="bg-white shadow-md rounded-lg overflow-hidden">
-      <div class="overflow-y-auto max-h-[calc(100vh-127px)]">
+      <div class="overflow-y-auto max-h-[calc(100vh-115px)]">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50 sticky top-0 z-10">
             <tr>

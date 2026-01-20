@@ -4,7 +4,7 @@
       <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">
         Generador de Cotizaciones
       </h1>
-      <p class="mt-2 text-gray-500 text-lg">Selecciona los servicios que deseas para obtener tu presupuesto oficial.</p>
+      <p class="mt-2 text-gray-500 text-sm sm:text-base md:text-lg">Selecciona los servicios que deseas para obtener tu presupuesto oficial.</p>
     </div>
 
     <!-- PASO 1: Selección de sede (Con resaltado si está vacío) -->
@@ -18,7 +18,7 @@
       >
         <div class="flex items-center gap-3 mb-4">
           <div 
-            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors"
+            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors shrink-0"
             :class="[sedeSeleccionada ? 'bg-green-100 text-green-600' : 'bg-medical-blue-600 text-white']"
           >
             <svg v-if="sedeSeleccionada" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -79,7 +79,7 @@
       <!-- PASO 3: Confirmación de Datos -->
       <div class="mb-10 bg-white rounded-2xl shadow-md border border-gray-100 p-6">
         <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-lg">
+          <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold text-lg shrink-0">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>

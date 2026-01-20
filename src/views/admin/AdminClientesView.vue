@@ -56,7 +56,7 @@
         </p>
       </div>
 
-      <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
         <div
           v-for="grupo in clientesAgrupados"
           :key="grupo.clienteId"
@@ -64,51 +64,51 @@
         >
           <!-- Encabezado de la empresa -->
           <div
-            class="px-4 md:px-6 py-4 md:py-5 bg-gray-50 border-b border-gray-200"
+            class="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 bg-gray-50 border-b border-gray-200"
           >
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <div class="mb-3">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="mb-2 sm:mb-3">
                   <span
-                    class="text-base md:text-lg font-semibold text-gray-900"
+                    class="text-sm sm:text-base md:text-lg font-semibold text-gray-900 break-words"
                   >
                     {{ grupo.empresa || 'Sin nombre' }}
                   </span>
                 </div>
-                <div class="mt-1 text-xs md:text-sm text-gray-600">
-                  <span>{{ grupo.rfc }}</span>
-                  <span class="ml-3 md:ml-4">
+                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
+                  <span class="text-xs sm:text-sm text-gray-600 break-all">{{ grupo.rfc }}</span>
+                  <span class="sm:ml-3 md:ml-4">
                     <span
                       v-if="grupo.activo !== false"
-                      class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+                      class="inline-block px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
                     >
                       Activo
                     </span>
                     <span
                       v-else
-                      class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"
+                      class="inline-block px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"
                     >
                       Inactivo
                     </span>
                   </span>
                 </div>
                 <div
-                  class="mt-3 flex flex-wrap gap-3 md:gap-4 text-xs md:text-sm text-gray-600"
+                  class="mt-2 sm:mt-3 flex flex-wrap gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm text-gray-600"
                 >
-                  <span>
+                  <span class="whitespace-nowrap">
                     <span class="font-medium">Usuarios:</span>
                     <span class="ml-1 font-semibold text-gray-900">{{
                       grupo.totalUsuarios || 0
                     }}</span>
                   </span>
-                  <span>
+                  <span class="whitespace-nowrap">
                     <span class="font-medium">Cotizaciones:</span>
                     <span class="ml-1 font-semibold text-gray-900">{{
                       grupo.totalCotizaciones || 0
                     }}</span>
                   </span>
-                  <span>
-                    <span class="font-medium">Órdenes de Trabajo:</span>
+                  <span class="whitespace-nowrap">
+                    <span class="font-medium">Órdenes:</span>
                     <span class="ml-1 font-semibold text-gray-900">{{
                       grupo.totalOrdenesTrabajo || 0
                     }}</span>
@@ -116,47 +116,49 @@
                 </div>
                 <div
                   v-if="grupo.clave"
-                  class="flex items-center space-x-2 mt-3 md:mt-4"
+                  class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 mt-2 sm:mt-3 md:mt-4"
                 >
-                  <label class="block text-xs font-medium text-gray-700">
+                  <label class="text-xs font-medium text-gray-700 whitespace-nowrap">
                     Clave de la empresa:
                   </label>
-                  <input
-                    :value="grupo.clave"
-                    type="text"
-                    readonly
-                    class="w-20 md:w-24 rounded-md border-gray-300 text-xs px-2 py-1.5 border bg-gray-50 text-gray-900 font-mono font-semibold"
-                  />
-                  <button
-                    type="button"
-                    @click="copiarClave(grupo.clave)"
-                    class="px-2 md:px-3 py-1.5 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs font-medium whitespace-nowrap"
-                    title="Copiar clave"
-                  >
-                    Copiar
-                  </button>
+                  <div class="flex items-center gap-2">
+                    <input
+                      :value="grupo.clave"
+                      type="text"
+                      readonly
+                      class="w-20 sm:w-24 rounded-md border-gray-300 text-xs px-2 py-1.5 border bg-gray-50 text-gray-900 font-mono font-semibold"
+                    />
+                    <button
+                      type="button"
+                      @click="copiarClave(grupo.clave)"
+                      class="px-2 sm:px-3 py-1.5 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs font-medium whitespace-nowrap"
+                      title="Copiar clave"
+                    >
+                      Copiar
+                    </button>
+                  </div>
                 </div>
                 <!-- Mensaje de éxito -->
                 <div
                   v-if="successMessage"
-                  class="mt-3 md:mt-4 rounded-md bg-green-50 px-3 md:px-4 py-2 md:py-3 text-xs md:text-sm text-green-700 max-w-xs"
+                  class="mt-2 sm:mt-3 md:mt-4 rounded-md bg-green-50 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm text-green-700 max-w-full sm:max-w-xs"
                 >
                   {{ successMessage }}
                 </div>
               </div>
               <div
-                class="flex items-center space-x-3 md:space-x-4 ml-4 md:ml-6"
+                class="flex items-center justify-end sm:justify-start sm:flex-shrink-0 sm:ml-4 md:ml-6"
               >
                 <router-link
                   :to="{
                     name: 'admin-cliente-detalle',
                     params: { id: grupo.clienteId },
                   }"
-                  class="inline-flex items-center px-3 md:px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
+                  class="inline-flex items-center px-3 sm:px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap w-full sm:w-auto justify-center"
                 >
                   Ver detalle
                   <svg
-                    class="w-4 h-4 ml-1 md:ml-2"
+                    class="w-4 h-4 ml-1 sm:ml-2"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"

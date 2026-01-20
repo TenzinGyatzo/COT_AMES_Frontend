@@ -18,7 +18,7 @@
       >
         <div class="flex items-center gap-3 mb-4">
           <div 
-            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors"
+            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors shrink-0"
             :class="[sedeSeleccionada ? 'bg-green-100 text-green-600' : 'bg-medical-blue-600 text-white']"
           >
             <svg v-if="sedeSeleccionada" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -76,7 +76,7 @@
       <div class="mb-10 bg-white rounded-2xl shadow-md border border-gray-100 p-6">
         <div class="flex items-center gap-3 mb-6">
           <div 
-            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors"
+            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors shrink-0"
             :class="[datosCliente.empresa && datosCliente.nombreContacto ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500']"
           >
             <svg v-if="datosCliente.empresa && datosCliente.nombreContacto" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

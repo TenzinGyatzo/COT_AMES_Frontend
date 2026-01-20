@@ -24,7 +24,8 @@
                 d="M12 4v16m8-8H4"
               />
             </svg>
-            Nueva cotización
+            <span>Nueva</span>
+            <span class="hidden sm:inline">&nbsp;Cotización</span>
           </router-link>
           <div class="flex items-center gap-2">
             <label class="text-sm font-medium text-gray-700"> Estado </label>

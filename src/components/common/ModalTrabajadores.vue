@@ -75,7 +75,7 @@
         <button
           @click="modo = 'manual'"
           :class="[
-            'px-4 py-2 rounded-xl text-sm font-bold transition-all flex-shrink-0',
+            'px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex-shrink-0',
             modo === 'manual'
               ? 'bg-medical-blue-600 text-white shadow-md'
               : 'text-gray-500 hover:bg-gray-100',
@@ -86,7 +86,7 @@
         <button
           @click="modo = 'excel'"
           :class="[
-            'px-4 py-2 rounded-xl text-sm font-bold transition-all flex-shrink-0',
+            'px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex-shrink-0',
             modo === 'excel'
               ? 'bg-medical-blue-600 text-white shadow-md'
               : 'text-gray-500 hover:bg-gray-100',
@@ -387,7 +387,7 @@
         </div>
 
         <div v-if="modo === 'excel'" class="space-y-6">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div v-if="trabajadoresExcel.length === 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
              <!-- Columna Izquierda: Zona de Carga (Drop Zone) -->
             <div
               class="border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center text-center transition-colors cursor-pointer"
@@ -489,10 +489,19 @@
           </div>
 
           <div v-if="trabajadoresExcel.length > 0" class="border border-gray-100 rounded-2xl bg-white shadow-sm overflow-hidden">
-            <div class="px-5 py-4 bg-gray-50/50 border-b border-gray-100">
+            <div class="px-5 py-4 bg-gray-50/50 border-b border-gray-100 flex items-center justify-between">
               <h4 class="font-bold text-gray-900">
                 Vista previa ({{ trabajadoresExcel.length }} trabajador{{ trabajadoresExcel.length > 1 ? 'es' : '' }})
               </h4>
+              <button
+                @click="descartarSeleccionExcel"
+                class="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors flex items-center gap-2"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Descartar 
+              </button>
             </div>
             
             <div class="max-h-96 overflow-y-auto">
@@ -544,11 +553,14 @@
                 </tbody>
               </table>
             </div>
-            <div class="px-5 py-4 bg-gray-50/50 border-t border-gray-100">
+            <div ref="botonCargarRef" class="px-5 py-4 bg-gray-50/50 border-t border-gray-100">
               <button
                 @click="confirmarExcel"
                 :disabled="erroresExcel.length > 0"
-                class="w-full px-6 py-3 bg-medical-blue-600 text-white rounded-xl hover:bg-medical-blue-700 active:scale-95 transition-all font-bold shadow-lg shadow-medical-blue-100 disabled:opacity-50"
+                :class="[
+                  'w-full px-6 py-3 bg-medical-blue-600 text-white rounded-xl hover:bg-medical-blue-700 active:scale-95 transition-all font-bold shadow-lg shadow-medical-blue-100 disabled:opacity-50',
+                  mostrarIndicadorCarga ? 'ring-4 ring-blue-300 ring-offset-2 animate-pulse' : ''
+                ]"
               >
                 Cargar {{ trabajadoresExcel.length }} trabajador{{ trabajadoresExcel.length > 1 ? 'es' : '' }}
               </button>
@@ -655,6 +667,8 @@ const shouldValidateForm = ref(false);
 const isFormValid = ref(true); // Inicialmente true para permitir intentar avanzar
 const hasAttemptedSubmit = ref(false); // Indica si se ha intentado avanzar
 const mostrarMensajeInfo = ref(true); // Controla la visibilidad del mensaje informativo
+const botonCargarRef = ref<HTMLElement | null>(null);
+const mostrarIndicadorCarga = ref(false);
 
 // Temporizador para el mensaje informativo
 let infoMessageTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -693,6 +707,7 @@ function procesarArchivoExcel(event: Event) {
 async function procesarArchivo(file: File) {
   erroresExcel.value = [];
   trabajadoresExcel.value = [];
+  mostrarIndicadorCarga.value = false;
   
   try {
     const { trabajadores: trabajadoresLeidos, errores } = await leerArchivoExcel(file);
@@ -722,6 +737,18 @@ async function procesarArchivo(file: File) {
           field: 'cantidad',
           message: `Se requieren exactamente ${props.maxTrabajadores} trabajador${props.maxTrabajadores > 1 ? 'es' : ''}. Faltan ${props.maxTrabajadores - totalTrabajadores} trabajador${props.maxTrabajadores - totalTrabajadores > 1 ? 'es' : ''}.`,
         });
+      } else {
+        // Si no hay errores y hay trabajadores, mostrar indicador y hacer scroll
+        mostrarIndicadorCarga.value = true;
+        // Hacer scroll después de que Vue renderice
+        setTimeout(() => {
+          if (botonCargarRef.value) {
+            botonCargarRef.value.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center' 
+            });
+          }
+        }, 300);
       }
     }
   } catch (error) {
@@ -1149,6 +1176,17 @@ function eliminarTrabajadorExcel(index: number) {
   }
 }
 
+function descartarSeleccionExcel() {
+  trabajadoresExcel.value = [];
+  erroresExcel.value = [];
+  mostrarIndicadorCarga.value = false;
+  // Limpiar el input de archivo
+  if (fileInputRef.value) {
+    fileInputRef.value.value = '';
+  }
+  isDragging.value = false;
+}
+
 // Función para limpiar campos opcionales vacíos antes de enviar
 function limpiarTrabajador(trabajador: CreateTrabajadorDto): CreateTrabajadorDto {
   const limpio: CreateTrabajadorDto = {
@@ -1201,6 +1239,7 @@ function confirmarExcel() {
   trabajadores.value.push(...trabajadoresExcelLimpios);
   trabajadoresExcel.value = [];
   erroresExcel.value = [];
+  mostrarIndicadorCarga.value = false;
   modo.value = 'manual';
   
   // Nota: No emitimos 'confirm' aquí porque el usuario aún puede agregar más trabajadores manualmente
@@ -1267,6 +1306,7 @@ watch(
         hasAttemptedSubmit.value = false; // Resetear intento de submit
         isFormValid.value = true; // Resetear estado de validación
         mostrarMensajeInfo.value = true; // Mostrar mensaje informativo al abrir de nuevo
+        mostrarIndicadorCarga.value = false; // Ocultar indicador de carga
         if (infoMessageTimeout) {
           clearTimeout(infoMessageTimeout);
           infoMessageTimeout = null;

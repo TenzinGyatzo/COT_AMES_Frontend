@@ -31,17 +31,17 @@
       <!-- Estado destacado -->
       <div
         :class="getEstadoBannerClass(ordenDetalle.estado)"
-        class="rounded-lg border-2 shadow-lg p-4 md:p-6"
+        class="rounded-lg border-2 shadow-lg p-4 sm:p-5 md:p-6"
       >
-        <div class="flex items-center justify-between flex-col md:flex-row gap-4">
-          <div class="flex items-center gap-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="flex items-center gap-3 sm:gap-4">
             <div
               :class="getEstadoIconClass(ordenDetalle.estado)"
-              class="flex-shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center"
+              class="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center"
             >
               <svg
                 v-if="ordenDetalle.estado === 'pendiente'"
-                class="w-7 h-7 md:w-8 md:h-8"
+                class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -55,7 +55,7 @@
               </svg>
               <svg
                 v-else-if="ordenDetalle.estado === 'en_proceso'"
-                class="w-7 h-7 md:w-8 md:h-8"
+                class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -69,7 +69,7 @@
               </svg>
               <svg
                 v-else-if="ordenDetalle.estado === 'completada'"
-                class="w-7 h-7 md:w-8 md:h-8"
+                class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -83,7 +83,7 @@
               </svg>
               <svg
                 v-else-if="ordenDetalle.estado === 'cancelada'"
-                class="w-7 h-7 md:w-8 md:h-8"
+                class="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -97,10 +97,10 @@
               </svg>
             </div>
             <div>
-              <p class="text-xs md:text-sm font-medium opacity-75 mb-1">Estado de la Orden</p>
+              <p class="text-xs sm:text-sm font-medium opacity-75 mb-1">Estado de la Orden</p>
               <h3
                 :class="getEstadoTextClass(ordenDetalle.estado)"
-                class="text-xl md:text-2xl lg:text-3xl font-bold"
+                class="text-xl sm:text-2xl md:text-3xl font-bold"
               >
                 {{ getEstadoLabel(ordenDetalle.estado) }}
               </h3>
@@ -109,11 +109,13 @@
               </p>
             </div>
           </div>
-          <div class="text-left md:text-right">
-            <p class="text-xs md:text-sm font-medium opacity-75 mb-1">Folio</p>
-            <p class="text-base md:text-lg font-mono font-bold">
-              {{ ordenDetalle.folio }}
-            </p>
+          <div class="flex flex-col md:items-end gap-3 w-full md:w-auto">
+            <div class="text-left md:text-right">
+              <p class="text-xs sm:text-sm font-medium opacity-75 mb-1">Folio</p>
+              <p class="text-base sm:text-lg font-mono font-bold">
+                {{ ordenDetalle.folio }}
+              </p>
+            </div>
           </div>
         </div>
       </div>

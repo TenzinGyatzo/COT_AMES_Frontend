@@ -61,44 +61,44 @@
     <template v-else>
       <!-- Vista de tabla para pantallas grandes -->
       <div
-        class="bg-white shadow-md rounded-lg overflow-hidden hidden md:block"
+        class="bg-white shadow-md rounded-lg overflow-hidden hidden lg:block"
       >
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
+          <table class="min-w-full divide-y divide-gray-200 table-fixed">
             <thead class="bg-gray-50">
               <tr>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-12 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   #
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-32 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Servicio
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-[330px] max-w-[330px] px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Descripción
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-24 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Clave Sede
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-32 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Precio Unitario
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-24 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Estado
                 </th>
                 <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-32 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Acciones
                 </th>
@@ -111,22 +111,22 @@
                 </td>
               </tr>
               <tr v-for="(servicio, index) in servicios" :key="servicio._id">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                <td class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                   {{ index + 1 }}
                 </td>
-                <td class="px-6 py-4 text-sm font-medium text-gray-900">
-                  {{ servicio.nombre }}
+                <td class="px-3 lg:px-4 py-4 text-sm font-medium text-gray-900">
+                  <div class="truncate">{{ servicio.nombre }}</div>
                 </td>
                 <td
-                  class="px-6 py-4 text-sm text-gray-500 max-w-xs relative group"
+                  class="w-[330px] max-w-[330px] px-3 lg:px-4 py-4 text-sm text-gray-500 relative group"
                   v-if="servicio.descripcion && servicio.descripcion.length > 0"
                 >
-                  <div class="truncate">
+                  <div class="line-clamp-4 w-full break-words">
                     {{ servicio.descripcion }}
                   </div>
                   <!-- Tooltip personalizado -->
                   <div
-                    class="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg pointer-events-none"
+                    class="tooltip-descripcion absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg pointer-events-none"
                   >
                     <div class="whitespace-normal break-words">
                       {{ servicio.descripcion }}
@@ -137,17 +137,17 @@
                     ></div>
                   </div>
                 </td>
-                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs" v-else>
+                <td class="w-[330px] max-w-[330px] px-3 lg:px-4 py-4 text-sm text-gray-500" v-else>
                   <div class="truncate">-</div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                <td class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                   {{ obtenerClaveSede(servicio) || '-' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                   $ {{ servicio.precioUnitario.toFixed(2) }}
                   {{ servicio.moneda || 'MXN' }}
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap">
+                <td class="px-3 lg:px-4 py-4 whitespace-nowrap">
                   <span
                     :class="[
                       'px-2 py-1 text-xs font-medium rounded-full',
@@ -160,20 +160,144 @@
                   </span>
                 </td>
                 <td
-                  class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2"
+                  class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm font-medium"
                 >
-                  <button
-                    @click="abrirModalEditar(servicio)"
-                    class="text-medical-blue-600 hover:text-medical-blue-900"
+                  <div class="flex flex-col xl:flex-row gap-1 xl:gap-2">
+                    <button
+                      @click="abrirModalEditar(servicio)"
+                      class="text-medical-blue-600 hover:text-medical-blue-900 text-left"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      @click="eliminarServicio(servicio)"
+                      class="text-red-600 hover:text-red-900 text-left"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Vista de tabla compacta para pantallas medianas (md a lg) -->
+      <div
+        class="bg-white shadow-md rounded-lg overflow-hidden hidden md:block lg:hidden"
+      >
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  #
+                </th>
+                <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Servicio
+                </th>
+                <th
+                  class="w-[330px] max-w-[330px] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Descripción
+                </th>
+                <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Clave
+                </th>
+                <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Precio
+                </th>
+                <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Estado
+                </th>
+                <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <tr v-if="servicios.length === 0">
+                <td colspan="7" class="px-3 py-4 text-center text-gray-500">
+                  No hay servicios disponibles
+                </td>
+              </tr>
+              <tr v-for="(servicio, index) in servicios" :key="servicio._id">
+                <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-500">
+                  {{ index + 1 }}
+                </td>
+                <td class="px-3 py-4 text-xs font-medium text-gray-900">
+                  <div class="truncate max-w-[120px]">{{ servicio.nombre }}</div>
+                </td>
+                <td
+                  class="w-[330px] max-w-[330px] px-3 py-4 text-xs text-gray-500 relative group"
+                  v-if="servicio.descripcion && servicio.descripcion.length > 0"
+                >
+                  <div class="line-clamp-3 w-full break-words">
+                    {{ servicio.descripcion }}
+                  </div>
+                  <!-- Tooltip personalizado -->
+                  <div
+                    class="tooltip-descripcion absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-56 p-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg pointer-events-none"
                   >
-                    Editar
-                  </button>
-                  <button
-                    @click="eliminarServicio(servicio)"
-                    class="text-red-600 hover:text-red-900"
+                    <div class="whitespace-normal break-words">
+                      {{ servicio.descripcion }}
+                    </div>
+                    <div
+                      class="absolute top-full left-4 border-4 border-transparent border-t-gray-900"
+                    ></div>
+                  </div>
+                </td>
+                <td class="w-[330px] max-w-[330px] px-3 py-4 text-xs text-gray-500" v-else>
+                  <div class="truncate">-</div>
+                </td>
+                <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-600">
+                  {{ obtenerClaveSede(servicio) || '-' }}
+                </td>
+                <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-900">
+                  ${{ servicio.precioUnitario.toFixed(2) }}
+                </td>
+                <td class="px-3 py-4 whitespace-nowrap">
+                  <span
+                    :class="[
+                      'px-1.5 py-0.5 text-xs font-medium rounded-full',
+                      servicio.activo
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800',
+                    ]"
                   >
-                    Eliminar
-                  </button>
+                    {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+                  </span>
+                </td>
+                <td
+                  class="px-3 py-4 whitespace-nowrap text-xs font-medium"
+                >
+                  <div class="flex flex-col gap-1">
+                    <button
+                      @click="abrirModalEditar(servicio)"
+                      class="text-medical-blue-600 hover:text-medical-blue-900 text-left"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      @click="eliminarServicio(servicio)"
+                      class="text-red-600 hover:text-red-900 text-left"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -216,6 +340,12 @@
                 {{ servicio.nombre }}
               </h3>
             </div>
+          </div>
+
+          <!-- Descripción -->
+          <div v-if="servicio.descripcion && servicio.descripcion.length > 0" class="text-sm text-gray-600">
+            <span class="font-medium text-gray-700 block mb-1">Descripción:</span>
+            <p class="text-gray-600 leading-relaxed">{{ servicio.descripcion }}</p>
           </div>
 
           <!-- Información adicional -->
@@ -763,5 +893,36 @@ watch(sedeSeleccionada, () => {
 .scrollbar-hide {
   scrollbar-width: thin;
   scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+/* Mejoras de responsividad para tablas */
+@media (max-width: 1023px) {
+  table {
+    font-size: 0.875rem;
+  }
+}
+
+/* Mejorar el comportamiento de line-clamp */
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Ocultar tooltips a partir de 1406px de ancho */
+@media (min-width: 1406px) {
+  .tooltip-descripcion {
+    display: none !important;
+  }
 }
 </style>

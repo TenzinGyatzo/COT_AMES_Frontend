@@ -146,7 +146,7 @@
         >
           Sedes
         </router-link>
-        <router-link
+        <!-- <router-link
           to="/admin/metricas"
           class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
           :class="
@@ -156,7 +156,7 @@
           "
         >
           Métricas
-        </router-link>
+        </router-link> -->
       </nav>
 
       <!-- Botón Cerrar Sesión -->

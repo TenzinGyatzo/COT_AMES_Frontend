@@ -333,6 +333,10 @@ export interface CotizacionDetalleDto {
   ordenTrabajoId?: string;
   ordenTrabajoFolio?: string;
   pdfUrl?: string;
+  personasAEvaluar?: string;
+  nombreEmpresa?: string;
+  nombreContacto?: string;
+  telefonoContacto?: string;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

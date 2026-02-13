@@ -198,6 +198,7 @@ export interface CreateAdminCotizacionPayload {
   nombreContacto: string;
   emailContacto?: string;
   telefonoContacto?: string;
+  personasAEvaluar?: string;
   items: Array<{
     servicioId: string;
     cantidad: number;

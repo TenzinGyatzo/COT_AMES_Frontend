@@ -356,7 +356,7 @@
             <label
               class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
             >
-              Nombre del cliente/usuario
+              Solicitante de la Cotización
             </label>
             <p class="text-sm md:text-base text-gray-900">
               {{ getUsuarioClienteNombre() || '-' }}
@@ -367,7 +367,7 @@
             <label
               class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
             >
-              Correo del cliente/usuario
+              Correo del solicitante
             </label>
             <p class="text-sm md:text-base text-gray-900">
               {{
@@ -382,10 +382,21 @@
             <label
               class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
             >
-              Teléfono del cliente/usuario
+              Teléfono del solicitante
             </label>
             <p class="text-sm md:text-base text-gray-900">
               {{ getUsuarioClienteTelefono() || '-' }}
+            </p>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
+            >
+              Persona(s) a evaluar – nombre(s)
+            </label>
+            <p class="text-sm md:text-base text-gray-900">
+              {{ getPersonasAEvaluar() || '-' }}
             </p>
           </div>
 
@@ -780,9 +791,9 @@ function getClienteRfc(): string {
   if (!cotizacionDetalle.value) return '';
   const cliente = cotizacionDetalle.value.clienteId;
   if (typeof cliente === 'object' && cliente !== null) {
-    return cliente.rfc || '';
+    return (cliente as any).rfc || '';
   }
-  return '-'; // Guest quotations no tienen RFC
+  return '';
 }
 
 function getSedeNombre(): string {
@@ -827,6 +838,11 @@ function getUsuarioClienteTelefono(): string {
     return (cotizacionDetalle.value as any).telefonoContacto;
   }
   return '';
+}
+
+function getPersonasAEvaluar(): string {
+  if (!cotizacionDetalle.value) return '';
+  return cotizacionDetalle.value.personasAEvaluar || '';
 }
 
 function getServicioNombre(item: any): string {

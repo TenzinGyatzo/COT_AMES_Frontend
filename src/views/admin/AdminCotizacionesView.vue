@@ -36,7 +36,7 @@
           <input
             v-model="filters.search"
             type="text"
-            placeholder="Buscar por folio, empresa, estado, sede, contacto..."
+            placeholder="Buscar por folio, empresa, estado, sede, solicitante..."
             class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
             @input="handleSearchChange"
           />
@@ -113,7 +113,7 @@
                 <th
                   class="table-cell md:hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
-                  Contacto
+                  Solicitante de la Cotización
                 </th>
                 <th
                   class="table-cell md:hidden lg:table-cell px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"

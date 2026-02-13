@@ -102,7 +102,7 @@
             />
           </div>
           <div class="space-y-1.5">
-            <label for="nombreContacto" class="text-sm font-bold text-gray-700 ml-1">Nombre del Contacto *</label>
+            <label for="nombreContacto" class="text-sm font-bold text-gray-700 ml-1">Solicitante de la Cotización *</label>
             <input
               id="nombreContacto"
               v-model="datosCliente.nombreContacto"
@@ -129,6 +129,16 @@
               type="tel"
               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
               placeholder="Ej. 6681702850"
+            />
+          </div>
+          <div class="space-y-1.5 col-span-1 md:col-span-2">
+            <label for="personasAEvaluar" class="text-sm font-bold text-gray-700 ml-1">Persona(s) a evaluar – nombre(s)</label>
+            <textarea
+              id="personasAEvaluar"
+              v-model="datosCliente.personasAEvaluar"
+              rows="3"
+              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm resize-y"
+              placeholder="Ej. Juan Pérez, María López"
             />
           </div>
         </div>
@@ -259,6 +269,7 @@ const datosCliente = ref({
   nombreContacto: '',
   correo: '',
   telefono: '',
+  personasAEvaluar: '',
 });
 const enviarEmail = ref(false);
 const mensajeValidacion = ref<string>('');
@@ -429,6 +440,7 @@ const crearCotizacion = async () => {
     nombreContacto: datosCliente.value.nombreContacto,
     emailContacto: datosCliente.value.correo || undefined,
     telefonoContacto: datosCliente.value.telefono || undefined,
+    personasAEvaluar: datosCliente.value.personasAEvaluar || undefined,
     items,
     enviarEmail: enviarEmail.value,
   };
@@ -460,6 +472,7 @@ const cerrarModal = () => {
     nombreContacto: '',
     correo: '',
     telefono: '',
+    personasAEvaluar: '',
   };
   enviarEmail.value = false;
   mensajeValidacion.value = '';

@@ -206,6 +206,7 @@ export interface CreateAdminCotizacionPayload {
   moneda?: string;
   fechaVencimiento?: string;
   enviarEmail?: boolean;
+  incluirDatosBancarios?: boolean;
 }
 
 /**

@@ -143,30 +143,52 @@
           </div>
         </div>
         
-        <!-- Notificación por Email -->
-        <div class="mt-8 p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100">
-          <label class="flex items-center cursor-pointer group">
-            <div class="relative">
-              <input
-                type="checkbox"
-                v-model="enviarEmail"
-                :disabled="!isEmailValid"
-                class="sr-only peer"
-              />
-              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600 disabled:opacity-30"></div>
-            </div>
-            <div class="ml-4">
-              <span class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors">
-                Enviar cotización por correo
-              </span>
-              <span v-if="isEmailValid" class="text-xs text-medical-blue-600/70">
-                Se enviará una copia al correo: {{ datosCliente.correo }}
-              </span>
-              <span v-else class="text-xs text-gray-400 italic">
-                Requiere un correo electrónico válido para activar esta opción.
-              </span>
-            </div>
-          </label>
+        <!-- Opciones de PDF y envío -->
+        <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100">
+            <label class="flex items-center cursor-pointer group">
+              <div class="relative">
+                <input
+                  type="checkbox"
+                  v-model="incluirDatosBancarios"
+                  class="sr-only peer"
+                />
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"></div>
+              </div>
+              <div class="ml-4">
+                <span class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors">
+                  Incluir datos bancarios en el PDF
+                </span>
+                <span class="text-xs text-medical-blue-600/70">
+                  Agrega una segunda página con información de transferencia.
+                </span>
+              </div>
+            </label>
+          </div>
+          <div class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100">
+            <label class="flex items-center cursor-pointer group">
+              <div class="relative">
+                <input
+                  type="checkbox"
+                  v-model="enviarEmail"
+                  :disabled="!isEmailValid"
+                  class="sr-only peer"
+                />
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600 disabled:opacity-30"></div>
+              </div>
+              <div class="ml-4">
+                <span class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors">
+                  Enviar cotización por correo
+                </span>
+                <span v-if="isEmailValid" class="text-xs text-medical-blue-600/70">
+                  Se enviará una copia al correo: {{ datosCliente.correo }}
+                </span>
+                <span v-else class="text-xs text-gray-400 italic">
+                  Requiere un correo electrónico válido para activar esta opción.
+                </span>
+              </div>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -272,6 +294,7 @@ const datosCliente = ref({
   personasAEvaluar: '',
 });
 const enviarEmail = ref(false);
+const incluirDatosBancarios = ref(false);
 const mensajeValidacion = ref<string>('');
 const isCreating = ref(false);
 const ultimaRespuesta = ref<any>(null);
@@ -443,6 +466,7 @@ const crearCotizacion = async () => {
     personasAEvaluar: datosCliente.value.personasAEvaluar || undefined,
     items,
     enviarEmail: enviarEmail.value,
+    incluirDatosBancarios: incluirDatosBancarios.value,
   };
 
   isCreating.value = true;
@@ -475,6 +499,7 @@ const cerrarModal = () => {
     personasAEvaluar: '',
   };
   enviarEmail.value = false;
+  incluirDatosBancarios.value = false;
   mensajeValidacion.value = '';
   
   // 3. Limpiar sede y servicios (esto disparará la limpieza de serviciosSeleccionados)

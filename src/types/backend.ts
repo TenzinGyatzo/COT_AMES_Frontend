@@ -337,6 +337,7 @@ export interface CotizacionDetalleDto {
   nombreEmpresa?: string;
   nombreContacto?: string;
   telefonoContacto?: string;
+  incluirDatosBancarios?: boolean;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

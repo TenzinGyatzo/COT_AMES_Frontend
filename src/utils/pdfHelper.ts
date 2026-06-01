@@ -6,6 +6,7 @@ import { getCotizacionDefinition } from './cotizacionPdfTemplate';
 import { getOrdenTrabajoDefinition } from './ordenTrabajoPdfTemplate';
 import { getBase64ImageFromURL } from './pdfUtils';
 import logoImg from '../assets/logos/exin-cv-salud-laboral-logo.png';
+import mocLogoImg from '../assets/logos/moc-caborca-logo.png';
 
 // Inicializar vfs para fuentes (necesario para pdfmake en cliente)
 if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
@@ -24,7 +25,14 @@ if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
 export async function downloadCotizacionPDF(cotizacion: CotizacionDetalleDto): Promise<void> {
   try {
     const logoBase64 = await getBase64ImageFromURL(logoImg);
-    const docDefinition = getCotizacionDefinition(cotizacion, logoBase64);
+    const mocLogoBase64 = cotizacion.incluirDatosBancarios
+      ? await getBase64ImageFromURL(mocLogoImg)
+      : undefined;
+    const docDefinition = getCotizacionDefinition(
+      cotizacion,
+      logoBase64,
+      mocLogoBase64,
+    );
     
     const filename = `${cotizacion.folio}.pdf`;
     pdfMake.createPdf(docDefinition).download(filename);

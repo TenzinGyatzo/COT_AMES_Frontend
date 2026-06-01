@@ -1,10 +1,88 @@
 import type { CotizacionDetalleDto, Cliente, Sede } from '../types/backend';
 import { formatCurrency, formatDateShort } from './pdfUtils';
 
+function buildDatosBancariosPage(mocLogoBase64: string): any[] {
+  const bankLine = (label: string, value: string) => ({
+    text: [
+      { text: `${label} `, bold: true },
+      { text: value },
+    ],
+    style: 'bankLine',
+    alignment: 'center' as const,
+  });
+
+  return [
+    { text: 'DATOS BANCARIOS', style: 'bankPageTitle', margin: [0, 20, 0, 16] },
+    {
+      table: {
+        widths: ['*'],
+        body: [
+          [
+            {
+              stack: [
+                {
+                  text: 'DATOS TRANSFERENCIA BANCARIA',
+                  style: 'bankSubtitle',
+                  margin: [0, 16, 0, 12],
+                },
+                {
+                  image: mocLogoBase64,
+                  width: 180,
+                  alignment: 'center',
+                  margin: [0, 0, 0, 16],
+                },
+                bankLine('Nombre:', 'Exin CV Salud Laboral'),
+                bankLine(
+                  'Domicilio:',
+                  'Ave. 5 de Mayo 74 sur Col. El Alto C.P. 83600 Caborca, Sonora',
+                ),
+                { text: ' ', margin: [0, 8] },
+                bankLine('RFC:', 'ECS 171130 Q41'),
+                {
+                  text: [
+                    { text: 'E-mail: ', bold: true },
+                    {
+                      text: 'administracion@mocaborca.com',
+                      link: 'mailto:administracion@mocaborca.com',
+                      style: 'bankLink',
+                    },
+                  ],
+                  style: 'bankLine',
+                  alignment: 'center',
+                  margin: [0, 0, 0, 0],
+                },
+                { text: ' ', margin: [0, 12] },
+                bankLine('Banco:', 'HSBC'),
+                bankLine('No. De Cuenta:', '4060659869'),
+                bankLine('Clabe interbancaria:', '021765040606598698'),
+                { text: ' ', margin: [0, 16] },
+              ],
+              margin: [24, 0, 24, 0],
+            },
+          ],
+        ],
+      },
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => '#7DD3FC',
+        vLineColor: () => '#7DD3FC',
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      },
+      margin: [40, 0, 40, 0],
+    },
+  ];
+}
+
 export const getCotizacionDefinition = (
   detalle: CotizacionDetalleDto,
-  logoBase64: string
+  logoBase64: string,
+  mocLogoBase64?: string,
 ): any => { // Retorna any para evitar errores de tipos de pdfmake si no están instalados
+  const incluirDatosBancarios = Boolean(detalle.incluirDatosBancarios && mocLogoBase64);
   
   // Helpers para obtener datos de forma segura
   const getCliente = (): Partial<Cliente> => {
@@ -75,43 +153,7 @@ export const getCotizacionDefinition = (
     ]);
   });
 
-  return {
-    pageSize: 'LETTER',
-    pageMargins: [40, 80, 40, 60], // [left, top, right, bottom]
-    
-    header: {
-      columns: [
-        {
-          image: logoBase64,
-          width: 75,
-          margin: [40, 20, 0, 0]
-        },
-        {
-          text: 'COTIZACIÓN',
-          alignment: 'right',
-          style: 'headerTitle',
-          margin: [0, 30, 40, 0]
-        }
-      ]
-    },
-
-    footer: (_currentPage: number, _pageCount: number) => {
-      return {
-        columns: [
-          {
-            stack: [
-              { text: 'Médica Ocupacional Caborca', style: 'footerText' },
-              { text: 'Avenida J, No. 80. Heroica Caborca Centro', style: 'footerText' },
-              { text: 'Tel: (52) 637935-8499 | mocaborca.com', style: 'footerText' }
-            ],
-            alignment: 'center'
-          }
-        ],
-        margin: [40, 0, 40, 0]
-      };
-    },
-
-    content: [
+  const mainContent: any[] = [
       // Espacio para header
       { text: '', margin: [0, 0] },
 
@@ -184,7 +226,7 @@ export const getCotizacionDefinition = (
               { text: (usuario.telefono || '-') + '\n', style: 'value' }
             ]
           },
-          // Columna 3: Email y Persona(s) a evaluar (tercera posición segunda fila)
+          // Columna 3: Email y Persona(s) a evaluar
           {
             width: '*',
             text: [
@@ -237,7 +279,55 @@ export const getCotizacionDefinition = (
           }
         ]
       }
-    ],
+  ];
+
+  if (incluirDatosBancarios) {
+    mainContent.push({ text: '', pageBreak: 'after' });
+    mainContent.push(...buildDatosBancariosPage(mocLogoBase64!));
+  }
+
+  return {
+    pageSize: 'LETTER',
+    pageMargins: [40, 80, 40, 60], // [left, top, right, bottom]
+    
+    header: (currentPage: number) => {
+      if (incluirDatosBancarios && currentPage >= 2) {
+        return { text: '', margin: [0, 0, 0, 0] };
+      }
+      return {
+        columns: [
+          {
+            image: logoBase64,
+            width: 75,
+            margin: [40, 20, 0, 0]
+          },
+          {
+            text: 'COTIZACIÓN',
+            alignment: 'right',
+            style: 'headerTitle',
+            margin: [0, 30, 40, 0]
+          }
+        ]
+      };
+    },
+
+    footer: (_currentPage: number, _pageCount: number) => {
+      return {
+        columns: [
+          {
+            stack: [
+              { text: 'Médica Ocupacional Caborca', style: 'footerText' },
+              { text: 'Avenida J, No. 80. Heroica Caborca Centro', style: 'footerText' },
+              { text: 'Tel: (52) 637935-8499 | mocaborca.com', style: 'footerText' }
+            ],
+            alignment: 'center'
+          }
+        ],
+        margin: [40, 0, 40, 0]
+      };
+    },
+
+    content: mainContent,
 
     styles: {
       headerTitle: {
@@ -305,7 +395,30 @@ export const getCotizacionDefinition = (
         fontSize: 8,
         color: '#9CA3AF',
         margin: [0, 2]
-      }
+      },
+      bankPageTitle: {
+        fontSize: 16,
+        bold: true,
+        alignment: 'center',
+        color: '#111827',
+      },
+      bankSubtitle: {
+        fontSize: 12,
+        bold: true,
+        italics: true,
+        alignment: 'center',
+        color: '#111827',
+      },
+      bankLine: {
+        fontSize: 10,
+        color: '#111827',
+        margin: [0, 4],
+      },
+      bankLink: {
+        fontSize: 10,
+        color: '#2563EB',
+        decoration: 'underline',
+      },
     }
   };
 };

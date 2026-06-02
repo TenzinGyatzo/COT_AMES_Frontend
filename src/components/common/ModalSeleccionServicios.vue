@@ -2,7 +2,9 @@
   <div
     v-if="isOpen"
     class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 sm:p-4 animate-in fade-in duration-300"
-    @click.self="cerrar"
+    @pointerdown="onBackdropPointerDown"
+    @pointerup="onBackdropPointerUp"
+    @pointercancel="onBackdropPointerCancel"
   >
     <div
       class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
@@ -152,6 +154,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
+import { useModalDismiss } from '../../composables/useModalDismiss';
 import QuantitySelector from './QuantitySelector.vue';
 import type { Servicio } from '../../types/backend';
 
@@ -245,4 +248,10 @@ const cerrar = () => {
   busqueda.value = '';
   emit('close');
 };
+
+const {
+  onBackdropPointerDown,
+  onBackdropPointerUp,
+  onBackdropPointerCancel,
+} = useModalDismiss(cerrar, () => props.isOpen);
 </script>

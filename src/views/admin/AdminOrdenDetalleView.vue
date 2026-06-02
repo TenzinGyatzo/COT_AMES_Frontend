@@ -767,7 +767,9 @@
     <div
       v-if="showConfirmDialog"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="showConfirmDialog = false"
+      @pointerdown="onBackdropPointerDown"
+      @pointerup="onBackdropPointerUp"
+      @pointercancel="onBackdropPointerCancel"
     >
       <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-xl" @click.stop>
         <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -811,6 +813,7 @@
 import { ref, watch, onMounted, onUnmounted, computed } from 'vue';
 import { useRoute, onBeforeRouteLeave } from 'vue-router';
 import { useAdmin } from '../../composables/useAdmin';
+import { useModalDismiss } from '../../composables/useModalDismiss';
 import { downloadOrdenTrabajoPDF } from '../../utils/pdfHelper';
 import type { UsuarioCliente } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
@@ -833,6 +836,16 @@ const observacionesArray = ref<Array<{ texto: string; timestamp: Date }>>([]);
 const nuevaObservacion = ref<string>('');
 const showConfirmDialog = ref(false);
 const pendingNavigation = ref<(() => void) | null>(null);
+
+const closeConfirmDialog = () => {
+  showConfirmDialog.value = false;
+};
+
+const {
+  onBackdropPointerDown,
+  onBackdropPointerUp,
+  onBackdropPointerCancel,
+} = useModalDismiss(closeConfirmDialog, showConfirmDialog);
 
 // Valores originales para comparar cambios
 const estadoOriginal = ref<string>('');

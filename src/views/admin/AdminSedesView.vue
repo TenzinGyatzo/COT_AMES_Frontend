@@ -124,7 +124,9 @@
     <div
       v-if="mostrarModal"
       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="cerrarModal"
+      @pointerdown="onBackdropPointerDown"
+      @pointerup="onBackdropPointerUp"
+      @pointercancel="onBackdropPointerCancel"
     >
       <div
         class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
@@ -292,6 +294,7 @@ import {
 import type { Sede } from '../../types/backend';
 import { EstadoMexico } from '../../types/estado-mexico.enum';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
+import { useModalDismiss } from '../../composables/useModalDismiss';
 
 const sedes = ref<Sede[]>([]);
 const isLoading = ref(false);
@@ -388,6 +391,12 @@ const cerrarModal = () => {
     activo: true,
   };
 };
+
+const {
+  onBackdropPointerDown,
+  onBackdropPointerUp,
+  onBackdropPointerCancel,
+} = useModalDismiss(cerrarModal, mostrarModal);
 
 /**
  * Guarda una sede (crear o actualizar)

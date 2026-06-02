@@ -3,9 +3,13 @@
     <div v-if="show" class="fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
       <div class="flex min-h-screen items-end justify-center px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <!-- Backdrop -->
-        <div class="fixed inset-0 transition-opacity" aria-hidden="true" @click="$emit('cancel')">
-          <div class="absolute inset-0 bg-gray-500/75 backdrop-blur-sm"></div>
-        </div>
+        <div
+          class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm transition-opacity"
+          aria-hidden="true"
+          @pointerdown="onBackdropPointerDown"
+          @pointerup="onBackdropPointerUp"
+          @pointercancel="onBackdropPointerCancel"
+        ></div>
 
         <!-- This element is to trick the browser into centering the modal contents. -->
         <span class="hidden sm:inline-block sm:h-screen sm:align-middle" aria-hidden="true">&#8203;</span>
@@ -72,6 +76,8 @@
 </template>
 
 <script setup lang="ts">
+import { useModalDismiss } from '../../composables/useModalDismiss';
+
 interface Props {
   show: boolean;
   title: string;
@@ -81,16 +87,22 @@ interface Props {
   type?: 'info' | 'warning' | 'danger';
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   confirmText: 'Confirmar',
   cancelText: 'Cancelar',
   type: 'info',
 });
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'confirm'): void;
   (e: 'cancel'): void;
 }>();
+
+const {
+  onBackdropPointerDown,
+  onBackdropPointerUp,
+  onBackdropPointerCancel,
+} = useModalDismiss(() => emit('cancel'), () => props.show);
 </script>
 
 <style scoped>

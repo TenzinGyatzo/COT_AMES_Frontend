@@ -2,7 +2,9 @@
   <div
     v-if="cotizacion"
     class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300"
-    @click.self="$emit('close')"
+    @pointerdown="onBackdropPointerDown"
+    @pointerup="onBackdropPointerUp"
+    @pointercancel="onBackdropPointerCancel"
   >
     <div 
       class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-300"
@@ -134,6 +136,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
+import { useModalDismiss } from '../../composables/useModalDismiss';
 import { useAuthStore } from '../../store/auth';
 import { useClienteCotizaciones } from '../../composables/useClienteCotizaciones';
 import { getCotizacionAdminById } from '../../services/admin-api.service';
@@ -159,11 +162,17 @@ const props = withDefaults(defineProps<Props>(), {
   emailEnviado: false,
 });
 
-defineEmits<{
+const emit = defineEmits<{
   close: [];
   'ver-cotizaciones': [];
   'ver-detalles': [];
 }>();
+
+const {
+  onBackdropPointerDown,
+  onBackdropPointerUp,
+  onBackdropPointerCancel,
+} = useModalDismiss(() => emit('close'), () => !!props.cotizacion);
 
 const authStore = useAuthStore();
 const isAdmin = computed(() => authStore.isAdmin);

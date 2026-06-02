@@ -2,6 +2,9 @@
   <div
     v-if="mostrar"
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    @pointerdown="onBackdropPointerDown"
+    @pointerup="onBackdropPointerUp"
+    @pointercancel="onBackdropPointerCancel"
   >
     <div
       class="bg-white w-full max-w-4xl h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col transition-all duration-300 transform scale-100"
@@ -632,6 +635,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue';
+import { useModalDismiss } from '../../composables/useModalDismiss';
 import type { CreateTrabajadorDto } from '../../types/backend';
 import {
   generarPlantillaExcel,
@@ -654,6 +658,12 @@ const emit = defineEmits<{
   close: [];
   confirm: [trabajadores: CreateTrabajadorDto[]];
 }>();
+
+const {
+  onBackdropPointerDown,
+  onBackdropPointerUp,
+  onBackdropPointerCancel,
+} = useModalDismiss(() => emit('close'), () => props.mostrar);
 
 const modo = ref<'manual' | 'excel'>('manual');
 const trabajadores = ref<CreateTrabajadorDto[]>([]);

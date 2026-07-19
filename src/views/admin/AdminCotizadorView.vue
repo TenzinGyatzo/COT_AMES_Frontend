@@ -46,137 +46,143 @@
         </div>
       </div>
 
-      <!-- Cliente -->
-      <div class="mb-4 space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <label class="text-sm font-bold text-gray-700 ml-1">Cliente</label>
-          <label
-            class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
-          >
+      <div
+        class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-start"
+      >
+        <!-- Cliente -->
+        <div class="min-w-0 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="text-sm font-bold text-gray-700 ml-1">Cliente</label>
+            <label
+              class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
+            >
+              <input
+                v-model="cotizarSinCliente"
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
+                @change="onCotizarSinClienteChange"
+              />
+              Cotizar sin registrar cliente
+            </label>
+          </div>
+          <div v-if="!cotizarSinCliente" class="flex gap-2 min-w-0">
+            <select
+              id="clienteCrm"
+              v-model="clienteId"
+              class="min-w-0 flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
+              @change="onClienteChange"
+            >
+              <option value="">— Sin cliente —</option>
+              <option v-for="c in clientes" :key="c._id" :value="c._id">
+                {{ c.empresa }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 whitespace-nowrap"
+              @click="abrirModalCliente"
+            >
+              + Cliente
+            </button>
+          </div>
+          <div v-else class="space-y-1.5">
+            <label
+              for="empresaGuest"
+              class="text-sm font-medium text-gray-600 ml-1"
+              >Nombre de la Empresa
+              <span class="text-gray-400 font-normal">(Opcional)</span></label
+            >
             <input
-              v-model="cotizarSinCliente"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
-              @change="onCotizarSinClienteChange"
+              id="empresaGuest"
+              v-model="datosCliente.empresa"
+              type="text"
+              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
+              placeholder="Opcional"
             />
-            Cotizar sin registrar cliente
-          </label>
+          </div>
         </div>
-        <div v-if="!cotizarSinCliente" class="flex gap-2">
-          <select
-            id="clienteCrm"
-            v-model="clienteId"
-            class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-            @change="onClienteChange"
-          >
-            <option value="">— Sin cliente —</option>
-            <option v-for="c in clientes" :key="c._id" :value="c._id">
-              {{ c.empresa }}
-            </option>
-          </select>
-          <button
-            type="button"
-            class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 whitespace-nowrap"
-            @click="abrirModalCliente"
-          >
-            + Cliente
-          </button>
-        </div>
-        <div v-else class="space-y-1.5">
-          <label for="empresaGuest" class="text-sm font-medium text-gray-600 ml-1"
-            >Nombre de la Empresa
-            <span class="text-gray-400 font-normal">(Opcional)</span></label
-          >
-          <input
-            id="empresaGuest"
-            v-model="datosCliente.empresa"
-            type="text"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-            placeholder="Opcional"
-          />
-        </div>
-      </div>
 
-      <!-- Contacto Solicitante -->
-      <div class="mb-4 space-y-2">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <label class="text-sm font-bold text-gray-700 ml-1"
-            >Contacto Solicitante</label
-          >
-          <label
-            class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
-            :class="{ 'opacity-50 cursor-not-allowed': cotizarSinCliente }"
-          >
+        <!-- Contacto Solicitante -->
+        <div class="min-w-0 space-y-2">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="text-sm font-bold text-gray-700 ml-1"
+              >Contacto Solicitante</label
+            >
+            <label
+              class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
+              :class="{ 'opacity-50 cursor-not-allowed': cotizarSinCliente }"
+            >
+              <input
+                v-model="cotizarSinContacto"
+                type="checkbox"
+                class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
+                :disabled="cotizarSinCliente"
+                @change="onCotizarSinContactoChange"
+              />
+              Cotizar sin registrar contacto
+            </label>
+          </div>
+          <div v-if="!cotizarSinContacto" class="flex gap-2 min-w-0">
+            <select
+              id="contactoCrm"
+              v-model="contactoId"
+              :disabled="!clienteId"
+              class="min-w-0 flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm disabled:opacity-50"
+              @change="onContactoChange"
+            >
+              <option value="">— Sin solicitante —</option>
+              <option v-for="ct in contactos" :key="ct._id" :value="ct._id">
+                {{ ct.nombre }}
+              </option>
+            </select>
+            <button
+              type="button"
+              :disabled="!clienteId"
+              class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 disabled:opacity-40 whitespace-nowrap"
+              :title="
+                !clienteId
+                  ? 'Selecciona un cliente primero'
+                  : 'Nuevo contacto'
+              "
+              @click="abrirModalContacto"
+            >
+              + Contacto
+            </button>
+          </div>
+          <div v-else class="space-y-1.5">
+            <label
+              for="solicitanteGuest"
+              class="text-sm font-medium text-gray-600 ml-1"
+              >Solicitante de la Cotización
+              <span class="text-gray-400 font-normal">(Opcional)</span></label
+            >
             <input
-              v-model="cotizarSinContacto"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
-              :disabled="cotizarSinCliente"
-              @change="onCotizarSinContactoChange"
+              id="solicitanteGuest"
+              v-model="datosCliente.nombreContacto"
+              type="text"
+              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
+              placeholder="Opcional"
             />
-            Cotizar sin registrar contacto
-          </label>
-        </div>
-        <div v-if="!cotizarSinContacto" class="flex gap-2">
-          <select
-            id="contactoCrm"
-            v-model="contactoId"
-            :disabled="!clienteId"
-            class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm disabled:opacity-50"
-            @change="onContactoChange"
-          >
-            <option value="">— Sin solicitante —</option>
-            <option v-for="ct in contactos" :key="ct._id" :value="ct._id">
-              {{ ct.nombre }}
-            </option>
-          </select>
-          <button
-            type="button"
-            :disabled="!clienteId"
-            class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 disabled:opacity-40 whitespace-nowrap"
-            :title="
-              !clienteId
-                ? 'Selecciona un cliente primero'
-                : 'Nuevo contacto'
+          </div>
+          <p
+            v-if="
+              !cotizarSinContacto &&
+              clienteId &&
+              contactos.length === 0 &&
+              !loadingContactos
             "
-            @click="abrirModalContacto"
+            class="text-xs text-gray-500 ml-1"
           >
-            + Contacto
-          </button>
+            Sin contactos activos.
+            <button
+              type="button"
+              class="underline text-medical-blue-600"
+              @click="abrirModalContacto"
+            >
+              Agregar al vuelo
+            </button>
+          </p>
         </div>
-        <div v-else class="space-y-1.5">
-          <label
-            for="solicitanteGuest"
-            class="text-sm font-medium text-gray-600 ml-1"
-            >Solicitante de la Cotización
-            <span class="text-gray-400 font-normal">(Opcional)</span></label
-          >
-          <input
-            id="solicitanteGuest"
-            v-model="datosCliente.nombreContacto"
-            type="text"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-            placeholder="Opcional"
-          />
-        </div>
-        <p
-          v-if="
-            !cotizarSinContacto &&
-            clienteId &&
-            contactos.length === 0 &&
-            !loadingContactos
-          "
-          class="text-xs text-gray-500 ml-1"
-        >
-          Sin contactos activos.
-          <button
-            type="button"
-            class="underline text-medical-blue-600"
-            @click="abrirModalContacto"
-          >
-            Agregar al vuelo
-          </button>
-        </p>
       </div>
 
       <p

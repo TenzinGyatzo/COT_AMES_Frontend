@@ -23,7 +23,10 @@ export interface PdfBancariosData {
 }
 
 export interface PdfBankPageOptions {
+  /** Logo del banco (`bancarios.logoUrl`). */
   logoBase64?: string;
+  /** Logo branding tenant / fallback AMES (mismo que header PDF). */
+  brandingLogoBase64?: string;
   bancarios: PdfBancariosData;
 }
 
@@ -35,20 +38,61 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
     alignment: 'center' as const,
   });
 
+  const centeredImage = (dataUrl: string, maxW: number, maxH: number, bottom: number) => ({
+    columns: [
+      { width: '*', text: '' },
+      {
+        width: 'auto',
+        image: dataUrl,
+        fit: [maxW, maxH],
+      },
+      { width: '*', text: '' },
+    ],
+    margin: [0, 0, 0, bottom] as [number, number, number, number],
+  });
+
   const stack: any[] = [
     {
       text: 'DATOS TRANSFERENCIA BANCARIA',
       style: 'bankSubtitle',
-      margin: [0, 16, 0, 12],
+      margin: [0, 8, 0, 14],
     },
   ];
 
-  if (b.titular?.trim()) stack.push(bankLine('Nombre:', b.titular.trim()));
-  if (b.domicilio?.trim()) stack.push(bankLine('Domicilio:', b.domicilio.trim()));
-  if (b.titular?.trim() || b.domicilio?.trim()) {
-    stack.push({ text: ' ', margin: [0, 2] });
+  if (opts.brandingLogoBase64) {
+    stack.push(centeredImage(opts.brandingLogoBase64, 88, 60, 12));
   }
+
+  if (b.titular?.trim()) stack.push(bankLine('Nombre:', b.titular.trim()));
   if (b.rfc?.trim()) stack.push(bankLine('RFC:', b.rfc.trim()));
+  if (b.domicilio?.trim()) stack.push(bankLine('Domicilio:', b.domicilio.trim()));
+
+  const hasIdentityBlock =
+    Boolean(opts.brandingLogoBase64) ||
+    Boolean(b.titular?.trim()) ||
+    Boolean(b.rfc?.trim()) ||
+    Boolean(b.domicilio?.trim());
+  const hasBankBlock =
+    Boolean(opts.logoBase64) ||
+    Boolean(b.banco?.trim()) ||
+    Boolean(b.cuenta?.trim()) ||
+    Boolean(b.clabe?.trim()) ||
+    Boolean(b.email?.trim());
+
+  if (hasIdentityBlock && hasBankBlock) {
+    stack.push({ text: ' ', margin: [0, 10] });
+  }
+
+  if (opts.logoBase64) {
+    stack.push(centeredImage(opts.logoBase64, 70, 48, 10));
+  }
+
+  if (b.banco?.trim()) stack.push(bankLine('Banco:', b.banco.trim()));
+  if (b.cuenta?.trim()) stack.push(bankLine('No. de Cuenta:', b.cuenta.trim()));
+  if (b.clabe?.trim()) {
+    stack.push(bankLine('Clabe Interbancaria:', b.clabe.trim()));
+  }
+
   if (b.email?.trim()) {
     const email = b.email.trim();
     stack.push({
@@ -62,26 +106,17 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
       ],
       style: 'bankLine',
       alignment: 'center',
-      margin: [0, 0, 0, 0],
+      margin: [0, 10, 0, 0],
     });
   }
 
-  // Logo banco inmediatamente antes de «Banco:» (Story 2.5)
-  if (opts.logoBase64) {
-    stack.push({ text: ' ', margin: [0, 10] });
-    stack.push({
+  stack.push({ text: ' ', margin: [0, 10] });
+
+  return [
+    {
       table: {
-        widths: ['auto'],
-        body: [
-          [
-            {
-              image: opts.logoBase64,
-              width: 100,
-              alignment: 'center',
-              margin: [6, 6, 6, 6],
-            },
-          ],
-        ],
+        widths: ['*'],
+        body: [[{ stack, margin: [28, 12, 28, 12] }]],
       },
       layout: {
         hLineWidth: () => 1,
@@ -93,38 +128,8 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
         paddingTop: () => 0,
         paddingBottom: () => 0,
       },
-      alignment: 'center',
-      margin: [0, 0, 0, 10],
-    });
-  } else if (b.banco?.trim() || b.cuenta?.trim() || b.clabe?.trim()) {
-    stack.push({ text: ' ', margin: [0, 12] });
-  }
-
-  if (b.banco?.trim()) stack.push(bankLine('Banco:', b.banco.trim()));
-  if (b.cuenta?.trim()) stack.push(bankLine('No. De Cuenta:', b.cuenta.trim()));
-  if (b.clabe?.trim()) {
-    stack.push(bankLine('Clabe interbancaria:', b.clabe.trim()));
-  }
-  stack.push({ text: ' ', margin: [0, 16] });
-
-  return [
-    { text: 'DATOS BANCARIOS', style: 'bankPageTitle', margin: [0, 20, 0, 16] },
-    {
-      table: {
-        widths: ['*'],
-        body: [[{ stack, margin: [24, 0, 24, 0] }]],
-      },
-      layout: {
-        hLineWidth: () => 1,
-        vLineWidth: () => 1,
-        hLineColor: () => '#7DD3FC',
-        vLineColor: () => '#7DD3FC',
-        paddingLeft: () => 0,
-        paddingRight: () => 0,
-        paddingTop: () => 0,
-        paddingBottom: () => 0,
-      },
-      margin: [40, 0, 40, 0],
+      // Margen superior para equilibrar la caja en LETTER (sin header en esta página)
+      margin: [36, 48, 36, 0],
     },
   ];
 }
@@ -434,7 +439,12 @@ export const getCotizacionDefinition = (
 
   if (incluirDatosBancarios && bankPage) {
     mainContent.push({ text: '', pageBreak: 'after' });
-    mainContent.push(...buildDatosBancariosPage(bankPage));
+    mainContent.push(
+      ...buildDatosBancariosPage({
+        ...bankPage,
+        brandingLogoBase64: logoBase64,
+      }),
+    );
   }
 
   return {
@@ -550,23 +560,16 @@ export const getCotizacionDefinition = (
         color: '#9CA3AF',
         margin: [0, 2],
       },
-      bankPageTitle: {
-        fontSize: 16,
-        bold: true,
-        alignment: 'center',
-        color: '#111827',
-      },
       bankSubtitle: {
-        fontSize: 12,
+        fontSize: 13,
         bold: true,
-        italics: true,
         alignment: 'center',
         color: '#111827',
       },
       bankLine: {
         fontSize: 10,
         color: '#111827',
-        margin: [0, 4],
+        margin: [0, 3],
       },
       bankLink: {
         fontSize: 10,

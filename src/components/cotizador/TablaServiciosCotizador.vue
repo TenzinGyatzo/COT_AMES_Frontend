@@ -207,7 +207,7 @@
               Servicio
             </th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
+              class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest min-w-[14rem]"
             >
               Descripción
             </th>

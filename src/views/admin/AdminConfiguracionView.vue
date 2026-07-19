@@ -653,10 +653,15 @@ const logoPreviewUrl = computed(() => {
 const bankLogoPreviewUrl = computed(() => {
   const path = config.value?.bancarios?.logoUrl;
   if (!path) return null;
-  if (path.startsWith('http')) return path;
+  const bust = config.value?.updatedAt
+    ? `?v=${encodeURIComponent(config.value.updatedAt)}`
+    : '';
+  if (path.startsWith('http')) {
+    return path.includes('?') ? path : `${path}${bust}`;
+  }
   const apiBase = API_BASE_URL.replace(/\/api\/?$/, '');
-  if (apiBase.startsWith('http')) return `${apiBase}${path}`;
-  return path;
+  if (apiBase.startsWith('http')) return `${apiBase}${path}${bust}`;
+  return `${path}${bust}`;
 });
 
 function fillBrandingFromConfig(cfg: TenantConfigResponse) {
@@ -675,8 +680,16 @@ function fillEmailFromConfig(cfg: TenantConfigResponse) {
 }
 
 function fillVbFromConfig(cfg: TenantConfigResponse) {
+  applyVigenciaFromConfig(cfg);
+  applyBancariosFromConfig(cfg);
+}
+
+function applyVigenciaFromConfig(cfg: TenantConfigResponse) {
   vbForm.vigenciaDefaultDias =
     typeof cfg.vigenciaDefaultDias === 'number' ? cfg.vigenciaDefaultDias : 30;
+}
+
+function applyBancariosFromConfig(cfg: TenantConfigResponse) {
   const b = cfg.bancarios || {};
   vbForm.titular = b.titular || '';
   vbForm.banco = b.banco || '';
@@ -962,7 +975,7 @@ async function onSaveVigencia() {
       vigenciaDefaultDias: days,
     });
     config.value = updated;
-    fillVbFromConfig(updated);
+    applyVigenciaFromConfig(updated);
     vigenciaFormSuccess.value = 'Vigencia guardada.';
   } catch (e) {
     vigenciaFormError.value = extractError(e, 'No se pudo guardar la vigencia');
@@ -990,7 +1003,7 @@ async function onSaveBancarios() {
       },
     });
     config.value = updated;
-    fillVbFromConfig(updated);
+    applyBancariosFromConfig(updated);
     bancariosFormSuccess.value = 'Datos bancarios guardados.';
   } catch (e) {
     bancariosFormError.value = extractError(

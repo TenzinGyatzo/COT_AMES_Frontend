@@ -107,7 +107,9 @@
           <div class="flex justify-between items-center pt-2 text-xs">
             <span class="text-gray-400 font-medium italic">Válida hasta</span>
             <span class="text-gray-500 font-semibold">{{
-              formatDate(cotizacion.fechaVencimiento)
+              cotizacion.sinVigencia || !cotizacion.fechaVencimiento
+                ? '—'
+                : formatDate(cotizacion.fechaVencimiento)
             }}</span>
           </div>
         </div>
@@ -354,7 +356,8 @@ interface CotizacionModalData {
   _id?: string;
   folio: string;
   total: number;
-  fechaVencimiento: Date | string;
+  fechaVencimiento?: Date | string;
+  sinVigencia?: boolean;
 }
 
 interface Props {

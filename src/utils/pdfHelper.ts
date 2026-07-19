@@ -81,9 +81,12 @@ async function buildCotizacionDocDefinition(
     let bankLogoBase64: string | undefined;
     if (raw.logoUrl) {
       try {
-        bankLogoBase64 = await getBase64ImageFromURL(
-          resolvePublicUrl(raw.logoUrl),
-        );
+        let bankUrl = resolvePublicUrl(raw.logoUrl);
+        if (cfg?.updatedAt) {
+          const sep = bankUrl.includes('?') ? '&' : '?';
+          bankUrl = `${bankUrl}${sep}v=${encodeURIComponent(cfg.updatedAt)}`;
+        }
+        bankLogoBase64 = await getBase64ImageFromURL(bankUrl);
       } catch {
         bankLogoBase64 = undefined;
       }

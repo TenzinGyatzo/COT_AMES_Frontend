@@ -20,7 +20,7 @@
       <textarea
         :value="descripcion"
         rows="2"
-        class="w-full min-w-[10rem] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none resize-y"
+        class="w-full min-w-[14rem] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none resize-y"
         @input="
           $emit(
             'update:descripcion',

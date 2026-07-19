@@ -250,7 +250,12 @@
               Fecha de vencimiento
             </label>
             <p class="text-sm md:text-base text-gray-900">
-              {{ formatDate(cotizacionDetalle.fechaVencimiento) }}
+              {{
+                cotizacionDetalle.sinVigencia ||
+                !cotizacionDetalle.fechaVencimiento
+                  ? '—'
+                  : formatDate(cotizacionDetalle.fechaVencimiento)
+              }}
             </p>
           </div>
 
@@ -391,17 +396,6 @@
             </label>
             <p class="text-sm md:text-base text-gray-900">
               {{ getUsuarioClienteTelefono() || '-' }}
-            </p>
-          </div>
-
-          <div>
-            <label
-              class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
-            >
-              Persona(s) a evaluar – nombre(s)
-            </label>
-            <p class="text-sm md:text-base text-gray-900">
-              {{ getPersonasAEvaluar() || '-' }}
             </p>
           </div>
 
@@ -936,11 +930,6 @@ function getUsuarioClienteEmail(): string {
 function getUsuarioClienteTelefono(): string {
   if (!cotizacionDetalle.value) return '';
   return cotizacionDetalle.value.telefonoContacto || '';
-}
-
-function getPersonasAEvaluar(): string {
-  if (!cotizacionDetalle.value) return '';
-  return cotizacionDetalle.value.personasAEvaluar || '';
 }
 
 function getServicioNombre(item: any): string {

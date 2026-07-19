@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Dashboard</h1>
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">{{ pageTitle }}</h1>
 
     <!-- Mensaje de error -->
     <div
@@ -189,16 +189,14 @@
       <!-- Totales -->
       <div>
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Totales</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Empresas Clientes -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+          <!-- Clientes -->
           <div
             class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
           >
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600 mb-1">
-                  Empresas Clientes
-                </p>
+                <p class="text-sm font-medium text-gray-600 mb-1">Clientes</p>
                 <p class="text-3xl font-bold text-indigo-600">
                   {{ dashboardCounters.totales.clientesActivos }}
                 </p>
@@ -216,6 +214,66 @@
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contactos -->
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Contactos</p>
+                <p class="text-3xl font-bold text-violet-600">
+                  {{ dashboardCounters.totales.contactos }}
+                </p>
+              </div>
+              <div class="p-3 bg-violet-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-violet-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Usuarios -->
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Usuarios</p>
+                <p class="text-3xl font-bold text-amber-600">
+                  {{ dashboardCounters.totales.usuarios }}
+                </p>
+              </div>
+              <div class="p-3 bg-amber-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-amber-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                   />
                 </svg>
               </div>
@@ -266,8 +324,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
+import { useAuthStore } from '../../store/auth';
+import { getTenants } from '../../services/admin-api.service';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 
 const {
@@ -278,8 +338,27 @@ const {
   limpiarDashboardCounters,
 } = useAdmin();
 
+const authStore = useAuthStore();
+const pageTitle = ref('Administración');
+
+async function resolveAdministracionTitle() {
+  try {
+    const tenants = await getTenants();
+    const tid = authStore.isAdminSistema
+      ? authStore.activeTenantId
+      : authStore.user?.tenantId || null;
+    const match = tid ? tenants.find((t) => t._id === tid) : undefined;
+    pageTitle.value = match?.nombre
+      ? `Administración ${match.nombre}`
+      : 'Administración';
+  } catch {
+    pageTitle.value = 'Administración';
+  }
+}
+
 // Cargar contadores al montar el componente
 onMounted(async () => {
+  void resolveAdministracionTitle();
   try {
     await obtenerDashboardCounters();
   } catch (err) {

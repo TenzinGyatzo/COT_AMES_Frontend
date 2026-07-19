@@ -13,6 +13,14 @@ export interface Tenant {
   activo?: boolean;
 }
 
+/** Totales CRM del dashboard home (Story 7.3) */
+export interface DashboardEntityTotals {
+  clientes: number;
+  contactos: number;
+  usuarios: number;
+  servicios: number;
+}
+
 /** Branding / datos legales por tenant (Story 2.2) */
 export interface TenantBranding {
   logoUrl?: string;
@@ -37,7 +45,7 @@ export interface TenantBancarios {
   email?: string;
 }
 
-/** Configuración por tenant (Stories 2.1–2.4) */
+/** Configuración por tenant (Stories 2.1–2.5) */
 export interface TenantConfigResponse {
   _id: string;
   tenantId: string;
@@ -137,7 +145,8 @@ export interface Cotizacion {
   total: number;
   moneda?: string;
   fechaCreacion: Date;
-  fechaVencimiento: Date;
+  fechaVencimiento?: Date;
+  sinVigencia?: boolean;
   estado: 'vigente' | 'vencida';
   pdfUrl?: string;
 }
@@ -174,13 +183,17 @@ export interface PublicCotizacionResponse {
   total: number;
   moneda: string;
   fechaCreacion: string;
-  fechaVencimiento: string;
+  fechaVencimiento?: string;
+  sinVigencia?: boolean;
   fechaAceptacion?: string;
   fechaRechazo?: string;
   nombreEmpresa?: string;
   nombreContacto?: string;
   telefonoContacto?: string;
-  personasAEvaluar?: string;
+  /** Story 6.16 — snapshot correo para PDF guest */
+  emailContacto?: string;
+  /** Story 6.16 — snapshot cargo CRM para PDF */
+  cargoContacto?: string;
   items: PublicCotizacionItem[];
   branding?: PublicCotizacionBranding;
   alreadyResponded?: boolean;
@@ -308,7 +321,9 @@ export interface CotizacionDetalleDto {
   total: number;
   moneda?: string;
   fechaCreacion: Date | string;
-  fechaVencimiento: Date | string;
+  fechaVencimiento?: Date | string;
+  /** Story 6.15 */
+  sinVigencia?: boolean;
   estado:
     | 'vigente'
     | 'vencida'
@@ -330,10 +345,11 @@ export interface CotizacionDetalleDto {
   creadoPorUserId?: string;
   creadoPorEmail?: string;
   pdfUrl?: string;
-  personasAEvaluar?: string;
   nombreEmpresa?: string;
   nombreContacto?: string;
   telefonoContacto?: string;
+  /** Story 6.16 — snapshot cargo CRM para PDF */
+  cargoContacto?: string;
   incluirDatosBancarios?: boolean;
   /** Destinatarios Para (Story 6.6). */
   emailsPara?: string[];

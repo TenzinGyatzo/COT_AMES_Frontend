@@ -310,6 +310,144 @@
           </div>
         </div>
       </div>
+
+      <!-- Cotizaciones por estado (Story 3.7) -->
+      <div>
+        <h2 class="text-lg md:text-xl font-semibold text-gray-800 mb-4">
+          Cotizaciones
+        </h2>
+        <BaseSectionLoader
+          v-if="isLoadingCotCounters"
+          message="Cargando cotizaciones..."
+        />
+        <div
+          v-else-if="cotCountersError"
+          class="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
+          role="alert"
+        >
+          {{ cotCountersError }}
+        </div>
+        <div
+          v-else
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+        >
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Vigentes</p>
+                <p class="text-3xl font-bold text-green-600">
+                  {{ cotCounters.vigentes }}
+                </p>
+              </div>
+              <div class="p-3 bg-green-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
+                <p class="text-3xl font-bold text-red-600">
+                  {{ cotCounters.rechazadas }}
+                </p>
+              </div>
+              <div class="p-3 bg-red-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Aceptadas</p>
+                <p class="text-3xl font-bold text-blue-600">
+                  {{ cotCounters.aceptadas }}
+                </p>
+              </div>
+              <div class="p-3 bg-blue-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Vencidas</p>
+                <p class="text-3xl font-bold text-gray-600">
+                  {{ cotCounters.vencidas }}
+                </p>
+              </div>
+              <div class="p-3 bg-gray-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-gray-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div
@@ -319,238 +457,26 @@
       <p class="text-gray-500">No se pudo cargar la información del cliente</p>
     </div>
 
-    <!-- Modal editar cliente -->
-    <div
-      v-if="mostrarModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @pointerdown="onBackdropPointerDown"
-      @pointerup="onBackdropPointerUp"
-      @pointercancel="onBackdropPointerCancel"
-    >
-      <div
-        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4"
-        @pointerdown.stop
-      >
-        <div class="p-4 sm:p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900">Editar cliente</h2>
-            <button
-              type="button"
-              class="text-gray-400 hover:text-gray-600"
-              :disabled="isSubmitting"
-              @click="cerrarModal"
-            >
-              ✕
-            </button>
-          </div>
-          <div
-            v-if="formError"
-            class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
-            role="alert"
-          >
-            {{ formError }}
-          </div>
-          <form class="space-y-4" @submit.prevent="guardar">
-            <div>
-              <label
-                for="detalle-cliente-empresa"
-                class="block text-sm font-medium text-gray-700 mb-1"
-                >Empresa <span class="text-red-500">*</span></label
-              >
-              <input
-                id="detalle-cliente-empresa"
-                v-model="formulario.empresa"
-                type="text"
-                required
-                maxlength="200"
-                placeholder="Nombre comercial"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmitting"
-              />
-            </div>
-            <div>
-              <label
-                for="detalle-cliente-razon-social"
-                class="block text-sm font-medium text-gray-700 mb-1"
-                >Razón Social</label
-              >
-              <input
-                id="detalle-cliente-razon-social"
-                v-model="formulario.razonSocial"
-                type="text"
-                maxlength="300"
-                placeholder="Ej. Servicios Industriales del Pacífico"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmitting"
-              />
-              <p class="mt-1 text-xs text-gray-500">Opcional</p>
-            </div>
-            <div>
-              <label
-                for="detalle-cliente-rfc"
-                class="block text-sm font-medium text-gray-700 mb-1"
-                >RFC</label
-              >
-              <input
-                id="detalle-cliente-rfc"
-                v-model="formulario.rfc"
-                type="text"
-                maxlength="20"
-                placeholder="Ej. ABC010101AB1"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 uppercase"
-                :disabled="isSubmitting"
-              />
-              <p class="mt-1 text-xs text-gray-500">
-                Opcional. Si se captura, debe ser único en esta administración.
-              </p>
-            </div>
-            <div class="flex justify-end gap-2">
-              <button
-                type="button"
-                class="px-4 py-2 border border-gray-300 rounded-md text-sm"
-                :disabled="isSubmitting"
-                @click="cerrarModal"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 bg-medical-blue-600 text-white rounded-md text-sm font-medium disabled:opacity-50"
-                :disabled="isSubmitting"
-              >
-                {{ isSubmitting ? 'Guardando…' : 'Guardar' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <ModalClienteForm
+      :show="mostrarModal"
+      modo-edicion
+      :initial="formulario"
+      :form-error="formError"
+      :is-submitting="isSubmitting"
+      @close="cerrarModal"
+      @submit="onModalClienteSubmit"
+    />
 
     <!-- Modal contacto -->
-    <div
-      v-if="mostrarModalContacto"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @pointerdown="onContactoBackdropPointerDown"
-      @pointerup="onContactoBackdropPointerUp"
-      @pointercancel="onContactoBackdropPointerCancel"
-    >
-      <div
-        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
-        @pointerdown.stop
-      >
-        <div class="p-4 sm:p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-gray-900">
-              {{
-                modoEdicionContacto ? 'Editar contacto' : 'Nuevo contacto'
-              }}
-            </h2>
-            <button
-              type="button"
-              class="text-gray-400 hover:text-gray-600"
-              :disabled="isSubmittingContacto"
-              @click="cerrarModalContacto"
-            >
-              ✕
-            </button>
-          </div>
-          <div
-            v-if="formErrorContacto"
-            class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
-            role="alert"
-          >
-            {{ formErrorContacto }}
-          </div>
-          <form class="space-y-4" @submit.prevent="guardarContacto">
-            <div>
-              <label
-                for="contacto-nombre"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Nombre <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="contacto-nombre"
-                v-model="formularioContacto.nombre"
-                type="text"
-                required
-                maxlength="200"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmittingContacto"
-              />
-            </div>
-            <div>
-              <label
-                for="contacto-correo"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Correo
-              </label>
-              <input
-                id="contacto-correo"
-                v-model="formularioContacto.correo"
-                type="text"
-                inputmode="email"
-                autocomplete="email"
-                maxlength="200"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmittingContacto"
-              />
-              <p class="mt-1 text-xs text-gray-500">Opcional.</p>
-            </div>
-            <div>
-              <label
-                for="contacto-telefono"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Teléfono
-              </label>
-              <input
-                id="contacto-telefono"
-                v-model="formularioContacto.telefono"
-                type="text"
-                maxlength="40"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmittingContacto"
-              />
-            </div>
-            <div>
-              <label
-                for="contacto-cargo"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Cargo
-              </label>
-              <input
-                id="contacto-cargo"
-                v-model="formularioContacto.cargo"
-                type="text"
-                maxlength="120"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmittingContacto"
-              />
-            </div>
-            <div class="flex justify-end gap-2">
-              <button
-                type="button"
-                class="px-4 py-2 border border-gray-300 rounded-md text-sm"
-                :disabled="isSubmittingContacto"
-                @click="cerrarModalContacto"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 bg-medical-blue-600 text-white rounded-md text-sm font-medium disabled:opacity-50"
-                :disabled="isSubmittingContacto"
-              >
-                {{ isSubmittingContacto ? 'Guardando…' : 'Guardar' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <ModalContactoForm
+      :show="mostrarModalContacto"
+      :modo-edicion="modoEdicionContacto"
+      :initial="formularioContacto"
+      :form-error="formErrorContacto"
+      :is-submitting="isSubmittingContacto"
+      @close="cerrarModalContacto"
+      @submit="onModalContactoSubmit"
+    />
 
     <ConfirmationModal
       :show="mostrarConfirmDesactivar"
@@ -589,12 +515,16 @@ import {
   updateContacto,
   deleteContacto,
   toggleContactoActivo,
+  getCotizacionesAdmin,
 } from '../../services/admin-api.service';
 import type { Contacto } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
-import { useModalDismiss } from '../../composables/useModalDismiss';
+import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
+import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
+import ModalContactoForm from '../../components/common/ModalContactoForm.vue';
+import type { ContactoFormFields } from '../../components/common/ModalContactoForm.vue';
 
 const route = useRoute();
 const {
@@ -617,14 +547,6 @@ const mensajeConfirmDesactivar = computed(() => {
   const nombre = clienteDetalle.value?.empresa || 'este cliente';
   return `¿Desactivar «${nombre}»? No aparecerá al crear cotizaciones; el histórico se conserva.`;
 });
-
-const {
-  onBackdropPointerDown,
-  onBackdropPointerUp,
-  onBackdropPointerCancel,
-} = useModalDismiss(() => {
-  if (!isSubmitting.value) cerrarModal();
-}, mostrarModal);
 
 /* ——— Contactos ——— */
 const contactos = ref<Contacto[]>([]);
@@ -657,19 +579,21 @@ const mensajeConfirmDesactivarContacto = computed(() => {
   return `¿Desactivar «${nombre}»? No aparecerá al crear cotizaciones; puede reactivarse después.`;
 });
 
+/* ——— Cotizaciones por estado (Story 3.7) ——— */
+const cotCounters = ref({
+  vigentes: 0,
+  rechazadas: 0,
+  aceptadas: 0,
+  vencidas: 0,
+});
+const isLoadingCotCounters = ref(false);
+const cotCountersError = ref<string | null>(null);
+let cotCountersReqSeq = 0;
 const emptyContactosMessage = computed(() =>
   verInactivosContactos.value
     ? 'No hay contactos inactivos'
     : 'Aún no hay contactos. Agrega el primero.',
 );
-
-const {
-  onBackdropPointerDown: onContactoBackdropPointerDown,
-  onBackdropPointerUp: onContactoBackdropPointerUp,
-  onBackdropPointerCancel: onContactoBackdropPointerCancel,
-} = useModalDismiss(() => {
-  if (!isSubmittingContacto.value) cerrarModalContacto();
-}, mostrarModalContacto);
 
 function extractError(err: unknown, fallback: string): string {
   const e = err as {
@@ -739,10 +663,10 @@ async function reactivar() {
   }
 }
 
-async function guardar() {
+async function onModalClienteSubmit(fields: ClienteFormFields) {
   const id = clienteDetalle.value?._id;
   if (!id) return;
-  const empresa = formulario.value.empresa.trim();
+  const empresa = fields.empresa.trim();
   if (!empresa) {
     formError.value = 'Debe proporcionar el nombre de la empresa';
     return;
@@ -752,9 +676,14 @@ async function guardar() {
   try {
     await updateCliente(id, {
       empresa,
-      razonSocial: formulario.value.razonSocial.trim(),
-      rfc: formulario.value.rfc.trim().toUpperCase(),
+      razonSocial: fields.razonSocial.trim(),
+      rfc: fields.rfc.trim().toUpperCase(),
     });
+    formulario.value = {
+      empresa,
+      razonSocial: fields.razonSocial.trim(),
+      rfc: fields.rfc.trim().toUpperCase(),
+    };
     successMsg.value = 'Cliente actualizado.';
     cerrarModal();
     await obtenerCliente(id);
@@ -780,6 +709,70 @@ function limpiarContactosLocal() {
   cerrarModalContacto();
   mostrarConfirmDesactivarContacto.value = false;
   contactoADesactivar.value = null;
+  limpiarCotCountersLocal();
+}
+
+function limpiarCotCountersLocal() {
+  cotCounters.value = {
+    vigentes: 0,
+    rechazadas: 0,
+    aceptadas: 0,
+    vencidas: 0,
+  };
+  cotCountersError.value = null;
+  cotCountersReqSeq += 1;
+  isLoadingCotCounters.value = false;
+}
+
+async function loadCotizacionCounters(clienteId: string) {
+  const seq = ++cotCountersReqSeq;
+  isLoadingCotCounters.value = true;
+  cotCountersError.value = null;
+  try {
+    const [vigentes, vencidas, aceptadas, rechazadas] = await Promise.all([
+      getCotizacionesAdmin({
+        clienteId,
+        estado: 'vigente',
+        limit: 1,
+        page: 1,
+      }),
+      getCotizacionesAdmin({
+        clienteId,
+        estado: 'vencida',
+        limit: 1,
+        page: 1,
+      }),
+      getCotizacionesAdmin({
+        clienteId,
+        estado: 'aceptada',
+        limit: 1,
+        page: 1,
+      }),
+      getCotizacionesAdmin({
+        clienteId,
+        estado: 'rechazada',
+        limit: 1,
+        page: 1,
+      }),
+    ]);
+    if (seq !== cotCountersReqSeq) return;
+    cotCounters.value = {
+      vigentes: vigentes.total ?? 0,
+      vencidas: vencidas.total ?? 0,
+      aceptadas: aceptadas.total ?? 0,
+      rechazadas: rechazadas.total ?? 0,
+    };
+  } catch (e) {
+    if (seq !== cotCountersReqSeq) return;
+    cotCountersError.value = extractError(
+      e,
+      'No se pudieron cargar los contadores de cotizaciones',
+    );
+  } finally {
+    if (seq === cotCountersReqSeq) {
+      isLoadingCotCounters.value = false;
+    }
+  }
 }
 
 async function loadContactos() {
@@ -894,14 +887,14 @@ function cerrarModalContacto() {
   isSubmittingContacto.value = false;
 }
 
-async function guardarContacto() {
+async function onModalContactoSubmit(fields: ContactoFormFields) {
   const clienteId = clienteDetalle.value?._id;
   if (!clienteId) {
     formErrorContacto.value =
       'No hay cliente cargado. Cierra el modal e inténtalo de nuevo.';
     return;
   }
-  const nombre = formularioContacto.value.nombre.trim();
+  const nombre = fields.nombre.trim();
   if (!nombre) {
     formErrorContacto.value = 'Debe proporcionar el nombre del contacto';
     return;
@@ -913,9 +906,10 @@ async function guardarContacto() {
   isSubmittingContacto.value = true;
   formErrorContacto.value = null;
   try {
-    const correo = formularioContacto.value.correo.trim();
-    const telefono = formularioContacto.value.telefono.trim();
-    const cargo = formularioContacto.value.cargo.trim();
+    const correo = fields.correo.trim();
+    const telefono = fields.telefono.trim();
+    const cargo = fields.cargo.trim();
+    formularioContacto.value = { nombre, correo, telefono, cargo };
     if (modoEdicionContacto.value && contactoEditandoId.value) {
       await updateContacto(clienteId, contactoEditandoId.value, {
         nombre,
@@ -990,7 +984,10 @@ async function reactivarContacto(c: Contacto) {
 async function cargarCliente(clienteId: string) {
   try {
     await obtenerCliente(clienteId);
-    await loadContactos();
+    await Promise.all([
+      loadContactos(),
+      loadCotizacionCounters(clienteId),
+    ]);
   } catch (err) {
     console.error('Error al cargar cliente:', err);
   }

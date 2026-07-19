@@ -9,90 +9,174 @@
       </p>
     </div>
 
-    <!-- PASO 1: Identidad (siempre habilitado) -->
+    <!-- PASO 1: Identidad (gated — Story 6.14) -->
     <div
       class="mb-10 bg-white rounded-2xl shadow-md border border-gray-100 p-6"
     >
       <div class="flex items-center gap-3 mb-6">
         <div
-          class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0 bg-medical-blue-100 text-medical-blue-700"
+          class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0"
+          :class="
+            identidadConfirmada
+              ? 'bg-green-100 text-green-700'
+              : 'bg-medical-blue-100 text-medical-blue-700'
+          "
         >
-          1
+          <svg
+            v-if="identidadConfirmada"
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span v-else>1</span>
         </div>
         <div>
           <h2 class="text-xl font-bold text-gray-800">Identidad</h2>
           <p class="text-sm text-gray-500">
-            Cliente y solicitante opcionales. Puedes guardar sin solicitante.
+            Cliente y solicitante opcionales. Continuar desbloquea Servicios.
           </p>
         </div>
       </div>
 
-      <!-- CRM -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-        <div class="space-y-1.5">
-          <label for="clienteCrm" class="text-sm font-bold text-gray-700 ml-1"
-            >Cliente CRM (opcional)</label
+      <!-- Cliente -->
+      <div class="mb-4 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label class="text-sm font-bold text-gray-700 ml-1">Cliente</label>
+          <label
+            class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
           >
+            <input
+              v-model="cotizarSinCliente"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
+              @change="onCotizarSinClienteChange"
+            />
+            Cotizar sin registrar cliente
+          </label>
+        </div>
+        <div v-if="!cotizarSinCliente" class="flex gap-2">
           <select
             id="clienteCrm"
             v-model="clienteId"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
+            class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
             @change="onClienteChange"
           >
             <option value="">— Sin cliente —</option>
-            <option
-              v-for="c in clientes"
-              :key="c._id"
-              :value="c._id"
-            >
+            <option v-for="c in clientes" :key="c._id" :value="c._id">
               {{ c.empresa }}
             </option>
           </select>
-        </div>
-        <div class="space-y-1.5">
-          <label for="contactoCrm" class="text-sm font-bold text-gray-700 ml-1"
-            >Contacto / Solicitante CRM (opcional)</label
+          <button
+            type="button"
+            class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 whitespace-nowrap"
+            @click="abrirModalCliente"
           >
-          <div class="flex gap-2">
-            <select
-              id="contactoCrm"
-              v-model="contactoId"
-              :disabled="!clienteId"
-              class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm disabled:opacity-50"
-              @change="onContactoChange"
-            >
-              <option value="">— Sin solicitante —</option>
-              <option
-                v-for="ct in contactos"
-                :key="ct._id"
-                :value="ct._id"
-              >
-                {{ ct.nombre }}
-              </option>
-            </select>
-            <button
-              type="button"
-              :disabled="!clienteId"
-              class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 disabled:opacity-40"
-              @click="mostrarAltaContacto = true"
-            >
-              + Contacto
-            </button>
-          </div>
-          <p
-            v-if="clienteId && contactos.length === 0 && !loadingContactos"
-            class="text-xs text-gray-500 ml-1"
-          >
-            Sin contactos activos.
-            <button
-              type="button"
-              class="underline text-medical-blue-600"
-              @click="mostrarAltaContacto = true"
-            >
-              Agregar al vuelo
-            </button>
-          </p>
+            + Cliente
+          </button>
         </div>
+        <div v-else class="space-y-1.5">
+          <label for="empresaGuest" class="text-sm font-medium text-gray-600 ml-1"
+            >Nombre de la Empresa
+            <span class="text-gray-400 font-normal">(Opcional)</span></label
+          >
+          <input
+            id="empresaGuest"
+            v-model="datosCliente.empresa"
+            type="text"
+            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
+            placeholder="Opcional"
+          />
+        </div>
+      </div>
+
+      <!-- Contacto Solicitante -->
+      <div class="mb-4 space-y-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <label class="text-sm font-bold text-gray-700 ml-1"
+            >Contacto Solicitante</label
+          >
+          <label
+            class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
+            :class="{ 'opacity-50 cursor-not-allowed': cotizarSinCliente }"
+          >
+            <input
+              v-model="cotizarSinContacto"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
+              :disabled="cotizarSinCliente"
+              @change="onCotizarSinContactoChange"
+            />
+            Cotizar sin registrar contacto
+          </label>
+        </div>
+        <div v-if="!cotizarSinContacto" class="flex gap-2">
+          <select
+            id="contactoCrm"
+            v-model="contactoId"
+            :disabled="!clienteId"
+            class="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm disabled:opacity-50"
+            @change="onContactoChange"
+          >
+            <option value="">— Sin solicitante —</option>
+            <option v-for="ct in contactos" :key="ct._id" :value="ct._id">
+              {{ ct.nombre }}
+            </option>
+          </select>
+          <button
+            type="button"
+            :disabled="!clienteId"
+            class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 disabled:opacity-40 whitespace-nowrap"
+            :title="
+              !clienteId
+                ? 'Selecciona un cliente primero'
+                : 'Nuevo contacto'
+            "
+            @click="abrirModalContacto"
+          >
+            + Contacto
+          </button>
+        </div>
+        <div v-else class="space-y-1.5">
+          <label
+            for="solicitanteGuest"
+            class="text-sm font-medium text-gray-600 ml-1"
+            >Solicitante de la Cotización
+            <span class="text-gray-400 font-normal">(Opcional)</span></label
+          >
+          <input
+            id="solicitanteGuest"
+            v-model="datosCliente.nombreContacto"
+            type="text"
+            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
+            placeholder="Opcional"
+          />
+        </div>
+        <p
+          v-if="
+            !cotizarSinContacto &&
+            clienteId &&
+            contactos.length === 0 &&
+            !loadingContactos
+          "
+          class="text-xs text-gray-500 ml-1"
+        >
+          Sin contactos activos.
+          <button
+            type="button"
+            class="underline text-medical-blue-600"
+            @click="abrirModalContacto"
+          >
+            Agregar al vuelo
+          </button>
+        </p>
       </div>
 
       <p
@@ -102,77 +186,26 @@
         Sin solicitante — la cotización se puede guardar igual.
       </p>
 
-      <!-- Guest / ad hoc / override -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div class="space-y-1.5">
-          <label for="empresa" class="text-sm font-bold text-gray-700 ml-1"
-            >Nombre de la Empresa</label
-          >
-          <input
-            id="empresa"
-            v-model="datosCliente.empresa"
-            type="text"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-            placeholder="Opcional (guest o override)"
-          />
-        </div>
-        <div class="space-y-1.5">
-          <label
-            for="nombreContacto"
-            class="text-sm font-bold text-gray-700 ml-1"
-            >Solicitante de la Cotización</label
-          >
-          <input
-            id="nombreContacto"
-            v-model="datosCliente.nombreContacto"
-            type="text"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-            placeholder="Opcional"
-          />
-        </div>
-        <div class="space-y-1.5">
-          <label for="correo" class="text-sm font-bold text-gray-700 ml-1"
-            >Correo Electrónico</label
-          >
-          <input
-            id="correo"
-            v-model="datosCliente.correo"
-            type="email"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-            placeholder="correo@empresa.com"
-          />
-        </div>
-        <div class="space-y-1.5">
-          <label for="telefono" class="text-sm font-bold text-gray-700 ml-1"
-            >Teléfono de Contacto</label
-          >
-          <input
-            id="telefono"
-            v-model="datosCliente.telefono"
-            type="tel"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-            placeholder="Opcional"
-          />
-        </div>
-        <div class="space-y-1.5 col-span-1 md:col-span-2">
-          <label
-            for="personasAEvaluar"
-            class="text-sm font-bold text-gray-700 ml-1"
-            >Persona(s) a evaluar – nombre(s)</label
-          >
-          <textarea
-            id="personasAEvaluar"
-            v-model="datosCliente.personasAEvaluar"
-            rows="2"
-            class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm resize-y"
-            placeholder="Opcional"
-          />
-        </div>
+      <div class="flex justify-end pt-2">
+        <button
+          type="button"
+          class="px-6 py-2.5 rounded-xl bg-medical-blue-600 text-white text-sm font-bold hover:bg-medical-blue-500 shadow-sm"
+          @click="confirmarIdentidad"
+        >
+          {{ identidadConfirmada ? 'Actualizar identidad' : 'Continuar' }}
+        </button>
       </div>
     </div>
 
     <!-- PASO 2: Servicios -->
-    <div class="mb-10 transition-all duration-700 opacity-100">
+    <div
+      class="mb-10 transition-all duration-700"
+      :class="[
+        !identidadConfirmada
+          ? 'opacity-40 grayscale pointer-events-none blur-[1px]'
+          : 'opacity-100',
+      ]"
+    >
       <TablaServiciosCotizador
         :servicios-seleccionados="serviciosSeleccionados"
         :cantidades-por-servicio="cantidadesPorServicio"
@@ -185,11 +218,11 @@
       />
     </div>
 
-    <!-- PASO 3: Opciones + guardar (requiere ≥1 servicio) -->
+    <!-- PASO 3: Opciones + guardar (requiere identidad + ≥1 servicio) -->
     <div
       class="transition-all duration-700"
       :class="[
-        serviciosSeleccionados.length === 0
+        !identidadConfirmada || serviciosSeleccionados.length === 0
           ? 'opacity-40 grayscale pointer-events-none blur-[1px]'
           : 'opacity-100',
       ]"
@@ -197,24 +230,20 @@
       <div
         class="mb-10 bg-white rounded-2xl shadow-md border border-gray-100 p-6"
       >
-        <h2 class="text-lg font-bold text-gray-800 mb-4">Opciones</h2>
-        <div class="mb-4">
-          <label
-            for="fechaVencimiento"
-            class="block text-sm font-bold text-gray-700 mb-1.5 ml-1"
+        <div class="flex items-center gap-3 mb-6">
+          <div
+            class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shrink-0 bg-medical-blue-100 text-medical-blue-700"
           >
-            Fecha de vencimiento
-          </label>
-          <input
-            id="fechaVencimiento"
-            v-model="fechaVencimiento"
-            type="date"
-            class="w-full max-w-xs px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-          />
-          <p class="text-xs text-gray-500 mt-1 ml-1">
-            Precargada desde la vigencia default del tenant; puedes ajustarla.
-          </p>
+            <span>3</span>
+          </div>
+          <div>
+            <h2 class="text-xl font-bold text-gray-800">Opciones adicionales</h2>
+            <p class="text-sm text-gray-500">
+              Plantillas, bancarios, destinatarios y vigencia.
+            </p>
+          </div>
         </div>
+
         <!-- Plantillas PDF (Story 6.5) -->
         <div class="mb-6">
           <h3 class="text-sm font-bold text-gray-800 mb-2">
@@ -294,7 +323,8 @@
           </ul>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Bancarios -->
+        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
             class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
             :class="{ 'opacity-60': !bancariosUtiles }"
@@ -334,11 +364,11 @@
           </div>
         </div>
 
-        <!-- Destinatarios Para/CC (Story 6.6) -->
-        <div class="mt-6 space-y-4">
+        <!-- Destinatarios Para/CC (Story 6.6 / 6.15) -->
+        <div class="mb-6 space-y-4">
           <h3 class="text-sm font-bold text-gray-800">Destinatarios del correo</h3>
           <p class="text-xs text-gray-500">
-            Opcional. Puedes guardar la cotización sin destinatarios ni envío.
+            Opcional. Si hay al menos un correo en Para, se envía al guardar.
           </p>
           <EmailChipsInput
             v-model="emailsPara"
@@ -353,11 +383,12 @@
             label="CC"
             input-id="emails-cc"
             variant="cc"
+            :disabled="!hasParaDestinatarios"
             :exclude="emailsPara"
-            hint="Copia a otros correos (manual o desde contactos del cliente)."
+            hint="Copia a otros correos (requiere al menos un Para)."
           />
           <div
-            v-if="contactosParaChecklist.length > 0"
+            v-if="hasParaDestinatarios && contactosParaChecklist.length > 0"
             class="rounded-xl border border-gray-200 bg-white p-3 space-y-2"
           >
             <p class="text-xs font-bold text-gray-700">
@@ -380,51 +411,45 @@
               </span>
             </label>
           </div>
+        </div>
+
+        <!-- Vigencia N días (Story 6.15) -->
+        <div class="mb-2 space-y-3">
+          <h3 class="text-sm font-bold text-gray-800">Vigencia</h3>
           <div
-            class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
-            :class="{ 'opacity-60': !hasParaDestinatarios }"
+            class="space-y-2"
+            :class="{ 'opacity-50': sinVigencia }"
           >
             <label
-              class="flex items-center group"
-              :class="
-                hasParaDestinatarios ? 'cursor-pointer' : 'cursor-not-allowed'
-              "
+              for="vigenciaDias"
+              class="block text-sm text-gray-700 ml-1"
             >
-              <div class="relative">
-                <input
-                  type="checkbox"
-                  v-model="enviarEmail"
-                  :disabled="!hasParaDestinatarios"
-                  class="sr-only peer"
-                />
-                <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600 peer-disabled:opacity-50"
-                ></div>
-              </div>
-              <div class="ml-4">
-                <span
-                  class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors"
-                >
-                  Enviar cotización por correo
-                </span>
-                <span
-                  v-if="hasParaDestinatarios"
-                  class="text-xs text-medical-blue-600/70"
-                >
-                  Para: {{ emailsPara.join(', ')
-                  }}{{
-                    emailsCc.length
-                      ? ` · CC: ${emailsCc.join(', ')}`
-                      : ''
-                  }}
-                </span>
-                <span v-else class="text-xs text-gray-500 italic">
-                  Agrega al menos un correo en Para para habilitar el envío
-                  (opcional — puedes guardar sin enviar).
-                </span>
-              </div>
+              Esta cotización tendrá una vigencia de
+              <input
+                id="vigenciaDias"
+                v-model.number="vigenciaDias"
+                type="number"
+                min="1"
+                max="365"
+                :disabled="sinVigencia"
+                class="mx-1 w-20 inline-block px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none text-gray-700 text-center font-bold disabled:cursor-not-allowed"
+              />
+              días
             </label>
+            <p class="text-xs text-gray-500 ml-1">
+              Default del tenant; puedes ajustar N (1–365).
+            </p>
           </div>
+          <label
+            class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer ml-1"
+          >
+            <input
+              v-model="sinVigencia"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
+            />
+            No usar vigencia para esta cotización
+          </label>
         </div>
       </div>
 
@@ -572,54 +597,21 @@
       </div>
     </div>
 
-    <!-- Alta contacto al vuelo -->
-    <div
-      v-if="mostrarAltaContacto"
-      class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4"
-      @click.self="cerrarAltaContacto"
-    >
-      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900">Nuevo contacto</h3>
-        <div class="space-y-1.5">
-          <label class="text-sm font-bold text-gray-700">Nombre *</label>
-          <input
-            v-model="nuevoContacto.nombre"
-            type="text"
-            class="w-full px-3 py-2 border border-gray-200 rounded-xl"
-            placeholder="Nombre obligatorio"
-          />
-        </div>
-        <div class="space-y-1.5">
-          <label class="text-sm font-bold text-gray-700">Correo</label>
-          <input
-            v-model="nuevoContacto.correo"
-            type="email"
-            class="w-full px-3 py-2 border border-gray-200 rounded-xl"
-            placeholder="Opcional"
-          />
-        </div>
-        <p v-if="errorAltaContacto" class="text-sm text-red-600">
-          {{ errorAltaContacto }}
-        </p>
-        <div class="flex justify-end gap-2">
-          <button
-            type="button"
-            class="px-4 py-2 rounded-xl border text-sm font-bold"
-            @click="cerrarAltaContacto"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            class="px-4 py-2 rounded-xl bg-medical-blue-600 text-white text-sm font-bold disabled:opacity-50"
-            :disabled="guardandoContacto"
-            @click="crearContactoAlVuelo"
-          >
-            Guardar
-          </button>
-        </div>
-      </div>
-    </div>
+    <ModalClienteForm
+      :show="mostrarModalCliente"
+      :form-error="errorModalCliente"
+      :is-submitting="guardandoCliente"
+      @close="cerrarModalCliente"
+      @submit="guardarClienteDesdeWizard"
+    />
+
+    <ModalContactoForm
+      :show="mostrarModalContacto"
+      :form-error="errorModalContacto"
+      :is-submitting="guardandoContacto"
+      @close="cerrarModalContacto"
+      @submit="guardarContactoDesdeWizard"
+    />
   </div>
 </template>
 
@@ -629,6 +621,10 @@ import { useRouter } from 'vue-router';
 import ModalSeleccionServicios from '../../components/common/ModalSeleccionServicios.vue';
 import ModalCotizacionCreada from '../../components/common/ModalCotizacionCreada.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
+import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
+import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
+import ModalContactoForm from '../../components/common/ModalContactoForm.vue';
+import type { ContactoFormFields } from '../../components/common/ModalContactoForm.vue';
 import TablaServiciosCotizador from '../../components/cotizador/TablaServiciosCotizador.vue';
 import type { ItemOverrideFields } from '../../components/cotizador/TablaServiciosCotizador.vue';
 import PlantillaSeccionesEditor from '../../components/plantillas/PlantillaSeccionesEditor.vue';
@@ -644,6 +640,7 @@ import type {
 } from '../../types/backend';
 import {
   createAdminCotizacion,
+  createCliente,
   createContacto,
   enviarCorreoCotizacion,
   getClientes,
@@ -690,24 +687,26 @@ const contactoId = ref('');
 const loadingContactos = ref(false);
 let contactosSeq = 0;
 
+/** Story 6.14 — gate Identidad */
+const identidadConfirmada = ref(false);
+const cotizarSinCliente = ref(false);
+const cotizarSinContacto = ref(false);
+
 const datosCliente = ref({
   empresa: '',
   nombreContacto: '',
   correo: '',
   telefono: '',
-  personasAEvaluar: '',
+  cargo: '',
 });
-/** YYYY-MM-DD local — siempre se envía en create (Story 6.3). */
-const fechaVencimiento = ref('');
+/** Story 6.15 — N días de vigencia (reemplaza date picker). */
+const vigenciaDias = ref(30);
+const sinVigencia = ref(false);
 let vigenciaDefaultDias = 30;
-/** true si el usuario cambió el picker (no precargas programáticas). */
-let fechaVencimientoManual = false;
-let suppressFechaVencimientoWatch = false;
-const enviarEmail = ref(false);
 /** Story 6.6 — destinatarios de correo (≠ solicitante emailContacto). */
 const emailsPara = ref<string[]>([]);
 const emailsCc = ref<string[]>([]);
-/** Story 6.8 — resultado real del envío (no el toggle). */
+/** Story 6.8 — resultado real del envío (envío implícito por Para en 6.15). */
 const emailSendOk = ref(false);
 const emailSendError = ref<string | null>(null);
 /** Create→send en curso (evita «Sin notificación» mid-flight). */
@@ -735,25 +734,185 @@ const mensajeValidacion = ref('');
 const isCreating = ref(false);
 const ultimaRespuesta = ref<any>(null);
 
-const mostrarAltaContacto = ref(false);
+const mostrarModalCliente = ref(false);
+const guardandoCliente = ref(false);
+const errorModalCliente = ref<string | null>(null);
+const mostrarModalContacto = ref(false);
 const guardandoContacto = ref(false);
-const errorAltaContacto = ref('');
-const nuevoContacto = ref({ nombre: '', correo: '' });
+const errorModalContacto = ref<string | null>(null);
 
 const tieneSolicitante = computed(
   () => !!datosCliente.value.nombreContacto.trim(),
 );
 
+function confirmarIdentidad() {
+  identidadConfirmada.value = true;
+}
+
+function clearDestinatariosIdentidad() {
+  emailsPara.value = [];
+  emailsCc.value = [];
+}
+
+function onCotizarSinClienteChange() {
+  if (cotizarSinCliente.value) {
+    clienteId.value = '';
+    contactoId.value = '';
+    contactos.value = [];
+    datosCliente.value.correo = '';
+    datosCliente.value.telefono = '';
+    cotizarSinContacto.value = true;
+    datosCliente.value.nombreContacto = '';
+    datosCliente.value.cargo = '';
+    clearDestinatariosIdentidad();
+  } else {
+    datosCliente.value.empresa = '';
+  }
+}
+
+function onCotizarSinContactoChange() {
+  if (cotizarSinCliente.value) {
+    cotizarSinContacto.value = true;
+    return;
+  }
+  if (cotizarSinContacto.value) {
+    contactoId.value = '';
+    datosCliente.value.correo = '';
+    datosCliente.value.telefono = '';
+    datosCliente.value.nombreContacto = '';
+    datosCliente.value.cargo = '';
+    clearDestinatariosIdentidad();
+  } else {
+    datosCliente.value.nombreContacto = '';
+    if (contactoId.value) onContactoChange();
+  }
+}
+
+function abrirModalCliente() {
+  errorModalCliente.value = null;
+  mostrarModalCliente.value = true;
+}
+
+function cerrarModalCliente() {
+  mostrarModalCliente.value = false;
+  errorModalCliente.value = null;
+}
+
+async function guardarClienteDesdeWizard(fields: ClienteFormFields) {
+  const empresa = fields.empresa.trim();
+  if (!empresa) {
+    errorModalCliente.value = 'Debe proporcionar el nombre de la empresa';
+    return;
+  }
+  if (guardandoCliente.value) return;
+  guardandoCliente.value = true;
+  errorModalCliente.value = null;
+  try {
+    const rfc = fields.rfc.trim().toUpperCase();
+    const razonSocial = fields.razonSocial.trim();
+    const created = await createCliente({
+      empresa,
+      ...(razonSocial ? { razonSocial } : {}),
+      ...(rfc ? { rfc } : {}),
+    });
+    const id = created?._id;
+    if (!id) {
+      errorModalCliente.value = 'Respuesta inválida del servidor';
+      return;
+    }
+    if (!clientes.value.some((c) => c._id === id)) {
+      clientes.value = [...clientes.value, created];
+    }
+    cotizarSinCliente.value = false;
+    clienteId.value = id;
+    try {
+      await onClienteChange();
+    } catch {
+      datosCliente.value.empresa = created.empresa || empresa;
+    }
+    cerrarModalCliente();
+    void cargarClientes();
+  } catch (err: any) {
+    const msg = err.response?.data?.message;
+    errorModalCliente.value = Array.isArray(msg)
+      ? msg.join(', ')
+      : msg || 'No se pudo crear el cliente';
+  } finally {
+    guardandoCliente.value = false;
+  }
+}
+
+function abrirModalContacto() {
+  if (!clienteId.value) {
+    errorModalContacto.value = 'Selecciona un cliente primero';
+    return;
+  }
+  errorModalContacto.value = null;
+  mostrarModalContacto.value = true;
+}
+
+function cerrarModalContacto() {
+  mostrarModalContacto.value = false;
+  errorModalContacto.value = null;
+}
+
+async function guardarContactoDesdeWizard(fields: ContactoFormFields) {
+  const nombre = fields.nombre.trim();
+  if (!nombre) {
+    errorModalContacto.value = 'El nombre es obligatorio';
+    return;
+  }
+  if (!clienteId.value) return;
+  if (guardandoContacto.value) return;
+  guardandoContacto.value = true;
+  errorModalContacto.value = null;
+  try {
+    const correo = fields.correo.trim();
+    const telefono = fields.telefono.trim();
+    const cargo = fields.cargo.trim();
+    const created = await createContacto(clienteId.value, {
+      nombre,
+      ...(correo ? { correo } : {}),
+      ...(telefono ? { telefono } : {}),
+      ...(cargo ? { cargo } : {}),
+    });
+    const id = created?._id;
+    if (!id) {
+      errorModalContacto.value = 'Respuesta inválida del servidor';
+      return;
+    }
+    if (!contactos.value.some((c) => c._id === id)) {
+      contactos.value = [...contactos.value, created];
+    }
+    cotizarSinContacto.value = false;
+    contactoId.value = id;
+    try {
+      onContactoChange();
+    } catch {
+      datosCliente.value.nombreContacto = created.nombre || nombre;
+      datosCliente.value.correo = created.correo || correo;
+      datosCliente.value.telefono = created.telefono || telefono;
+      datosCliente.value.cargo = created.cargo || cargo;
+    }
+    // Si la API no devolvió cargo, conservar el del formulario
+    if (!(datosCliente.value.cargo || '').trim() && cargo) {
+      datosCliente.value.cargo = cargo;
+    }
+    cerrarModalContacto();
+    void cargarContactos(clienteId.value);
+  } catch (err: any) {
+    const msg = err.response?.data?.message;
+    errorModalContacto.value = Array.isArray(msg)
+      ? msg.join(', ')
+      : msg || 'No se pudo crear el contacto';
+  } finally {
+    guardandoContacto.value = false;
+  }
+}
+
 function clampVigenciaDias(n: number): number {
   if (!Number.isFinite(n)) return 30;
   return Math.min(365, Math.max(1, Math.trunc(n)));
-}
-
-function toLocalDateInputValue(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
 }
 
 function addDaysLocal(base: Date, days: number): Date {
@@ -762,13 +921,11 @@ function addDaysLocal(base: Date, days: number): Date {
   return d;
 }
 
-function precargarFechaVencimiento() {
-  const dias = clampVigenciaDias(vigenciaDefaultDias);
-  suppressFechaVencimientoWatch = true;
-  fechaVencimiento.value = toLocalDateInputValue(
-    addDaysLocal(new Date(), dias),
-  );
-  suppressFechaVencimientoWatch = false;
+function toLocalDateInputValue(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 /** Date-only local → ISO (fin del día local) para el BE. */
@@ -789,6 +946,13 @@ function fechaVencimientoToIso(yyyyMmDd: string): string | undefined {
   return d.toISOString();
 }
 
+function isoFromVigenciaDias(n: number): string | undefined {
+  const dias = clampVigenciaDias(n);
+  return fechaVencimientoToIso(
+    toLocalDateInputValue(addDaysLocal(new Date(), dias)),
+  );
+}
+
 const cargarVigenciaDefault = async () => {
   try {
     const cfg = await getTenantConfig();
@@ -806,10 +970,7 @@ const cargarVigenciaDefault = async () => {
     bancariosUtiles.value = false;
     incluirDatosBancarios.value = false;
   }
-  // No pisar una fecha que el usuario ya ajustó mientras cargaba la config.
-  if (!fechaVencimientoManual) {
-    precargarFechaVencimiento();
-  }
+  vigenciaDias.value = vigenciaDefaultDias;
 };
 
 function deepCloneSecciones(secciones: SeccionPlantilla[]): SeccionPlantilla[] {
@@ -958,8 +1119,7 @@ async function guardarPersonalizar() {
 }
 
 onMounted(async () => {
-  // Precarga inmediata con fallback 30; se recalcula al llegar la config.
-  precargarFechaVencimiento();
+  vigenciaDias.value = clampVigenciaDias(vigenciaDefaultDias);
   await Promise.all([
     cargarServiciosDisponibles(),
     cargarClientes(),
@@ -1014,23 +1174,16 @@ function toggleContactoCc(c: Contacto) {
 
 watch(emailsPara, (para) => {
   if (para.length === 0) {
-    enviarEmail.value = false;
-  }
-  // Quitar de CC cualquier correo que haya pasado a Para
-  if (emailsCc.value.some((e) => para.includes(e))) {
+    emailsCc.value = [];
+  } else if (emailsCc.value.some((e) => para.includes(e))) {
+    // Quitar de CC cualquier correo que haya pasado a Para
     emailsCc.value = emailsCc.value.filter((e) => !para.includes(e));
   }
 });
 
-// Preferido 6.3: si el usuario limpia el picker, re-aplicar default del tenant.
-watch(fechaVencimiento, (v) => {
-  if (suppressFechaVencimientoWatch) return;
-  if (!v) {
-    fechaVencimientoManual = false;
-    precargarFechaVencimiento();
-    return;
-  }
-  fechaVencimientoManual = true;
+watch(vigenciaDias, (n) => {
+  const clamped = clampVigenciaDias(Number(n));
+  if (clamped !== n) vigenciaDias.value = clamped;
 });
 
 const serviciosSeleccionados = computed(() =>
@@ -1082,7 +1235,7 @@ const onClienteChange = async () => {
   datosCliente.value.nombreContacto = '';
   datosCliente.value.correo = '';
   datosCliente.value.telefono = '';
-  enviarEmail.value = false;
+  datosCliente.value.cargo = '';
   emailsPara.value = [];
   emailsCc.value = [];
   if (!clienteId.value) {
@@ -1099,6 +1252,7 @@ const onContactoChange = () => {
     datosCliente.value.nombreContacto = '';
     datosCliente.value.correo = '';
     datosCliente.value.telefono = '';
+    datosCliente.value.cargo = '';
     return;
   }
   const ct = contactos.value.find((x) => x._id === contactoId.value);
@@ -1106,40 +1260,9 @@ const onContactoChange = () => {
   datosCliente.value.nombreContacto = ct.nombre || '';
   datosCliente.value.correo = ct.correo || '';
   datosCliente.value.telefono = ct.telefono || '';
+  datosCliente.value.cargo = ct.cargo || '';
   if (ct.correo && isValidEmail(ct.correo.trim())) {
     ensureInPara(ct.correo);
-  }
-};
-
-const cerrarAltaContacto = () => {
-  mostrarAltaContacto.value = false;
-  errorAltaContacto.value = '';
-  nuevoContacto.value = { nombre: '', correo: '' };
-};
-
-const crearContactoAlVuelo = async () => {
-  errorAltaContacto.value = '';
-  const nombre = nuevoContacto.value.nombre.trim();
-  if (!nombre) {
-    errorAltaContacto.value = 'El nombre es obligatorio';
-    return;
-  }
-  if (!clienteId.value) return;
-  guardandoContacto.value = true;
-  try {
-    const created = await createContacto(clienteId.value, {
-      nombre,
-      correo: nuevoContacto.value.correo.trim() || undefined,
-    });
-    await cargarContactos(clienteId.value);
-    contactoId.value = created._id || '';
-    onContactoChange();
-    cerrarAltaContacto();
-  } catch (err: any) {
-    errorAltaContacto.value =
-      err.response?.data?.message || 'No se pudo crear el contacto';
-  } finally {
-    guardandoContacto.value = false;
   }
 };
 
@@ -1323,22 +1446,11 @@ const crearCotizacion = async () => {
   const nombre = datosCliente.value.nombreContacto.trim();
   const correo = datosCliente.value.correo.trim();
   const telefono = datosCliente.value.telefono.trim();
+  const cargo = datosCliente.value.cargo.trim();
 
+  // Snapshots CRM (email/tel) solo vía contacto registrado — no inputs guest.
   if (correo && !isValidEmail(correo)) {
-    mensajeValidacion.value = 'Correo inválido';
-    return;
-  }
-
-  if ((correo || telefono) && !nombre && !clienteId.value) {
-    mensajeValidacion.value =
-      'Indica el nombre del solicitante si capturas correo o teléfono';
-    return;
-  }
-
-  // CRM: teléfono sin nombre no está exento (solo email legacy)
-  if (clienteId.value && telefono && !nombre && !correo) {
-    mensajeValidacion.value =
-      'Indica el nombre del solicitante si capturas teléfono';
+    mensajeValidacion.value = 'Correo del contacto inválido';
     return;
   }
 
@@ -1366,13 +1478,13 @@ const crearCotizacion = async () => {
     }
   }
 
-  if (!fechaVencimiento.value) {
-    precargarFechaVencimiento();
-  }
-  const fechaIso = fechaVencimientoToIso(fechaVencimiento.value);
-  if (!fechaIso) {
-    mensajeValidacion.value = 'Indica una fecha de vencimiento válida';
-    return;
+  if (!sinVigencia.value) {
+    vigenciaDias.value = clampVigenciaDias(Number(vigenciaDias.value));
+    const fechaIso = isoFromVigenciaDias(vigenciaDias.value);
+    if (!fechaIso) {
+      mensajeValidacion.value = 'Indica una vigencia en días válida (1–365)';
+      return;
+    }
   }
 
   const dirty = collectDirtySync();
@@ -1407,17 +1519,20 @@ const crearCotizacion = async () => {
 
   const para = [...emailsPara.value];
   const cc = emailsCc.value.filter((e) => !para.includes(e));
-  const doEnviar = enviarEmail.value && para.length > 0;
+  const doEnviar = para.length > 0;
 
   const payload: Parameters<typeof createAdminCotizacion>[0] = {
     items,
     moneda: 'MXN',
-    fechaVencimiento: fechaIso,
+    sinVigencia: sinVigencia.value,
     enviarEmail: doEnviar,
     incluirDatosBancarios: incluirBancarios,
     emailsPara: para,
     emailsCc: cc,
   };
+  if (!sinVigencia.value) {
+    payload.fechaVencimiento = isoFromVigenciaDias(vigenciaDias.value);
+  }
   if (clienteId.value) payload.clienteId = clienteId.value;
   if (datosCliente.value.empresa.trim()) {
     payload.nombreEmpresa = datosCliente.value.empresa.trim();
@@ -1425,9 +1540,7 @@ const crearCotizacion = async () => {
   if (nombre) payload.nombreContacto = nombre;
   if (correo) payload.emailContacto = correo;
   if (telefono) payload.telefonoContacto = telefono;
-  if (datosCliente.value.personasAEvaluar.trim()) {
-    payload.personasAEvaluar = datosCliente.value.personasAEvaluar.trim();
-  }
+  if (cargo) payload.cargoContacto = cargo;
   if (plantillasSeleccionadasIds.value.length > 0) {
     payload.plantillas = plantillasSeleccionadasIds.value.map((id) => {
       const snap = plantillaSnapshots.value[id];
@@ -1587,12 +1700,16 @@ const cerrarModal = () => {
     nombreContacto: '',
     correo: '',
     telefono: '',
-    personasAEvaluar: '',
+    cargo: '',
   };
   clienteId.value = '';
   contactoId.value = '';
   contactos.value = [];
-  enviarEmail.value = false;
+  identidadConfirmada.value = false;
+  cotizarSinCliente.value = false;
+  cotizarSinContacto.value = false;
+  sinVigencia.value = false;
+  vigenciaDias.value = clampVigenciaDias(vigenciaDefaultDias);
   emailsPara.value = [];
   emailsCc.value = [];
   emailSendOk.value = false;
@@ -1605,7 +1722,6 @@ const cerrarModal = () => {
   showPersonalizarModal.value = false;
   mensajeValidacion.value = '';
   serviciosDisponibles.value = [];
-  precargarFechaVencimiento();
 };
 
 const verCotizaciones = () => {

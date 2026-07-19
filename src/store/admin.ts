@@ -17,7 +17,7 @@ import {
   getClienteById,
   getCotizacionesAdmin,
   getCotizacionAdminById,
-  getServicios,
+  getDashboardEntityTotals,
   type AdminClientesFilters,
   type AdminCotizacionesFilters,
 } from '../services/admin-api.service';
@@ -33,6 +33,8 @@ interface AdminDashboardCounters {
   };
   totales: {
     clientesActivos: number;
+    contactos: number;
+    usuarios: number;
     servicios: number;
   };
 }
@@ -317,15 +319,13 @@ export const useAdminStore = defineStore('admin', {
           cotizacionesVencidas,
           cotizacionesAceptadas,
           cotizacionesRechazadas,
-          clientes,
-          servicios,
+          entityTotals,
         ] = await Promise.all([
           getCotizacionesAdmin({ estado: 'vigente', limit: 1, page: 1 }),
           getCotizacionesAdmin({ estado: 'vencida', limit: 1, page: 1 }),
           getCotizacionesAdmin({ estado: 'aceptada', limit: 1, page: 1 }),
           getCotizacionesAdmin({ estado: 'rechazada', limit: 1, page: 1 }),
-          getClientes({ activo: true, page: 1, limit: 1 }),
-          getServicios({ page: 1, limit: 1 }),
+          getDashboardEntityTotals(),
         ]);
 
         this.dashboardCounters = {
@@ -336,8 +336,10 @@ export const useAdminStore = defineStore('admin', {
             rechazadas: cotizacionesRechazadas.total,
           },
           totales: {
-            clientesActivos: clientes.total,
-            servicios: servicios.total,
+            clientesActivos: entityTotals.clientes,
+            contactos: entityTotals.contactos,
+            usuarios: entityTotals.usuarios,
+            servicios: entityTotals.servicios,
           },
         };
       } catch (error: any) {

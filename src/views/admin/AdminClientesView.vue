@@ -272,130 +272,15 @@
     </div>
 
     <!-- Modal crear/editar -->
-    <div
-      v-if="mostrarModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @pointerdown="onBackdropPointerDown"
-      @pointerup="onBackdropPointerUp"
-      @pointercancel="onBackdropPointerCancel"
-    >
-      <div
-        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
-        @pointerdown.stop
-      >
-        <div class="p-4 sm:p-6">
-          <div class="flex justify-between items-center mb-4 sm:mb-6">
-            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
-              {{ modoEdicion ? 'Editar cliente' : 'Nuevo cliente' }}
-            </h2>
-            <button
-              type="button"
-              class="text-gray-400 hover:text-gray-600 transition-colors"
-              :disabled="isSubmitting"
-              @click="cerrarModal"
-            >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-
-          <div
-            v-if="formError"
-            class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
-            role="alert"
-          >
-            {{ formError }}
-          </div>
-
-          <form class="space-y-4" @submit.prevent="guardar">
-            <div>
-              <label
-                for="cliente-empresa"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Empresa <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="cliente-empresa"
-                v-model="formulario.empresa"
-                type="text"
-                required
-                maxlength="200"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                placeholder="Nombre comercial"
-                :disabled="isSubmitting"
-              />
-            </div>
-            <div>
-              <label
-                for="cliente-razon-social"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Razón Social
-              </label>
-              <input
-                id="cliente-razon-social"
-                v-model="formulario.razonSocial"
-                type="text"
-                maxlength="300"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                placeholder="Ej. Servicios Industriales del Pacífico"
-                :disabled="isSubmitting"
-              />
-              <p class="mt-1 text-xs text-gray-500">Opcional</p>
-            </div>
-            <div>
-              <label
-                for="cliente-rfc"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                RFC
-              </label>
-              <input
-                id="cliente-rfc"
-                v-model="formulario.rfc"
-                type="text"
-                maxlength="20"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 uppercase"
-                placeholder="Ej. ABC010101AB1"
-                :disabled="isSubmitting"
-              />
-              <p class="mt-1 text-xs text-gray-500">
-                Opcional. Si se captura, debe ser único en esta administración.
-              </p>
-            </div>
-            <div class="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                class="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                :disabled="isSubmitting"
-                @click="cerrarModal"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="px-4 py-2 bg-medical-blue-600 text-white rounded-md text-sm font-medium hover:bg-medical-blue-700 disabled:opacity-50"
-                :disabled="isSubmitting"
-              >
-                {{ isSubmitting ? 'Guardando…' : 'Guardar' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+    <ModalClienteForm
+      :show="mostrarModal"
+      :modo-edicion="modoEdicion"
+      :initial="formulario"
+      :form-error="formError"
+      :is-submitting="isSubmitting"
+      @close="cerrarModal"
+      @submit="onModalClienteSubmit"
+    />
 
     <ConfirmationModal
       :show="mostrarConfirmDesactivar"
@@ -423,7 +308,8 @@ import {
 import type { Cliente } from '../../types/backend';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
-import { useModalDismiss } from '../../composables/useModalDismiss';
+import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
+import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
 
 const {
   clientes,
@@ -460,14 +346,6 @@ const mensajeConfirmDesactivar = computed(() => {
   const nombre = clienteADesactivar.value?.empresa || 'este cliente';
   return `¿Desactivar «${nombre}»? No aparecerá al crear cotizaciones; el histórico se conserva.`;
 });
-
-const {
-  onBackdropPointerDown,
-  onBackdropPointerUp,
-  onBackdropPointerCancel,
-} = useModalDismiss(() => {
-  if (!isSubmitting.value) cerrarModal();
-}, mostrarModal);
 
 let filterTimeout: ReturnType<typeof setTimeout> | null = null;
 
@@ -652,8 +530,8 @@ async function reactivar(grupo: { clienteId: string }) {
   }
 }
 
-async function guardar() {
-  const empresa = formulario.value.empresa.trim();
+async function onModalClienteSubmit(fields: ClienteFormFields) {
+  const empresa = fields.empresa.trim();
   if (!empresa) {
     formError.value = 'Debe proporcionar el nombre de la empresa';
     return;
@@ -662,8 +540,9 @@ async function guardar() {
   isSubmitting.value = true;
   formError.value = null;
   try {
-    const rfc = formulario.value.rfc.trim().toUpperCase();
-    const razonSocial = formulario.value.razonSocial.trim();
+    const rfc = fields.rfc.trim().toUpperCase();
+    const razonSocial = fields.razonSocial.trim();
+    formulario.value = { empresa, razonSocial, rfc };
     if (modoEdicion.value && clienteEditandoId.value) {
       await updateCliente(clienteEditandoId.value, {
         empresa,

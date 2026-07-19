@@ -46,7 +46,7 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
   if (b.titular?.trim()) stack.push(bankLine('Nombre:', b.titular.trim()));
   if (b.domicilio?.trim()) stack.push(bankLine('Domicilio:', b.domicilio.trim()));
   if (b.titular?.trim() || b.domicilio?.trim()) {
-    stack.push({ text: ' ', margin: [0, 8] });
+    stack.push({ text: ' ', margin: [0, 2] });
   }
   if (b.rfc?.trim()) stack.push(bankLine('RFC:', b.rfc.trim()));
   if (b.email?.trim()) {
@@ -171,16 +171,26 @@ export const getCotizacionDefinition = (
     nombre?: string;
     email?: string;
     telefono?: string;
+    cargo?: string;
   } => {
-    if (detalle.nombreContacto) {
+    const trimOrUndef = (s?: string) => {
+      const t = s?.trim();
+      return t || undefined;
+    };
+    const nombre = trimOrUndef(detalle.nombreContacto);
+    if (nombre) {
       return {
-        nombre: detalle.nombreContacto,
-        email: detalle.emailContacto || undefined,
-        telefono: detalle.telefonoContacto || undefined,
+        nombre,
+        email: trimOrUndef(detalle.emailContacto),
+        telefono: trimOrUndef(detalle.telefonoContacto),
+        cargo: trimOrUndef(detalle.cargoContacto),
       };
     }
 
-    return { email: detalle.emailContacto };
+    return {
+      email: trimOrUndef(detalle.emailContacto),
+      cargo: trimOrUndef(detalle.cargoContacto),
+    };
   };
 
   const iva = detalle.total * 0.16;
@@ -267,7 +277,10 @@ export const getCotizacionDefinition = (
               style: 'paramValue',
             },
             {
-              text: formatDateShort(detalle.fechaVencimiento),
+              text:
+                detalle.sinVigencia || !detalle.fechaVencimiento
+                  ? '—'
+                  : formatDateShort(detalle.fechaVencimiento),
               style: 'paramValue',
             },
           ],
@@ -292,48 +305,71 @@ export const getCotizacionDefinition = (
     },
     { text: ' ', fontSize: 5 },
 
-    // Información del Cliente
+    // Información del Cliente — 2 filas × 3 cols (Story 6.16)
     { text: 'INFORMACIÓN DEL CLIENTE', style: 'sectionHeader' },
     {
-      columns: [
-        // Columna 1: Empresa y RFC
-        {
-          width: '*',
-          text: [
-            { text: 'Empresa:\n', style: 'label' },
-            { text: (cliente.empresa || '-') + '\n\n', style: 'value' },
-            { text: 'RFC:\n', style: 'label' },
-            { text: (cliente.rfc || '-') + '\n', style: 'value' },
-          ],
-        },
-        // Columna 2: Nombre de Contacto y Teléfono
-        {
-          width: '*',
-          text: [
-            { text: 'Contacto:\n', style: 'label' },
+      table: {
+        widths: ['*', '*', '*'],
+        body: [
+          [
             {
-              text: (usuario.nombre || 'Sin solicitante') + '\n\n',
-              style: 'value',
+              text: [
+                { text: 'Empresa:\n', style: 'label' },
+                { text: cliente.empresa || '-', style: 'value' },
+              ],
+              border: [false, false, false, false],
             },
-            { text: 'Teléfono:\n', style: 'label' },
-            { text: (usuario.telefono || '-') + '\n', style: 'value' },
-          ],
-        },
-        // Columna 3: Email y Persona(s) a evaluar
-        {
-          width: '*',
-          text: [
-            { text: 'Email:\n', style: 'label' },
             {
-              text: (usuario.email || detalle.emailContacto || '-') + '\n\n',
-              style: 'value',
+              text: [
+                { text: 'Contacto:\n', style: 'label' },
+                {
+                  text: usuario.nombre || 'Sin solicitante',
+                  style: 'value',
+                },
+              ],
+              border: [false, false, false, false],
             },
-            { text: 'Persona(s) a evaluar – nombre(s):\n', style: 'label' },
-            { text: (detalle.personasAEvaluar || '-') + '\n', style: 'value' },
+            {
+              text: [
+                { text: 'Cargo:\n', style: 'label' },
+                { text: usuario.cargo || '-', style: 'value' },
+              ],
+              border: [false, false, false, false],
+            },
           ],
-        },
-      ],
-      margin: [0, 10, 0, 20],
+          [
+            {
+              text: [
+                { text: 'RFC:\n', style: 'label' },
+                { text: cliente.rfc || '-', style: 'value' },
+              ],
+              border: [false, false, false, false],
+              margin: [0, 8, 0, 0],
+            },
+            {
+              text: [
+                { text: 'Teléfono:\n', style: 'label' },
+                { text: usuario.telefono || '-', style: 'value' },
+              ],
+              border: [false, false, false, false],
+              margin: [0, 8, 0, 0],
+            },
+            {
+              text: [
+                { text: 'Correo:\n', style: 'label' },
+                {
+                  text: (usuario.email || detalle.emailContacto || '-') as string,
+                  style: 'value',
+                },
+              ],
+              border: [false, false, false, false],
+              margin: [0, 8, 0, 0],
+            },
+          ],
+        ],
+      },
+      layout: 'noBorders',
+      margin: [0, 6, 0, 14],
     },
 
     // Tabla de Servicios
@@ -403,7 +439,7 @@ export const getCotizacionDefinition = (
 
   return {
     pageSize: 'LETTER',
-    pageMargins: [40, 80, 40, 60], // [left, top, right, bottom]
+    pageMargins: [40, 62, 40, 60], // [left, top, right, bottom] — top 80→62 (Story 6.16)
 
     header: (currentPage: number, pageCount: number) => {
       if (incluirDatosBancarios && currentPage === pageCount) {
@@ -414,13 +450,13 @@ export const getCotizacionDefinition = (
           {
             image: logoBase64,
             width: 75,
-            margin: [40, 20, 0, 0],
+            margin: [40, 12, 0, 0],
           },
           {
             text: 'COTIZACIÓN',
             alignment: 'right',
             style: 'headerTitle',
-            margin: [0, 30, 40, 0],
+            margin: [0, 22, 40, 0],
           },
         ],
       };

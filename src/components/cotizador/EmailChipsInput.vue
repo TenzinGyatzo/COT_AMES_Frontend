@@ -7,8 +7,10 @@
       {{ label }}
     </label>
     <div
+      role="group"
       class="flex flex-wrap items-center gap-1.5 min-h-[2.5rem] px-2.5 py-1.5 rounded-xl border bg-white focus-within:ring-2 focus-within:ring-medical-blue-500"
-      :class="variantClass"
+      :class="[variantClass, disabled ? 'opacity-50 pointer-events-none bg-gray-50' : '']"
+      :aria-disabled="disabled || undefined"
     >
       <span
         v-for="email in modelValue"
@@ -21,6 +23,7 @@
           type="button"
           class="shrink-0 p-0.5 rounded hover:bg-black/10 focus:outline-none focus:ring-1 focus:ring-medical-blue-500"
           :aria-label="`Quitar ${email} de ${label}`"
+          :disabled="disabled"
           @mousedown.prevent="remove(email)"
         >
           ×
@@ -33,6 +36,7 @@
         autocomplete="email"
         class="flex-1 min-w-[8rem] border-0 bg-transparent text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-0 py-1"
         :placeholder="placeholder"
+        :disabled="disabled"
         :aria-invalid="!!errorMsg"
         :aria-describedby="errorMsg ? `${inputId}-error` : undefined"
         @keydown.enter.prevent="tryAdd"
@@ -62,6 +66,7 @@ const props = withDefaults(
     variant?: 'para' | 'cc';
     placeholder?: string;
     hint?: string;
+    disabled?: boolean;
     /** Correos que no deben agregarse aquí (p. ej. ya en la otra lista). */
     exclude?: string[];
   }>(),
@@ -69,6 +74,7 @@ const props = withDefaults(
     variant: 'para',
     placeholder: 'correo@empresa.com + Enter',
     hint: '',
+    disabled: false,
     exclude: () => [],
   },
 );
@@ -100,6 +106,7 @@ function normalize(email: string) {
 }
 
 function tryAdd() {
+  if (props.disabled) return;
   errorMsg.value = '';
   const raw = draft.value.trim();
   if (!raw) return;
@@ -122,6 +129,7 @@ function tryAdd() {
 }
 
 function remove(email: string) {
+  if (props.disabled) return;
   errorMsg.value = '';
   emit(
     'update:modelValue',

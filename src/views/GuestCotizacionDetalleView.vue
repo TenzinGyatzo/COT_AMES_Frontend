@@ -265,7 +265,11 @@
                   Vigencia
                 </p>
                 <p class="text-gray-900 font-medium">
-                  {{ formatDate(cotizacion.fechaVencimiento) }}
+                  {{
+                    cotizacion.sinVigencia || !cotizacion.fechaVencimiento
+                      ? '—'
+                      : formatDate(cotizacion.fechaVencimiento)
+                  }}
                 </p>
               </div>
             </div>
@@ -464,6 +468,7 @@ function publicErrorMessage(err: unknown, fallback: string): string {
 const canRespond = computed(() => {
   const c = cotizacion.value;
   if (!c || c.estado !== 'vigente' || successMessage.value) return false;
+  if (c.sinVigencia || !c.fechaVencimiento) return true;
   const due = Date.parse(c.fechaVencimiento);
   if (Number.isNaN(due)) return false;
   return due >= Date.now();
@@ -568,16 +573,17 @@ function toPdfShape(c: PublicCotizacionResponse): CotizacionDetalleDto {
     _id: 'public',
     folio: c.folio,
     clienteId: '',
-    emailContacto: '',
+    emailContacto: c.emailContacto || '',
     total: c.total,
     moneda: c.moneda || 'MXN',
     estado: (c.estado as CotizacionDetalleDto['estado']) || 'vigente',
     fechaCreacion: c.fechaCreacion,
     fechaVencimiento: c.fechaVencimiento,
+    sinVigencia: c.sinVigencia,
     nombreEmpresa: c.nombreEmpresa,
     nombreContacto: c.nombreContacto,
     telefonoContacto: c.telefonoContacto,
-    personasAEvaluar: c.personasAEvaluar,
+    cargoContacto: c.cargoContacto,
     items: (c.items || []).map((it) => ({
       servicioId: 'public',
       nombreServicioSnapshot: it.nombre,
@@ -611,8 +617,10 @@ const getEstadoLabel = (estado: string) => {
 
 const getEstadoSublabel = (cot: PublicCotizacionResponse | null) => {
   if (!cot) return '';
-  if (cot.estado === 'vigente')
+  if (cot.estado === 'vigente') {
+    if (cot.sinVigencia || !cot.fechaVencimiento) return 'Sin vigencia';
     return `Vence el: ${formatDate(cot.fechaVencimiento)}`;
+  }
   if (cot.estado === 'aceptada')
     return `Aceptada el: ${formatDate(cot.fechaAceptacion)}`;
   if (cot.estado === 'rechazada')

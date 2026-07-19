@@ -12,6 +12,7 @@ import type {
   PaginatedCotizacionesResponseDto,
   Tenant,
   TenantConfigResponse,
+  DashboardEntityTotals,
 } from '../types/backend';
 import type { CategoriaServicioCode } from '../constants/categorias-servicio';
 
@@ -35,6 +36,8 @@ export interface PaginatedClientesResponse {
 
 export interface AdminCotizacionesFilters {
   estado?: 'vigente' | 'vencida' | 'aceptada' | 'rechazada';
+  /** Scope CRM — Story 3.7 (ficha cliente) */
+  clienteId?: string;
   search?: string;
   fechaDesde?: string;
   fechaHasta?: string;
@@ -244,6 +247,7 @@ export async function getCotizacionesAdmin(
     page = 1,
     limit = 10,
     estado,
+    clienteId,
     search,
     fechaDesde,
     fechaHasta,
@@ -251,6 +255,7 @@ export async function getCotizacionesAdmin(
 
   const params: any = { page, limit };
   if (estado) params.estado = estado;
+  if (clienteId) params.clienteId = clienteId;
   if (search) params.search = search;
   if (fechaDesde) params.fechaDesde = fechaDesde;
   if (fechaHasta) params.fechaHasta = fechaHasta;
@@ -277,7 +282,8 @@ export interface CreateAdminCotizacionPayload {
   nombreContacto?: string;
   emailContacto?: string;
   telefonoContacto?: string;
-  personasAEvaluar?: string;
+  /** Story 6.16 — snapshot cargo CRM para PDF */
+  cargoContacto?: string;
   items: Array<{
     servicioId: string;
     cantidad: number;
@@ -288,6 +294,8 @@ export interface CreateAdminCotizacionPayload {
   }>;
   moneda?: string;
   fechaVencimiento?: string;
+  /** Story 6.15 — sin fecha de vencimiento. */
+  sinVigencia?: boolean;
   enviarEmail?: boolean;
   /** Destinatarios Para (Story 6.6). */
   emailsPara?: string[];
@@ -559,6 +567,14 @@ export async function deletePlantilla(id: string): Promise<Plantilla> {
 /** Listado de tenants activos (sin X-Tenant-Id; chicken-egg AD-2 / 1.7). */
 export async function getTenants(): Promise<Tenant[]> {
   const { data } = await httpClient.get<Tenant[]>('/tenants');
+  return data;
+}
+
+/** Totales CRM del tenant (Story 7.3). Operativo + admin. */
+export async function getDashboardEntityTotals(): Promise<DashboardEntityTotals> {
+  const { data } = await httpClient.get<DashboardEntityTotals>(
+    '/dashboard/entity-totals',
+  );
   return data;
 }
 

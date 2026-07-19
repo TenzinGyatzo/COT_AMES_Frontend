@@ -8,7 +8,11 @@
         Ingresa tu nueva contraseña
       </p>
 
-      <form v-if="!passwordReset" @submit.prevent="handleSubmit" class="space-y-4">
+      <form
+        v-if="!passwordReset"
+        @submit.prevent="handleSubmit"
+        class="space-y-4"
+      >
         <div>
           <label
             for="password"
@@ -100,10 +104,7 @@
         </button>
       </form>
 
-      <div
-        v-if="passwordReset"
-        class="text-center space-y-4"
-      >
+      <div v-if="passwordReset" class="text-center space-y-4">
         <div class="flex justify-center">
           <svg
             class="h-16 w-16 text-green-500"
@@ -140,11 +141,10 @@
         {{ error }}
       </div>
 
-      <div
-        v-if="validatingToken"
-        class="text-center py-8"
-      >
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue-600"></div>
+      <div v-if="validatingToken" class="text-center py-8">
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-medical-blue-600"
+        ></div>
         <p class="mt-2 text-gray-600">Validando enlace...</p>
       </div>
 
@@ -201,8 +201,8 @@ const passwordReset = ref(false);
 
 onMounted(async () => {
   // Obtener email y token de la URL
-  email.value = route.query.email as string || '';
-  token.value = route.query.token as string || '';
+  email.value = (route.query.email as string) || '';
+  token.value = (route.query.token as string) || '';
 
   if (!email.value || !token.value) {
     error.value = 'Enlace de recuperación inválido';
@@ -255,7 +255,9 @@ const handleSubmit = async () => {
     });
     passwordReset.value = true;
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Error al restablecer la contraseña. Por favor, intenta de nuevo.';
+    error.value =
+      err.response?.data?.message ||
+      'Error al restablecer la contraseña. Por favor, intenta de nuevo.';
   } finally {
     isLoading.value = false;
   }

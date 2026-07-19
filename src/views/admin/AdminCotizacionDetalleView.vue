@@ -1,6 +1,10 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <BaseBackButton to="/admin/cotizaciones" class="mb-4" default-text="Volver a Cotizaciones" />
+    <BaseBackButton
+      to="/admin/cotizaciones"
+      class="mb-4"
+      default-text="Volver a Cotizaciones"
+    />
 
     <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
       Detalle de Cotización
@@ -25,7 +29,9 @@
         :class="getEstadoBannerClass(cotizacionDetalle.estado)"
         class="rounded-lg border-2 shadow-lg p-4 md:p-6"
       >
-        <div class="flex items-center justify-between flex-col md:flex-row gap-4">
+        <div
+          class="flex items-center justify-between flex-col md:flex-row gap-4"
+        >
           <div class="flex items-center gap-4">
             <div
               :class="getEstadoIconClass(cotizacionDetalle.estado)"
@@ -89,7 +95,9 @@
               </svg>
             </div>
             <div>
-              <p class="text-xs md:text-sm font-medium opacity-75 mb-1">Estado de la Cotización</p>
+              <p class="text-xs md:text-sm font-medium opacity-75 mb-1">
+                Estado de la Cotización
+              </p>
               <h3
                 :class="getEstadoTextClass(cotizacionDetalle.estado)"
                 class="text-xl md:text-2xl lg:text-3xl font-bold"
@@ -97,69 +105,90 @@
                 {{ getEstadoLabel(cotizacionDetalle.estado) }}
               </h3>
               <p class="text-xs text-gray-500 mt-1">
-                Desde {{ formatDateTime(getEstadoTimestamp(cotizacionDetalle.estado)) }}
+                Desde
+                {{
+                  formatDateTime(getEstadoTimestamp(cotizacionDetalle.estado))
+                }}
+              </p>
+              <p
+                v-if="provenanceLine"
+                class="text-xs text-gray-500 mt-1 max-w-md"
+                style="font-size: 0.75rem; font-weight: 400; line-height: 1.4"
+              >
+                {{ provenanceLine }}
               </p>
             </div>
           </div>
           <div class="flex flex-col md:items-end gap-3 w-full md:w-auto">
             <div class="text-left md:text-right">
-              <p class="text-xs md:text-sm font-medium opacity-75 mb-1">Folio</p>
+              <p class="text-xs md:text-sm font-medium opacity-75 mb-1">
+                Folio
+              </p>
               <p class="text-base md:text-lg font-mono font-bold">
                 {{ cotizacionDetalle.folio }}
               </p>
             </div>
 
-            <div v-if="cotizacionDetalle.estado === 'vigente' && esCotizacionGuest" class="flex flex-col sm:flex-row gap-2">
-              <BaseButtonLoader
-                type="button"
-                variant="primary"
-                size="sm"
-                :disabled="isProcessing"
-                :loading="isProcessing"
-                custom-class="bg-green-600 hover:bg-green-700 focus:ring-green-500 w-full sm:w-auto justify-center"
-                @click="handleAceptar"
-              >
-                <svg
-                  v-if="!isProcessing"
-                  class="-ml-1 mr-2 h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+            <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+              <template v-if="cotizacionDetalle.estado === 'vigente'">
+                <BaseButtonLoader
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  :disabled="isProcessing"
+                  :loading="isProcessing"
+                  custom-class="bg-green-600 hover:bg-green-700 focus:ring-green-500 w-full sm:w-auto justify-center"
+                  @click="handleAceptar"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Cliente Aceptó
-              </BaseButtonLoader>
-              <BaseButtonLoader
-                type="button"
-                variant="danger"
-                size="sm"
-                :disabled="isProcessing"
-                :loading="isProcessing"
-                custom-class="w-full sm:w-auto justify-center"
-                @click="handleRechazar"
-              >
-                <svg
-                  v-if="!isProcessing"
-                  class="-ml-1 mr-2 h-4 w-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  Aceptar
+                </BaseButtonLoader>
+                <BaseButtonLoader
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  :disabled="isProcessing"
+                  :loading="isProcessing"
+                  custom-class="w-full sm:w-auto justify-center"
+                  @click="handleRechazar"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                Cliente Rechazó
-              </BaseButtonLoader>
+                  Rechazar
+                </BaseButtonLoader>
+              </template>
+              <button
+                v-if="puedeRepetir"
+                type="button"
+                class="w-full sm:w-auto px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                :disabled="isProcessing"
+                @click="abrirRepetir"
+              >
+                Repetir
+              </button>
+              <div class="relative">
+                <button
+                  type="button"
+                  class="w-full sm:w-auto px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                  :disabled="isProcessing"
+                  @click="showMasAcciones = !showMasAcciones"
+                >
+                  Más acciones
+                  <span class="ml-1 text-gray-400">▾</span>
+                </button>
+                <div
+                  v-if="showMasAcciones"
+                  class="absolute right-0 z-20 mt-1 w-48 rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+                >
+                  <button
+                    v-for="opt in otrosEstados"
+                    :key="opt"
+                    type="button"
+                    class="block w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    :disabled="isProcessing"
+                    @click="!isProcessing && pedirCambioEstado(opt)"
+                  >
+                    Marcar como {{ getEstadoLabel(opt) }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -201,17 +230,6 @@
             >
               {{ getEstadoLabel(cotizacionDetalle.estado) }}
             </span>
-          </div>
-
-          <div v-if="getSedeNombre()">
-            <label
-              class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
-            >
-              Sede
-            </label>
-            <p class="text-sm md:text-base text-gray-900">
-              {{ getSedeNombre() }}
-            </p>
           </div>
 
           <div>
@@ -262,59 +280,39 @@
             <label
               class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
             >
-              Descargar
+              PDF
             </label>
-            <button
-              type="button"
-              @click="handleDownloadPDF"
-              class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-medical-blue-500 transition-colors"
-            >
-              <svg
-                class="-ml-1 mr-2 h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            <div class="flex flex-wrap gap-2">
+              <button
+                type="button"
+                @click="handlePreviewPDF"
+                :disabled="isPdfBusy"
+                class="inline-flex items-center px-4 py-2 border border-medical-blue-200 rounded-md shadow-sm text-sm font-medium text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-medical-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Descargar PDF
-            </button>
-          </div>
-
-
-          <div v-if="cotizacionDetalle.ordenTrabajoId">
-            <label
-              class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
-            >
-              Orden de Trabajo Asociada
-            </label>
-            <router-link
-              :to="{
-                name: 'admin-orden-detalle',
-                params: { id: cotizacionDetalle.ordenTrabajoId },
-              }"
-              class="inline-flex items-center text-sm md:text-base text-medical-blue-600 hover:text-medical-blue-900 font-medium font-mono"
-            >
-              {{ cotizacionDetalle.ordenTrabajoFolio || '-' }}
-              <svg
-                class="w-4 h-4 ml-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                {{ isPdfBusy ? '…' : 'Previsualizar' }}
+              </button>
+              <button
+                type="button"
+                @click="handleDownloadPDF"
+                :disabled="isPdfBusy"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-medical-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </router-link>
+                <svg
+                  class="-ml-1 mr-2 h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                Descargar PDF
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -358,8 +356,15 @@
             >
               Solicitante de la Cotización
             </label>
-            <p class="text-sm md:text-base text-gray-900">
-              {{ getUsuarioClienteNombre() || '-' }}
+            <p
+              class="text-sm md:text-base"
+              :class="
+                getUsuarioClienteNombre()
+                  ? 'text-gray-900'
+                  : 'text-gray-500 italic'
+              "
+            >
+              {{ getUsuarioClienteNombre() || 'Sin solicitante' }}
             </p>
           </div>
 
@@ -429,70 +434,6 @@
               </svg>
             </router-link>
           </div>
-        </div>
-      </div>
-
-      <!-- Acciones de Administración -->
-      <div
-        v-if="cotizacionDetalle.estado === 'vigente' && esCotizacionGuest"
-        class="bg-white shadow-md rounded-lg p-4 md:p-6 mb-6"
-      >
-        <h2
-          class="text-lg md:text-xl font-semibold text-gray-800 mb-4 pb-4 border-b border-gray-200"
-        >
-          Acciones
-        </h2>
-        <p class="text-sm text-gray-600 mb-4">
-          Puede aceptar o rechazar esta cotización por parte del cliente. Una vez aceptada, se generará una orden de trabajo.
-        </p>
-        <div class="flex gap-3">
-          <BaseButtonLoader
-            type="button"
-            variant="primary"
-            :disabled="isProcessing"
-            :loading="isProcessing"
-            custom-class="bg-green-600 hover:bg-green-700 focus:ring-green-500"
-            @click="handleAceptar"
-          >
-            <svg
-              v-if="!isProcessing"
-              class="-ml-1 mr-2 h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            Aceptar cotización
-          </BaseButtonLoader>
-          <BaseButtonLoader
-            type="button"
-            variant="danger"
-            :disabled="isProcessing"
-            :loading="isProcessing"
-            @click="handleRechazar"
-          >
-            <svg
-              v-if="!isProcessing"
-              class="-ml-1 mr-2 h-4 w-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            Rechazar cotización
-          </BaseButtonLoader>
         </div>
       </div>
 
@@ -576,9 +517,7 @@
                 >
                   Subtotal:
                 </td>
-                <td
-                  class="px-3 py-2 text-right font-semibold text-gray-900"
-                >
+                <td class="px-3 py-2 text-right font-semibold text-gray-900">
                   ${{
                     cotizacionDetalle.total.toLocaleString('es-MX', {
                       minimumFractionDigits: 2,
@@ -667,44 +606,196 @@
       </p>
     </div>
 
-    <!-- Modal de trabajadores -->
-    <ModalTrabajadores
-      :mostrar="showModalTrabajadores"
-      :max-trabajadores="totalTrabajadoresRequeridos"
-      info-title="Información de Trabajadores"
-      info-description="Si ya cuentas con la información de los trabajadores, puedes registrarlos aquí. Si no, igualmente puedes continuar con la aceptación de la cotización sin registrarlos, pero no se tendrá la información en la orden de trabajo."
-      permitir-omitir
-      @close="showModalTrabajadores = false"
-      @confirm="handleConfirmarTrabajadores"
-    />
-
-    <!-- Modal de confirmación para rechazo -->
+    <!-- Modal de confirmación para rechazo (banner) -->
     <ConfirmationModal
       :show="showConfirmRechazo"
       title="¿Rechazar cotización?"
-      message="¿Está seguro de rechazar esta cotización? NO se enviará notificación por correo."
+      message="¿Está seguro de rechazar esta cotización? No se enviará notificación por correo."
       type="danger"
       confirm-text="Sí, rechazar"
       cancel-text="Cancelar"
       @confirm="confirmarRechazo"
       @cancel="showConfirmRechazo = false"
     />
+
+    <!-- Confirmación Más acciones (Story 6.10) -->
+    <ConfirmationModal
+      :show="showConfirmEstado"
+      :title="confirmEstadoTitle"
+      :message="confirmEstadoMessage"
+      type="warning"
+      confirm-text="Sí, cambiar"
+      cancel-text="Cancelar"
+      @confirm="confirmarCambioEstado"
+      @cancel="cancelarCambioEstado"
+    />
+
+    <!-- Story 6.12 — elegir modo de precios -->
+    <div
+      v-if="showRepetirModo"
+      class="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="repetir-modo-title"
+    >
+      <div
+        class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm"
+        @click="cerrarRepetir"
+      ></div>
+      <div
+        class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <h3
+          id="repetir-modo-title"
+          class="text-lg font-semibold text-gray-900"
+        >
+          Repetir cotización
+        </h3>
+        <p class="mt-2 text-sm text-gray-600">
+          Elija cómo calcular los precios de la nueva cotización. Se creará con
+          folio nuevo y estado vigente; podrá editarla o enviarla después.
+        </p>
+        <div class="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="confirmarRepetirModo('originales')"
+          >
+            Precios originales
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="confirmarRepetirModo('actualizados')"
+          >
+            Precios actualizados
+          </button>
+          <button
+            type="button"
+            class="mt-1 w-full px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+            :disabled="isProcessing"
+            @click="cerrarRepetir"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Story 6.12 — resolver warnings (excluir / sustituir) -->
+    <div
+      v-if="showRepetirWarnings"
+      class="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="repetir-warnings-title"
+    >
+      <div
+        class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm"
+        @click="cerrarRepetir"
+      ></div>
+      <div
+        class="relative w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+      >
+        <h3
+          id="repetir-warnings-title"
+          class="text-lg font-semibold text-gray-900"
+        >
+          Servicios que requieren atención
+        </h3>
+        <p class="mt-2 text-sm text-gray-600">
+          Omita o sustituya cada servicio antes de confirmar. Debe quedar al
+          menos un ítem.
+        </p>
+        <ul class="mt-4 space-y-3">
+          <li
+            v-for="w in repetirWarnings"
+            :key="`${w.index}-${w.servicioId}`"
+            class="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm"
+          >
+            <p class="font-medium text-gray-900">
+              Ítem {{ w.index + 1 }} —
+              {{ nombreItemFuente(w.servicioId) || w.servicioId }}
+            </p>
+            <p class="text-amber-800 mt-0.5">
+              {{
+                w.motivo === 'inactivo'
+                  ? 'Servicio inactivo en el catálogo'
+                  : 'Servicio no encontrado en el catálogo'
+              }}
+            </p>
+            <label class="mt-2 flex items-center gap-2 text-gray-700">
+              <input
+                v-model="omitirIds[w.servicioId]"
+                type="checkbox"
+                class="rounded border-gray-300"
+                @change="onOmitirChange(w.servicioId)"
+              />
+              Omitir este ítem
+            </label>
+            <div v-if="!omitirIds[w.servicioId]" class="mt-2">
+              <label class="block text-xs text-gray-500 mb-1"
+                >Sustituir por servicio activo</label
+              >
+              <select
+                v-model="sustitucionesMap[w.servicioId]"
+                class="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+              >
+                <option value="">— Seleccionar —</option>
+                <option
+                  v-for="s in serviciosActivos"
+                  :key="s._id"
+                  :value="s._id"
+                >
+                  {{ s.nombre }}
+                </option>
+              </select>
+            </div>
+          </li>
+        </ul>
+        <div class="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+          <button
+            type="button"
+            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800"
+            :disabled="isProcessing"
+            @click="cerrarRepetir"
+          >
+            Cancelar
+          </button>
+          <BaseButtonLoader
+            type="button"
+            variant="primary"
+            size="sm"
+            :disabled="isProcessing || !puedeConfirmarWarnings"
+            :loading="isProcessing"
+            @click="confirmarRepetirConResoluciones"
+          >
+            Confirmar repetición
+          </BaseButtonLoader>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, computed } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, onUnmounted, computed, ref, reactive, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useAdmin } from '../../composables/useAdmin';
-import { downloadCotizacionPDF } from '../../utils/pdfHelper';
-import type { Servicio, UsuarioCliente, CreateTrabajadorDto } from '../../types/backend';
+import {
+  downloadCotizacionPDF,
+  previewCotizacionPDF,
+} from '../../utils/pdfHelper';
+import type { Servicio } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
-import ModalTrabajadores from '../../components/common/ModalTrabajadores.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 
 const route = useRoute();
+const router = useRouter();
 const {
   cotizacionDetalle,
   isLoadingCotizaciones,
@@ -712,6 +803,8 @@ const {
   obtenerCotizacionAdmin,
   limpiarCotizacionDetalle,
 } = useAdmin();
+
+const isPdfBusy = ref(false);
 
 // Computed para calcular el IVA (16% del subtotal)
 const iva = computed(() => {
@@ -725,28 +818,62 @@ const totalConIva = computed(() => {
   return cotizacionDetalle.value.total + iva.value;
 });
 
-// Computed para identificar si es una cotización de guest (creada por admin)
-const esCotizacionGuest = computed(() => {
-  if (!cotizacionDetalle.value) return false;
-  // Si no tiene clienteId, es una cotización guest creada por admin
-  return !cotizacionDetalle.value.clienteId;
+const ESTADOS = ['vigente', 'vencida', 'aceptada', 'rechazada'] as const;
+type EstadoCotizacion = (typeof ESTADOS)[number];
+let flashTimer: ReturnType<typeof setTimeout> | null = null;
+
+const otrosEstados = computed(() => {
+  const actual = cotizacionDetalle.value?.estado;
+  return ESTADOS.filter((e) => e !== actual);
 });
 
-// Cargar cotización al montar el componente
-onMounted(async () => {
-  const cotizacionId = route.params.id as string;
-  if (cotizacionId) {
-    try {
-      await obtenerCotizacionAdmin(cotizacionId);
-    } catch (err) {
-      // El error ya se maneja en el store
-      console.error('Error al cargar cotización:', err);
-    }
+const provenanceLine = computed(() => {
+  const c = cotizacionDetalle.value;
+  if (!c?.estadoOrigen) return null;
+  const whenAt = c.estadoOrigenAt || getEstadoTimestamp(c.estado);
+  if (c.estadoOrigen === 'magic_link') {
+    return `Respondido por el cliente · enlace público · ${formatDateTime(whenAt)}`;
   }
+  if (c.estadoOrigen === 'usuario') {
+    const nombre = c.estadoCambiadoPorNombre?.trim() || 'Usuario AMES';
+    return `Marcado por ${nombre} · ${formatDateTime(whenAt)}`;
+  }
+  if (c.estadoOrigen === 'cron') {
+    return `Vencida automáticamente · ${formatDateOnly(whenAt)}`;
+  }
+  return null;
 });
+
+async function cargarDetallePorRuta() {
+  const cotizacionId = route.params.id as string;
+  if (!cotizacionId) return;
+  try {
+    await obtenerCotizacionAdmin(cotizacionId);
+  } catch (err) {
+    console.error('Error al cargar cotización:', err);
+  }
+}
+
+// Cargar cotización al montar; re-cargar si cambia :id (p. ej. tras Repetir)
+onMounted(() => {
+  void cargarDetallePorRuta();
+});
+
+watch(
+  () => route.params.id,
+  (next, prev) => {
+    if (next && next !== prev) {
+      void cargarDetallePorRuta();
+    }
+  },
+);
 
 // Limpiar detalle al desmontar
 onUnmounted(() => {
+  if (flashTimer != null) {
+    clearTimeout(flashTimer);
+    flashTimer = null;
+  }
   limpiarCotizacionDetalle();
 });
 
@@ -796,48 +923,19 @@ function getClienteRfc(): string {
   return '';
 }
 
-function getSedeNombre(): string {
-  if (!cotizacionDetalle.value) return '';
-  const sede = cotizacionDetalle.value.sedeId;
-  if (typeof sede === 'object' && sede !== null) {
-    return sede.ciudad || sede.clave || '';
-  }
-  return '';
-}
-
 function getUsuarioClienteNombre(): string {
   if (!cotizacionDetalle.value) return '';
-  const usuarioCliente = cotizacionDetalle.value.usuarioClienteId;
-  if (typeof usuarioCliente === 'object' && usuarioCliente !== null) {
-    return (usuarioCliente as UsuarioCliente).nombre || '';
-  }
-  // Fallback para cotizaciones guest
-  if ((cotizacionDetalle.value as any).nombreContacto) {
-    return (cotizacionDetalle.value as any).nombreContacto;
-  }
-  return '';
+  return cotizacionDetalle.value.nombreContacto?.trim() || '';
 }
 
 function getUsuarioClienteEmail(): string {
   if (!cotizacionDetalle.value) return '';
-  const usuarioCliente = cotizacionDetalle.value.usuarioClienteId;
-  if (typeof usuarioCliente === 'object' && usuarioCliente !== null) {
-    return (usuarioCliente as UsuarioCliente).email || '';
-  }
-  return '';
+  return cotizacionDetalle.value.emailContacto || '';
 }
 
 function getUsuarioClienteTelefono(): string {
   if (!cotizacionDetalle.value) return '';
-  const usuarioCliente = cotizacionDetalle.value.usuarioClienteId;
-  if (typeof usuarioCliente === 'object' && usuarioCliente !== null) {
-    return (usuarioCliente as UsuarioCliente).telefono || '';
-  }
-  // Fallback para cotizaciones guest
-  if ((cotizacionDetalle.value as any).telefonoContacto) {
-    return (cotizacionDetalle.value as any).telefonoContacto;
-  }
-  return '';
+  return cotizacionDetalle.value.telefonoContacto || '';
 }
 
 function getPersonasAEvaluar(): string {
@@ -905,16 +1003,25 @@ function getEstadoBadgeClass(estado: string): string {
 
 function getEstadoTimestamp(estado: string): Date | string | undefined {
   if (!cotizacionDetalle.value) return undefined;
-  
+
   switch (estado) {
     case 'vigente':
-      return cotizacionDetalle.value.fechaEstadoVigente || cotizacionDetalle.value.fechaCreacion;
+      return (
+        cotizacionDetalle.value.fechaEstadoVigente ||
+        cotizacionDetalle.value.fechaCreacion
+      );
     case 'vencida':
       return cotizacionDetalle.value.fechaEstadoVencida;
     case 'aceptada':
-      return cotizacionDetalle.value.fechaEstadoAceptada || cotizacionDetalle.value.fechaAceptacion;
+      return (
+        cotizacionDetalle.value.fechaEstadoAceptada ||
+        cotizacionDetalle.value.fechaAceptacion
+      );
     case 'rechazada':
-      return cotizacionDetalle.value.fechaEstadoRechazada || cotizacionDetalle.value.fechaRechazo;
+      return (
+        cotizacionDetalle.value.fechaEstadoRechazada ||
+        cotizacionDetalle.value.fechaRechazo
+      );
     default:
       return cotizacionDetalle.value.fechaCreacion;
   }
@@ -923,6 +1030,7 @@ function getEstadoTimestamp(estado: string): Date | string | undefined {
 function formatDateTime(date: Date | string | undefined): string {
   if (!date) return '-';
   const d = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return '-';
   return d.toLocaleString('es-MX', {
     year: 'numeric',
     month: 'short',
@@ -932,55 +1040,275 @@ function formatDateTime(date: Date | string | undefined): string {
   });
 }
 
-async function handleDownloadPDF(): Promise<void> {
-  if (!cotizacionDetalle.value) return;
-  await downloadCotizacionPDF(cotizacionDetalle.value);
+/** Solo fecha (microcopy cron EXPERIENCE / AC4). */
+function formatDateOnly(date: Date | string | undefined): string {
+  if (!date) return '-';
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (Number.isNaN(d.getTime())) return '-';
+  return d.toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 }
 
-// Logic for Acceptance/Rejection
-import { aceptarCotizacionAdmin, rechazarCotizacionAdmin, type AceptarCotizacionAdminPayload } from '../../services/admin-api.service';
-import { ref } from 'vue';
+async function handleDownloadPDF(): Promise<void> {
+  if (!cotizacionDetalle.value || isPdfBusy.value) return;
+  try {
+    isPdfBusy.value = true;
+    await downloadCotizacionPDF(cotizacionDetalle.value);
+  } finally {
+    isPdfBusy.value = false;
+  }
+}
+
+async function handlePreviewPDF(): Promise<void> {
+  if (!cotizacionDetalle.value || isPdfBusy.value) return;
+  try {
+    isPdfBusy.value = true;
+    await previewCotizacionPDF(cotizacionDetalle.value);
+  } finally {
+    isPdfBusy.value = false;
+  }
+}
+
+// Logic for Acceptance/Rejection + Más acciones (Story 6.10) + Repetir (6.12)
+import {
+  aceptarCotizacionAdmin,
+  rechazarCotizacionAdmin,
+  cambiarEstadoCotizacion,
+  repetirCotizacion,
+  getServicios,
+  type ModoPreciosRepetir,
+  type RepetirCotizacionWarning,
+} from '../../services/admin-api.service';
 
 const isProcessing = ref(false);
-const showModalTrabajadores = ref(false);
 const showConfirmRechazo = ref(false);
+const showMasAcciones = ref(false);
+const showConfirmEstado = ref(false);
+const estadoPendiente = ref<EstadoCotizacion | null>(null);
 const successMessage = ref<string | null>(null);
 
-const totalTrabajadoresRequeridos = computed(() => {
-  if (!cotizacionDetalle.value?.items) return 0;
-  return cotizacionDetalle.value.items.reduce((acc, item) => acc + item.cantidad, 0);
+const ESTADOS_REPETIBLES: EstadoCotizacion[] = [
+  'vigente',
+  'vencida',
+  'aceptada',
+  'rechazada',
+];
+const puedeRepetir = computed(() => {
+  const e = cotizacionDetalle.value?.estado;
+  return !!e && ESTADOS_REPETIBLES.includes(e as EstadoCotizacion);
 });
 
-async function handleAceptar() {
-  if (!cotizacionDetalle.value) return;
-  
-  // Validar si hay trabajadores requeridos
-  if (totalTrabajadoresRequeridos.value > 0) {
-    showModalTrabajadores.value = true;
-    return;
+const showRepetirModo = ref(false);
+const showRepetirWarnings = ref(false);
+const repetirModo = ref<ModoPreciosRepetir | null>(null);
+const repetirWarnings = ref<RepetirCotizacionWarning[]>([]);
+const omitirIds = reactive<Record<string, boolean>>({});
+const sustitucionesMap = reactive<Record<string, string>>({});
+const serviciosActivos = ref<Servicio[]>([]);
+
+const puedeConfirmarWarnings = computed(() => {
+  if (!repetirWarnings.value.length) return false;
+  const todosResueltos = repetirWarnings.value.every((w) => {
+    if (omitirIds[w.servicioId]) return true;
+    return !!sustitucionesMap[w.servicioId];
+  });
+  if (!todosResueltos) return false;
+
+  // No confirmar si omitir dejaría 0 ítems (mismo criterio BE).
+  const items = cotizacionDetalle.value?.items || [];
+  const warningIds = new Set(repetirWarnings.value.map((w) => w.servicioId));
+  const omitIds = new Set(
+    repetirWarnings.value
+      .filter((w) => omitirIds[w.servicioId])
+      .map((w) => w.servicioId),
+  );
+  let restantes = 0;
+  for (const it of items) {
+    const sid = itemServicioId(it.servicioId);
+    if (!sid) continue;
+    if (omitIds.has(sid)) continue;
+    if (warningIds.has(sid) && !sustitucionesMap[sid]) continue;
+    restantes += 1;
   }
+  return restantes >= 1;
+});
 
-  await procesarAceptacion([]);
+function itemServicioId(
+  servicioId: string | Servicio | undefined,
+): string {
+  if (!servicioId) return '';
+  if (typeof servicioId === 'string') return servicioId;
+  return String((servicioId as Servicio)._id || '');
 }
 
-async function handleConfirmarTrabajadores(trabajadores: CreateTrabajadorDto[]) {
-  showModalTrabajadores.value = false;
-  await procesarAceptacion(trabajadores);
+function nombreItemFuente(servicioId: string): string {
+  const items = cotizacionDetalle.value?.items || [];
+  const hit = items.find((it) => itemServicioId(it.servicioId) === servicioId);
+  return hit?.nombreServicioSnapshot || '';
 }
 
-async function procesarAceptacion(trabajadores: CreateTrabajadorDto[]) {
-  if (!cotizacionDetalle.value) return;
+function parseRepetirWarnings(err: unknown): RepetirCotizacionWarning[] | null {
+  const data = (err as { response?: { data?: any } })?.response?.data;
+  if (!data) return null;
+  if (Array.isArray(data.warnings)) return data.warnings;
+  if (data.message && Array.isArray(data.message.warnings)) {
+    return data.message.warnings;
+  }
+  return null;
+}
 
+function abrirRepetir() {
+  if (isProcessing.value || !puedeRepetir.value) return;
+  showMasAcciones.value = false;
+  repetirWarnings.value = [];
+  repetirModo.value = null;
+  Object.keys(omitirIds).forEach((k) => delete omitirIds[k]);
+  Object.keys(sustitucionesMap).forEach((k) => delete sustitucionesMap[k]);
+  showRepetirModo.value = true;
+}
+
+function cerrarRepetir() {
+  if (isProcessing.value) return;
+  showRepetirModo.value = false;
+  showRepetirWarnings.value = false;
+  repetirModo.value = null;
+  repetirWarnings.value = [];
+  Object.keys(omitirIds).forEach((k) => delete omitirIds[k]);
+  Object.keys(sustitucionesMap).forEach((k) => delete sustitucionesMap[k]);
+}
+
+function onOmitirChange(servicioId: string) {
+  if (omitirIds[servicioId]) {
+    sustitucionesMap[servicioId] = '';
+  }
+}
+
+async function loadServiciosActivos() {
+  try {
+    const res = await getServicios({ activo: true, page: 1, limit: 100 });
+    serviciosActivos.value = res.data || [];
+  } catch (e) {
+    console.error('Error al cargar servicios para sustituir:', e);
+    serviciosActivos.value = [];
+  }
+}
+
+async function ejecutarRepetir(payload: {
+  modoPrecios: ModoPreciosRepetir;
+  omitirServicioIds?: string[];
+  sustituciones?: Array<{ fromServicioId: string; toServicioId: string }>;
+}) {
+  if (!cotizacionDetalle.value || isProcessing.value) return;
   isProcessing.value = true;
   successMessage.value = null;
+  const fuenteId = cotizacionDetalle.value._id;
   try {
-    const payload: AceptarCotizacionAdminPayload = { trabajadores };
-    await aceptarCotizacionAdmin(cotizacionDetalle.value._id, payload);
-    await obtenerCotizacionAdmin(cotizacionDetalle.value._id); // Refresh
-    successMessage.value = 'Cotización aceptada correctamente. Se ha creado la Orden de Trabajo.';
-    setTimeout(() => {
-      successMessage.value = null;
-    }, 5000);
+    const nueva = await repetirCotizacion(fuenteId, payload);
+    showRepetirModo.value = false;
+    showRepetirWarnings.value = false;
+    await router.push({
+      name: 'admin-cotizacion-detalle',
+      params: { id: nueva._id },
+    });
+  } catch (error) {
+    const warnings = parseRepetirWarnings(error);
+    if (warnings?.length) {
+      // Liberar UI antes de cargar catálogo para que Cancelar responda.
+      isProcessing.value = false;
+      repetirModo.value = payload.modoPrecios;
+      repetirWarnings.value = warnings;
+      for (const w of warnings) {
+        if (omitirIds[w.servicioId] === undefined) {
+          omitirIds[w.servicioId] = false;
+        }
+        if (sustitucionesMap[w.servicioId] === undefined) {
+          sustitucionesMap[w.servicioId] = '';
+        }
+      }
+      showRepetirModo.value = false;
+      showRepetirWarnings.value = true;
+      await loadServiciosActivos();
+      return;
+    }
+    console.error('Error al repetir cotización:', error);
+    alert('Ocurrió un error al repetir la cotización.');
+  } finally {
+    isProcessing.value = false;
+  }
+}
+
+async function confirmarRepetirModo(modo: ModoPreciosRepetir) {
+  repetirModo.value = modo;
+  await ejecutarRepetir({ modoPrecios: modo });
+}
+
+async function confirmarRepetirConResoluciones() {
+  if (!repetirModo.value || !puedeConfirmarWarnings.value) return;
+  const omitirServicioIds = repetirWarnings.value
+    .filter((w) => omitirIds[w.servicioId])
+    .map((w) => w.servicioId);
+  const sustituciones = repetirWarnings.value
+    .filter((w) => !omitirIds[w.servicioId] && sustitucionesMap[w.servicioId])
+    .map((w) => ({
+      fromServicioId: w.servicioId,
+      toServicioId: sustitucionesMap[w.servicioId],
+    }));
+  await ejecutarRepetir({
+    modoPrecios: repetirModo.value,
+    omitirServicioIds,
+    sustituciones,
+  });
+}
+
+const confirmEstadoTitle = computed(() =>
+  estadoPendiente.value
+    ? `¿Marcar como ${getEstadoLabel(estadoPendiente.value)}?`
+    : '¿Cambiar estado?',
+);
+const confirmEstadoMessage = computed(() => {
+  if (estadoPendiente.value === 'vigente') {
+    return 'Se marcará como vigente y se extenderá la fecha de vencimiento según la vigencia del tenant. No se enviará notificación por correo.';
+  }
+  return 'Se actualizará el estado de la cotización. No se enviará notificación por correo.';
+});
+
+function flashSuccess(msg: string) {
+  successMessage.value = msg;
+  if (flashTimer != null) clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => {
+    successMessage.value = null;
+    flashTimer = null;
+  }, 5000);
+}
+
+async function reloadDetalleAfterMutation(id: string): Promise<boolean> {
+  try {
+    await obtenerCotizacionAdmin(id);
+    return true;
+  } catch (reloadErr) {
+    console.error('Estado persistido; fallo al recargar detalle:', reloadErr);
+    return false;
+  }
+}
+
+async function handleAceptar() {
+  if (!cotizacionDetalle.value || isProcessing.value) return;
+
+  showMasAcciones.value = false;
+  isProcessing.value = true;
+  successMessage.value = null;
+  const id = cotizacionDetalle.value._id;
+  try {
+    await aceptarCotizacionAdmin(id, {});
+    const reloaded = await reloadDetalleAfterMutation(id);
+    flashSuccess(
+      reloaded
+        ? 'Estado actualizado a Aceptada.'
+        : 'Estado actualizado a Aceptada. Recarga la página para ver el detalle.',
+    );
   } catch (error) {
     console.error('Error al aceptar cotización:', error);
     alert('Ocurrió un error al aceptar la cotización.');
@@ -995,21 +1323,63 @@ async function handleRechazar() {
 }
 
 async function confirmarRechazo() {
-  if (!cotizacionDetalle.value) return;
+  if (!cotizacionDetalle.value || isProcessing.value) return;
   showConfirmRechazo.value = false;
 
   isProcessing.value = true;
   successMessage.value = null;
+  const id = cotizacionDetalle.value._id;
   try {
-    await rechazarCotizacionAdmin(cotizacionDetalle.value._id);
-    await obtenerCotizacionAdmin(cotizacionDetalle.value._id); // Refresh
-    successMessage.value = 'Cotización rechazada correctamente.';
-    setTimeout(() => {
-      successMessage.value = null;
-    }, 5000);
+    await rechazarCotizacionAdmin(id);
+    const reloaded = await reloadDetalleAfterMutation(id);
+    flashSuccess(
+      reloaded
+        ? 'Estado actualizado a Rechazada.'
+        : 'Estado actualizado a Rechazada. Recarga la página para ver el detalle.',
+    );
   } catch (error) {
     console.error('Error al rechazar cotización:', error);
     alert('Ocurrió un error al rechazar la cotización.');
+  } finally {
+    isProcessing.value = false;
+  }
+}
+
+function pedirCambioEstado(estado: EstadoCotizacion) {
+  if (isProcessing.value) return;
+  showMasAcciones.value = false;
+  estadoPendiente.value = estado;
+  showConfirmEstado.value = true;
+}
+
+function cancelarCambioEstado() {
+  showConfirmEstado.value = false;
+  estadoPendiente.value = null;
+}
+
+async function confirmarCambioEstado() {
+  if (!cotizacionDetalle.value || !estadoPendiente.value || isProcessing.value) {
+    return;
+  }
+  const destino = estadoPendiente.value;
+  showConfirmEstado.value = false;
+  estadoPendiente.value = null;
+
+  isProcessing.value = true;
+  successMessage.value = null;
+  const id = cotizacionDetalle.value._id;
+  try {
+    await cambiarEstadoCotizacion(id, destino);
+    const reloaded = await reloadDetalleAfterMutation(id);
+    const label = getEstadoLabel(destino);
+    flashSuccess(
+      reloaded
+        ? `Estado actualizado a ${label}.`
+        : `Estado actualizado a ${label}. Recarga la página para ver el detalle.`,
+    );
+  } catch (error) {
+    console.error('Error al cambiar estado:', error);
+    alert('Ocurrió un error al cambiar el estado.');
   } finally {
     isProcessing.value = false;
   }

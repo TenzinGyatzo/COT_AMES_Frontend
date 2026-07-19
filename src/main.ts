@@ -23,9 +23,11 @@ const app = createApp(App);
 app.use(pinia);
 app.use(router);
 
-// Cargar estado de autenticación desde localStorage antes de montar
+// Cargar sesión (+ tenant admin revalidado) antes de montar para evitar
+// llamadas de negocio sin X-Tenant-Id en cold start (AD-2 / Story 1.5).
 const authStore = useAuthStore();
-authStore.loadFromStorage();
 
-// Montar la aplicación en el elemento #app
-app.mount('#app');
+void (async () => {
+  await authStore.loadFromStorage();
+  app.mount('#app');
+})();

@@ -1,12 +1,28 @@
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl md:text-3xl font-bold text-gray-900">
+  <div class="max-w-3xl lg:max-w-7xl mx-auto py-2 sm:py-4">
+    <div
+      v-if="cotizacion?.branding?.razonSocial || cotizacion?.branding?.logoUrl"
+      class="mb-4 flex items-center gap-3"
+    >
+      <img
+        v-if="cotizacion.branding?.logoUrl"
+        :src="cotizacion.branding.logoUrl"
+        alt=""
+        class="h-10 w-10 object-contain rounded"
+      />
+      <p class="text-sm font-semibold text-gray-700">
+        {{ cotizacion.branding?.razonSocial || 'Cotización' }}
+      </p>
+    </div>
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
         Detalle de Cotización
       </h1>
-      <div v-if="cotizacion" class="text-right">
+      <div v-if="cotizacion" class="sm:text-right">
         <p class="text-sm font-medium text-gray-500">Folio</p>
-        <p class="text-lg font-mono font-bold text-medical-blue-600">{{ cotizacion.folio }}</p>
+        <p class="text-lg font-mono font-bold text-medical-blue-600">
+          {{ cotizacion.folio }}
+        </p>
       </div>
     </div>
 
@@ -17,8 +33,16 @@
     >
       <div class="flex">
         <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+          <svg
+            class="h-5 w-5 text-red-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
           </svg>
         </div>
         <div class="ml-3">
@@ -34,8 +58,16 @@
     >
       <div class="flex">
         <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          <svg
+            class="h-5 w-5 text-green-400"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
           </svg>
         </div>
         <div class="ml-3">
@@ -55,7 +87,9 @@
         :class="getEstadoBannerClass(cotizacion.estado)"
         class="rounded-xl border shadow-sm p-6"
       >
-        <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div
+          class="flex flex-col md:flex-row items-center justify-between gap-6"
+        >
           <div class="flex items-center gap-5">
             <div
               :class="getEstadoIconClass(cotizacion.estado)"
@@ -68,7 +102,12 @@
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <svg
                 v-else-if="cotizacion.estado === 'aceptada'"
@@ -77,7 +116,12 @@
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <svg
                 v-else-if="cotizacion.estado === 'vencida'"
@@ -86,7 +130,12 @@
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
               </svg>
               <svg
                 v-else-if="cotizacion.estado === 'rechazada'"
@@ -95,7 +144,12 @@
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </div>
             <div>
@@ -112,7 +166,10 @@
             </div>
           </div>
 
-          <div v-if="cotizacion.estado === 'vigente' && !successMessage" class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+          <div
+            v-if="canRespond"
+            class="flex flex-col sm:flex-row gap-3 w-full md:w-auto"
+          >
             <BaseButtonLoader
               variant="primary"
               size="lg"
@@ -142,15 +199,29 @@
         <div class="lg:col-span-2 space-y-6">
           <!-- Detalles Generales -->
           <div class="bg-white shadow-sm border border-gray-100 rounded-xl p-6">
-            <div class="flex items-center justify-between mb-6 pb-4 border-b border-gray-50">
-              <h2 class="text-xl font-bold text-gray-800">Resumen del Servicio</h2>
+            <div
+              class="flex items-center justify-between mb-6 pb-4 border-b border-gray-50"
+            >
+              <h2 class="text-xl font-bold text-gray-800">
+                Resumen del Servicio
+              </h2>
               <button
                 @click="handleDownloadPDF"
                 class="inline-flex items-center text-medical-blue-600 hover:text-medical-blue-800 font-medium transition-colors"
                 title="Descargar versión PDF"
               >
-                <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                <svg
+                  class="w-5 h-5 mr-1.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                  />
                 </svg>
                 Descargar PDF
               </button>
@@ -158,50 +229,113 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-6 gap-x-4">
               <div>
-                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Empresa / Cliente</p>
-                <p class="text-gray-900 font-medium">{{ cotizacion.nombreEmpresa || 'No especificada' }}</p>
+                <p
+                  class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1"
+                >
+                  Empresa / Cliente
+                </p>
+                <p class="text-gray-900 font-medium">
+                  {{ cotizacion.nombreEmpresa || 'No especificada' }}
+                </p>
               </div>
               <div>
-                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Sede de atención</p>
-                <p class="text-gray-900 font-medium">{{ cotizacion.sedeId?.ciudad || '-' }}</p>
+                <p
+                  class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1"
+                >
+                  Contacto Solicitante
+                </p>
+                <p class="text-gray-900 font-medium">
+                  {{ cotizacion.nombreContacto || 'No especificado' }}
+                </p>
+              </div>
+              <div v-if="cotizacion.telefonoContacto">
+                <p
+                  class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1"
+                >
+                  Teléfono
+                </p>
+                <p class="text-gray-900 font-medium">
+                  {{ cotizacion.telefonoContacto }}
+                </p>
               </div>
               <div>
-                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Contacto Solicitante</p>
-                <p class="text-gray-900 font-medium">{{ cotizacion.nombreContacto || 'No especificado' }}</p>
-              </div>
-              <div>
-                <p class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1">Correo Electrónico</p>
-                <p class="text-gray-900 font-medium">{{ cotizacion.emailContacto || '-' }}</p>
+                <p
+                  class="text-xs uppercase tracking-wider text-gray-400 font-semibold mb-1"
+                >
+                  Vigencia
+                </p>
+                <p class="text-gray-900 font-medium">
+                  {{ formatDate(cotizacion.fechaVencimiento) }}
+                </p>
               </div>
             </div>
           </div>
 
           <!-- Servicios Cotizados -->
-          <div class="bg-white shadow-sm border border-gray-100 rounded-xl overflow-hidden">
+          <div
+            class="bg-white shadow-sm border border-gray-100 rounded-xl overflow-hidden"
+          >
             <div class="p-6 pb-2 border-b border-gray-50 bg-gray-50/50">
-              <h2 class="text-lg font-bold text-gray-800">Servicios Detallados</h2>
+              <h2 class="text-lg font-bold text-gray-800">
+                Servicios Detallados
+              </h2>
             </div>
             <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-100">
                 <thead class="bg-gray-50/80">
                   <tr>
-                    <th class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Servicio</th>
-                    <th class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider">Cant.</th>
-                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-32">P. Unitario</th>
-                    <th class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-20">Subtotal</th>
+                    <th
+                      class="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Servicio
+                    </th>
+                    <th
+                      class="px-6 py-3 text-center text-xs font-bold text-gray-500 uppercase tracking-wider"
+                    >
+                      Cant.
+                    </th>
+                    <th
+                      class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-32"
+                    >
+                      P. Unitario
+                    </th>
+                    <th
+                      class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-20"
+                    >
+                      Subtotal
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-50 bg-white">
-                  <tr v-for="(item, index) in cotizacion.items" :key="index" class="hover:bg-medical-blue-50/30 transition-colors">
+                  <tr
+                    v-for="(item, index) in cotizacion.items"
+                    :key="index"
+                    class="hover:bg-medical-blue-50/30 transition-colors"
+                  >
                     <td class="px-6 py-4">
-                      <p class="text-sm font-bold text-gray-900">{{ item.nombreServicioSnapshot }}</p>
-                      <p v-if="item.descripcionServicioSnapshot" class="text-xs text-gray-500 mt-1 line-clamp-5 italic">
-                        {{ item.descripcionServicioSnapshot }}
+                      <p class="text-sm font-bold text-gray-900">
+                        {{ item.nombre }}
+                      </p>
+                      <p
+                        v-if="item.descripcion"
+                        class="text-xs text-gray-500 mt-1 line-clamp-5 italic"
+                      >
+                        {{ item.descripcion }}
                       </p>
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600 text-center font-medium">{{ item.cantidad }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-600 text-right">{{ formatCurrency(item.precioUnitarioSnapshot) }}</td>
-                    <td class="px-6 py-4 text-sm text-gray-900 text-right font-bold">{{ formatCurrency(item.subtotal) }}</td>
+                    <td
+                      class="px-6 py-4 text-sm text-gray-600 text-center font-medium"
+                    >
+                      {{ item.cantidad }}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-600 text-right">
+                      {{ formatCurrency(item.precioUnitario) }}
+                    </td>
+                    <td
+                      class="px-6 py-4 text-sm text-gray-900 text-right font-bold"
+                    >
+                      {{ formatCurrency(item.subtotal) }}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -211,34 +345,49 @@
 
         <!-- Columna Derecha: Totales -->
         <div class="space-y-6">
-          <div class="bg-white shadow-md border border-medical-blue-100 rounded-xl p-6 sticky top-6">
-            <h2 class="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-2">Resumen de Pago</h2>
+          <div
+            class="bg-white shadow-md border border-medical-blue-100 rounded-xl p-6 sticky top-6"
+          >
+            <h2
+              class="text-xl font-bold text-gray-900 mb-6 border-b border-gray-100 pb-2"
+            >
+              Resumen de Pago
+            </h2>
             <div class="space-y-4">
-              <div v-if="cotizacion.ordenTrabajofolio || cotizacion.ordenTrabajoFolio" class="bg-green-50 border border-green-100 rounded-lg p-3 mb-4">
-                <p class="text-[10px] text-green-600 font-bold uppercase tracking-widest mb-1">Orden Generada</p>
-                <p class="text-green-800 font-mono font-black text-sm">{{ cotizacion.ordenTrabajofolio || cotizacion.ordenTrabajoFolio }}</p>
-              </div>
-              
               <div class="flex justify-between items-center py-2">
                 <span class="text-gray-500 font-medium">Subtotal</span>
-                <span class="text-gray-900 font-bold">{{ formatCurrency(cotizacion.total) }}</span>
+                <span class="text-gray-900 font-bold">{{
+                  formatCurrency(cotizacion.total)
+                }}</span>
               </div>
               <div class="flex justify-between items-center py-2">
                 <span class="text-gray-500 font-medium">I.V.A (16%)</span>
-                <span class="text-gray-900 font-bold">{{ formatCurrency(iva) }}</span>
+                <span class="text-gray-900 font-bold">{{
+                  formatCurrency(iva)
+                }}</span>
               </div>
               <div class="pt-4 border-t-2 border-gray-50">
                 <div class="flex justify-between items-center">
-                  <span class="text-medical-blue-600 font-black text-lg">TOTAL</span>
-                  <span class="text-medical-blue-700 font-black text-2xl">{{ formatCurrency(grandTotal) }}</span>
+                  <span class="text-medical-blue-600 font-black text-lg"
+                    >TOTAL</span
+                  >
+                  <span class="text-medical-blue-700 font-black text-2xl">{{
+                    formatCurrency(grandTotal)
+                  }}</span>
                 </div>
-                <p class="text-right text-[10px] text-gray-400 mt-1 font-bold">MONEDA: {{ cotizacion.moneda }}</p>
+                <p class="text-right text-[10px] text-gray-400 mt-1 font-bold">
+                  MONEDA: {{ cotizacion.moneda }}
+                </p>
               </div>
             </div>
 
-            <div v-if="cotizacion.estado === 'vigente' && !successMessage" class="mt-8 pt-6 border-t border-gray-50 space-y-4">
+            <div
+              v-if="canRespond"
+              class="mt-8 pt-6 border-t border-gray-50 space-y-4"
+            >
               <p class="text-xs text-center text-gray-500 font-medium italic">
-                Al aceptar esta cotización, confirmas tu solicitud para los servicios listados.
+                Al aceptar esta cotización, confirmas tu solicitud para los
+                servicios listados.
               </p>
               <BaseButtonLoader
                 variant="primary"
@@ -257,15 +406,6 @@
     </div>
 
     <!-- Modales -->
-    <ModalTrabajadores
-      v-if="cotizacion"
-      :mostrar="showModalTrabajadores"
-      :max-trabajadores="totalServicios"
-      :cotizacion-folio="cotizacion.folio"
-      @close="showModalTrabajadores = false"
-      @confirm="handleAceptarFinal"
-    />
-
     <ConfirmationModal
       :show="showRechazarConfirm"
       title="Rechazar Cotización"
@@ -282,34 +422,70 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { publicApiService } from '../services/public-api.service';
-import ModalTrabajadores from '../components/common/ModalTrabajadores.vue';
 import ConfirmationModal from '../components/common/ConfirmationModal.vue';
 import { downloadCotizacionPDF } from '../utils/pdfHelper';
 import BaseSectionLoader from '../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../components/base/BaseButtonLoader.vue';
+import type {
+  CotizacionDetalleDto,
+  PublicCotizacionResponse,
+} from '../types/backend';
 
 const route = useRoute();
 const token = route.params.token as string;
 
-const cotizacion = ref<any>(null);
+const cotizacion = ref<PublicCotizacionResponse | null>(null);
 const isLoading = ref(true);
 const isProcessing = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
 
-const showModalTrabajadores = ref(false);
 const showRechazarConfirm = ref(false);
+
+function publicErrorMessage(err: unknown, fallback: string): string {
+  const e = err as {
+    response?: { status?: number; data?: { message?: string | string[] } };
+  };
+  const status = e.response?.status;
+  const raw = e.response?.data?.message;
+  const msg = Array.isArray(raw) ? raw.join(', ') : raw;
+  if (status === 401 || status === 410) {
+    return msg || 'Este enlace ha expirado y ya no es válido.';
+  }
+  if (status === 404) {
+    return msg || 'Este enlace no es válido o la cotización no existe.';
+  }
+  if (status === 400) {
+    return msg || 'No se puede responder esta cotización en su estado actual.';
+  }
+  return msg || fallback;
+}
+
+const canRespond = computed(() => {
+  const c = cotizacion.value;
+  if (!c || c.estado !== 'vigente' || successMessage.value) return false;
+  const due = Date.parse(c.fechaVencimiento);
+  if (Number.isNaN(due)) return false;
+  return due >= Date.now();
+});
 
 const fetchCotizacion = async () => {
   try {
     isLoading.value = true;
     error.value = null;
     cotizacion.value = await publicApiService.getCotizacionByToken(token);
-    // Limpiar error anterior si la carga fue exitosa
-    if (cotizacion.value) error.value = null;
-  } catch (err: any) {
+    if (cotizacion.value?.estado === 'aceptada') {
+      successMessage.value = 'Esta cotización ya fue aceptada.';
+    } else if (cotizacion.value?.estado === 'rechazada') {
+      successMessage.value = 'Esta cotización ya fue rechazada.';
+    }
+  } catch (err: unknown) {
     console.error('Error al cargar cotización:', err);
-    error.value = err.response?.data?.message || 'Hubo un problema al cargar la cotización.';
+    cotizacion.value = null;
+    error.value = publicErrorMessage(
+      err,
+      'Hubo un problema al cargar la cotización.',
+    );
   } finally {
     isLoading.value = false;
   }
@@ -319,20 +495,14 @@ onMounted(() => {
   if (token) {
     fetchCotizacion();
   } else {
-    error.value = 'Token de acceso no proporcionado.';
+    error.value = 'Enlace de acceso no proporcionado.';
     isLoading.value = false;
   }
 });
 
-// Cálculos
 const iva = computed(() => (cotizacion.value?.total || 0) * 0.16);
 const grandTotal = computed(() => (cotizacion.value?.total || 0) + iva.value);
-const totalServicios = computed(() => {
-  if (!cotizacion.value) return 0;
-  return cotizacion.value.items.reduce((sum: number, item: any) => sum + item.cantidad, 0);
-});
 
-// Formateadores
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
@@ -340,9 +510,10 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const formatDate = (dateString: string) => {
+const formatDate = (dateString?: string) => {
   if (!dateString) return '-';
   const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return '-';
   return new Intl.DateTimeFormat('es-MX', {
     day: '2-digit',
     month: 'long',
@@ -350,30 +521,28 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-// Handlers
-const prepareAceptar = () => {
-  showModalTrabajadores.value = true;
-};
-
-const handleAceptarFinal = async (trabajadoresData: any[]) => {
+const prepareAceptar = async () => {
+  if (isProcessing.value) return;
   try {
     isProcessing.value = true;
     error.value = null;
     successMessage.value = null;
-    showModalTrabajadores.value = false;
-    
-    const updated = await publicApiService.aceptarCotizacionByToken(token, trabajadoresData);
+
+    const updated = await publicApiService.aceptarCotizacionByToken(token);
     cotizacion.value = updated;
-    
-    successMessage.value = '¡Cotización aceptada con éxito! Te contactaremos pronto.';
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Error al aceptar la cotización.';
+
+    successMessage.value = updated.alreadyResponded
+      ? 'Esta cotización ya había sido aceptada.'
+      : '¡Cotización aceptada con éxito! Te contactaremos pronto.';
+  } catch (err: unknown) {
+    error.value = publicErrorMessage(err, 'Error al aceptar la cotización.');
   } finally {
     isProcessing.value = false;
   }
 };
 
 const handleRechazar = async () => {
+  if (isProcessing.value) return;
   try {
     isProcessing.value = true;
     error.value = null;
@@ -382,28 +551,56 @@ const handleRechazar = async () => {
 
     const updated = await publicApiService.rechazarCotizacionByToken(token);
     cotizacion.value = updated;
-    
-    successMessage.value = 'Has rechazado la cotización.';
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Error al rechazar la cotización.';
+
+    successMessage.value = updated.alreadyResponded
+      ? 'Esta cotización ya había sido rechazada.'
+      : 'Has rechazado la cotización.';
+  } catch (err: unknown) {
+    error.value = publicErrorMessage(err, 'Error al rechazar la cotización.');
   } finally {
     isProcessing.value = false;
   }
 };
 
+/** Adapta DTO público al shape que espera pdfHelper (sin exigir JWT). */
+function toPdfShape(c: PublicCotizacionResponse): CotizacionDetalleDto {
+  return {
+    _id: 'public',
+    folio: c.folio,
+    clienteId: '',
+    emailContacto: '',
+    total: c.total,
+    moneda: c.moneda || 'MXN',
+    estado: (c.estado as CotizacionDetalleDto['estado']) || 'vigente',
+    fechaCreacion: c.fechaCreacion,
+    fechaVencimiento: c.fechaVencimiento,
+    nombreEmpresa: c.nombreEmpresa,
+    nombreContacto: c.nombreContacto,
+    telefonoContacto: c.telefonoContacto,
+    personasAEvaluar: c.personasAEvaluar,
+    items: (c.items || []).map((it) => ({
+      servicioId: 'public',
+      nombreServicioSnapshot: it.nombre,
+      descripcionServicioSnapshot: it.descripcion,
+      cantidad: it.cantidad,
+      precioUnitarioSnapshot: it.precioUnitario,
+      subtotal: it.subtotal,
+    })),
+  };
+}
+
 const handleDownloadPDF = async () => {
   if (!cotizacion.value) return;
   try {
-    await downloadCotizacionPDF(cotizacion.value);
+    await downloadCotizacionPDF(toPdfShape(cotizacion.value));
   } catch (err) {
     console.error('Error al descargar PDF:', err);
     alert('No se pudo generar el PDF en este momento.');
   }
 };
 
-// Helper Classes (Copying from AdminView for consistency)
 const getEstadoLabel = (estado: string) => {
-  const labels: any = {
+  const labels: Record<string, string> = {
     vigente: 'Vigente',
     aceptada: 'Aceptada',
     vencida: 'Vencida',
@@ -412,12 +609,16 @@ const getEstadoLabel = (estado: string) => {
   return labels[estado] || estado;
 };
 
-const getEstadoSublabel = (cot: any) => {
+const getEstadoSublabel = (cot: PublicCotizacionResponse | null) => {
   if (!cot) return '';
-  if (cot.estado === 'vigente') return `Vence el: ${formatDate(cot.fechaVencimiento)}`;
-  if (cot.estado === 'aceptada') return `Aceptada el: ${formatDate(cot.fechaAceptacion)}`;
-  if (cot.estado === 'rechazada') return `Rechazada el: ${formatDate(cot.fechaRechazo)}`;
-  if (cot.estado === 'vencida') return `Expiró el: ${formatDate(cot.fechaVencimiento)}`;
+  if (cot.estado === 'vigente')
+    return `Vence el: ${formatDate(cot.fechaVencimiento)}`;
+  if (cot.estado === 'aceptada')
+    return `Aceptada el: ${formatDate(cot.fechaAceptacion)}`;
+  if (cot.estado === 'rechazada')
+    return `Rechazada el: ${formatDate(cot.fechaRechazo)}`;
+  if (cot.estado === 'vencida')
+    return `Expiró el: ${formatDate(cot.fechaVencimiento)}`;
   return '';
 };
 

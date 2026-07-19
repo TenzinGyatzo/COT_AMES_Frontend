@@ -20,7 +20,7 @@
           <select
             v-model="filters.estado"
             class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-            @change="loadCotizaciones"
+            @change="onFilterChange"
           >
             <option :value="undefined">Todos</option>
             <option value="vigente">Vigente</option>
@@ -36,7 +36,7 @@
           <input
             v-model="filters.search"
             type="text"
-            placeholder="Buscar por folio, empresa, estado, sede, solicitante..."
+            placeholder="Buscar por folio, empresa, solicitante..."
             class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
             @input="handleSearchChange"
           />
@@ -49,7 +49,7 @@
             v-model="filters.fechaDesde"
             type="date"
             class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-            @change="loadCotizaciones"
+            @change="onFilterChange"
           />
         </div>
         <div>
@@ -60,7 +60,7 @@
             v-model="filters.fechaHasta"
             type="date"
             class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-            @change="loadCotizaciones"
+            @change="onFilterChange"
           />
         </div>
       </div>
@@ -77,7 +77,7 @@
         v-if="resumenCotizaciones.length === 0"
         class="bg-white shadow-md rounded-lg p-8 text-center"
       >
-        <p class="text-gray-500">No se encontraron cotizaciones</p>
+        <p class="text-gray-500">{{ emptyStateMessage }}</p>
       </div>
 
       <div v-else class="bg-white shadow-md rounded-lg overflow-hidden">
@@ -104,11 +104,6 @@
                   class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Empresa
-                </th>
-                <th
-                  class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Sede
                 </th>
                 <th
                   class="table-cell md:hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -151,9 +146,6 @@
                 </td>
                 <td class="px-6 py-4 text-sm text-gray-900">
                   {{ cotizacion.empresa || '-' }}
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ cotizacion.sede || '-' }}
                 </td>
                 <td
                   class="table-cell md:hidden xl:table-cell px-6 py-4 text-sm text-gray-900"
@@ -232,7 +224,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
 import type { AdminCotizacionesFilters } from '../../services/admin-api.service';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
@@ -256,6 +248,21 @@ const filters = ref<AdminCotizacionesFilters>({
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
+const tieneFiltrosActivos = computed(
+  () =>
+    !!filters.value.estado ||
+    !!filters.value.search?.trim() ||
+    !!filters.value.fechaDesde ||
+    !!filters.value.fechaHasta,
+);
+
+const emptyStateMessage = computed(() => {
+  if (tieneFiltrosActivos.value) {
+    return 'No se encontraron cotizaciones con esos filtros';
+  }
+  return 'No hay cotizaciones en este tenant';
+});
+
 // Manejar cambios en búsqueda con debounce
 function handleSearchChange() {
   if (searchTimeout) {
@@ -268,6 +275,11 @@ function handleSearchChange() {
   }, 500);
 }
 
+function onFilterChange() {
+  filters.value.page = 1;
+  loadCotizaciones();
+}
+
 async function loadCotizaciones() {
   try {
     const activeFilters: AdminCotizacionesFilters = {
@@ -278,8 +290,9 @@ async function loadCotizaciones() {
     if (filters.value.estado) {
       activeFilters.estado = filters.value.estado;
     }
-    if (filters.value.search) {
-      activeFilters.search = filters.value.search;
+    const searchTerm = filters.value.search?.trim();
+    if (searchTerm) {
+      activeFilters.search = searchTerm;
     }
     if (filters.value.fechaDesde) {
       // Crear fecha en hora local (no UTC) para evitar problemas de zona horaria
@@ -367,5 +380,12 @@ function getEstadoBadgeClass(estado: string): string {
 // Cargar cotizaciones al montar el componente
 onMounted(() => {
   loadCotizaciones();
+});
+
+onUnmounted(() => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
 });
 </script>

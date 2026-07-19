@@ -9,36 +9,6 @@
 
     <!-- Filtros -->
     <div class="mb-6 space-y-4">
-      <!-- Filtros geográficos -->
-      <div class="border-b border-gray-200">
-        <nav class="flex space-x-4 overflow-x-auto scrollbar-sutil pb-2">
-          <button
-            @click="filtrarPorSede(null)"
-            :class="[
-              'px-4 py-2 rounded-md font-medium transition-colors whitespace-nowrap',
-              sedeFiltro === null
-                ? 'bg-medical-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
-            ]"
-          >
-            Todos
-          </button>
-          <button
-            v-for="sede in sedes"
-            :key="sede._id"
-            @click="filtrarPorSede(sede._id ? String(sede._id) : null)"
-            :class="[
-              'px-4 py-2 rounded-md font-medium transition-colors whitespace-nowrap',
-              sedeFiltro === (sede._id ? String(sede._id) : null)
-                ? 'bg-medical-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300',
-            ]"
-          >
-            {{ sede.ciudad }}
-          </button>
-        </nav>
-      </div>
-
       <!-- Filtros por periodo -->
       <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <h3 class="text-sm font-medium text-gray-700 mb-3">
@@ -121,21 +91,16 @@
                   >
                     Total COT
                   </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                  >
-                    Total OT
-                  </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-if="isLoading">
-                  <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                  <td colspan="5" class="px-6 py-4 text-center text-gray-500">
                     Cargando métricas de clientes...
                   </td>
                 </tr>
                 <tr v-else-if="metricasClientes.length === 0">
-                  <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                  <td colspan="5" class="px-6 py-4 text-center text-gray-500">
                     No hay datos disponibles
                   </td>
                 </tr>
@@ -166,11 +131,6 @@
                   >
                     {{ cliente.totalCotizaciones }}
                   </td>
-                  <td
-                    class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
-                  >
-                    {{ cliente.totalOrdenesTrabajo || 0 }}
-                  </td>
                 </tr>
               </tbody>
             </table>
@@ -199,11 +159,6 @@
                   <th
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                   >
-                    Sede
-                  </th>
-                  <th
-                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                  >
                     Precio Unitario
                   </th>
                   <th
@@ -215,12 +170,12 @@
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-if="isLoading">
-                  <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                  <td colspan="4" class="px-6 py-4 text-center text-gray-500">
                     Cargando métricas de servicios...
                   </td>
                 </tr>
                 <tr v-else-if="metricasServicios.length === 0">
-                  <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                  <td colspan="4" class="px-6 py-4 text-center text-gray-500">
                     No hay datos disponibles
                   </td>
                 </tr>
@@ -235,9 +190,6 @@
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-900">
                     {{ servicio.nombreServicio }}
-                  </td>
-                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ servicio.claveSede || '-' }}
                   </td>
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium"
@@ -267,7 +219,50 @@
       <h2 class="text-xl font-semibold text-gray-800 mb-4">
         Resumen Ejecutivo
       </h2>
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4 mb-4"
+      >
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Emitidas</h3>
+          <p class="text-2xl font-semibold text-gray-900">
+            {{ metricasTotales?.cotizacionesEmitidas ?? metricasTotales?.cotizacionesTotales ?? '-' }}
+          </p>
+          <p class="text-xs text-gray-500 mt-1">En el periodo filtrado</p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Aceptadas</h3>
+          <p class="text-2xl font-semibold text-gray-900">
+            {{ metricasTotales?.cotizacionesAceptadas ?? '-' }}
+          </p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Rechazadas</h3>
+          <p class="text-2xl font-semibold text-gray-900">
+            {{ metricasTotales?.cotizacionesRechazadas ?? '-' }}
+          </p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Hoy</h3>
+          <p class="text-2xl font-semibold text-gray-900">
+            {{ metricasTotales?.cotizacionesHoy ?? '-' }}
+          </p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Este mes</h3>
+          <p class="text-2xl font-semibold text-gray-900">
+            {{ metricasTotales?.cotizacionesMes ?? '-' }}
+          </p>
+        </div>
+        <div class="bg-white shadow-md rounded-lg p-6">
+          <h3 class="text-sm font-medium text-gray-500 mb-2">Este año</h3>
+          <p class="text-2xl font-semibold text-gray-900">
+            {{ metricasTotales?.cotizacionesAnio ?? '-' }}
+          </p>
+        </div>
+      </div>
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4"
+      >
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
             Mayor Solicitante
@@ -284,18 +279,10 @@
           </p>
           <p v-else class="text-lg font-semibold text-gray-900">-</p>
           <p
-            v-if="metricasTotales?.mayorSolicitante?.nombreUsuarioCliente"
-            class="text-sm text-gray-600 mt-1"
-          >
-            {{ metricasTotales.mayorSolicitante.nombreUsuarioCliente }}
-          </p>
-          <p
             v-if="metricasTotales?.mayorSolicitante"
             class="text-xs text-gray-500 mt-1"
           >
-            {{
-              metricasTotales.mayorSolicitante.totalCotizaciones
-            }}
+            {{ metricasTotales.mayorSolicitante.totalCotizaciones }}
             cotizaciones
           </p>
         </div>
@@ -315,18 +302,10 @@
           </p>
           <p v-else class="text-lg font-semibold text-gray-900">-</p>
           <p
-            v-if="metricasTotales?.clienteMasActivoMes?.nombreUsuarioCliente"
-            class="text-sm text-gray-600 mt-1"
-          >
-            {{ metricasTotales.clienteMasActivoMes.nombreUsuarioCliente }}
-          </p>
-          <p
             v-if="metricasTotales?.clienteMasActivoMes"
             class="text-xs text-gray-500 mt-1"
           >
-            {{
-              metricasTotales.clienteMasActivoMes.totalCotizaciones
-            }}
+            {{ metricasTotales.clienteMasActivoMes.totalCotizaciones }}
             cotizaciones este mes
           </p>
         </div>
@@ -341,7 +320,6 @@
             v-if="metricasTotales?.servicioMasSolicitado"
             class="text-xs text-gray-500"
           >
-            {{ metricasTotales.servicioMasSolicitado.claveSede || '-' }} -
             {{ metricasTotales.servicioMasSolicitado.vecesSolicitado }} veces
           </p>
         </div>
@@ -356,7 +334,7 @@
             v-if="metricasTotales?.servicioMasRentable"
             class="text-xs text-gray-500"
           >
-            {{ metricasTotales.servicioMasRentable.claveSede || '-' }} - ${{
+            ${{
               metricasTotales.servicioMasRentable.ingresosTotales.toLocaleString(
                 'es-MX',
                 { minimumFractionDigits: 2, maximumFractionDigits: 2 },
@@ -370,22 +348,20 @@
           </h3>
           <p class="text-lg font-semibold text-gray-900">
             {{
-              metricasTotales?.tasaConversion
+              metricasTotales?.tasaConversion !== undefined &&
+              metricasTotales?.cotizacionesEmitidas
                 ? (metricasTotales.tasaConversion * 100).toFixed(1) + '%'
-                : '-'
+                : metricasTotales?.tasaConversion === 0
+                  ? '0.0%'
+                  : '-'
             }}
           </p>
           <p
-            v-if="metricasTotales?.tasaConversion !== undefined"
+            v-if="metricasTotales?.cotizacionesEmitidas !== undefined"
             class="text-xs text-gray-500 mt-1"
           >
-            {{
-              Math.round(
-                (metricasTotales.tasaConversion || 0) *
-                  metricasTotales.cotizacionesTotales,
-              )
-            }}
-            de {{ metricasTotales.cotizacionesTotales }} aceptadas
+            {{ metricasTotales.cotizacionesAceptadas ?? 0 }} aceptadas de
+            {{ metricasTotales.cotizacionesEmitidas }} emitidas
           </p>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
@@ -393,13 +369,13 @@
             Ingresos totales
           </h3>
           <p class="text-lg font-semibold text-gray-900">
-            ${{
-              metricasTotales?.ingresosTotales
-                ? metricasTotales.ingresosTotales.toLocaleString('es-MX', {
+            {{
+              metricasTotales
+                ? `$${metricasTotales.ingresosTotales.toLocaleString('es-MX', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                  })
-                : '0.00'
+                  })}`
+                : '-'
             }}
           </p>
           <p class="text-xs text-gray-500 mt-1">MXN - No incluye IVA</p>
@@ -412,8 +388,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
-import { getSedes } from '../../services/admin-api.service';
-import type { Sede } from '../../types/backend';
 
 // Vista de métricas admin: orquesta la carga de datos usando el composable useAdmin
 // Toda la lógica de negocio está en el composable, la vista solo maneja UI
@@ -427,22 +401,8 @@ const {
   obtenerMetricas,
 } = useAdmin();
 
-const sedes = ref<Sede[]>([]);
-const sedeFiltro = ref<string | null>(null);
 const fechaDesde = ref<string>('');
 const fechaHasta = ref<string>('');
-
-/**
- * Carga todas las sedes disponibles
- */
-const cargarSedes = async () => {
-  try {
-    const sedesData = await getSedes();
-    sedes.value = sedesData;
-  } catch (err: any) {
-    console.error('Error al cargar sedes:', err);
-  }
-};
 
 /**
  * Construye los filtros actuales y aplica las métricas
@@ -450,15 +410,9 @@ const cargarSedes = async () => {
 const aplicarFiltros = async () => {
   try {
     const filters: {
-      sedeId?: string;
       fechaDesde?: string;
       fechaHasta?: string;
     } = {};
-
-    // Filtro por sede
-    if (sedeFiltro.value && sedeFiltro.value.trim() !== '') {
-      filters.sedeId = String(sedeFiltro.value).trim();
-    }
 
     // Filtros por fecha
     if (fechaDesde.value) {
@@ -501,16 +455,6 @@ const aplicarFiltros = async () => {
 };
 
 /**
- * Filtra las métricas por sede
- */
-const filtrarPorSede = async (sedeId: string | null) => {
-  // Actualizar el filtro seleccionado
-  sedeFiltro.value = sedeId;
-  // Aplicar todos los filtros (incluyendo fechas si existen)
-  await aplicarFiltros();
-};
-
-/**
  * Limpia los filtros de fecha
  */
 const limpiarFiltrosFecha = async () => {
@@ -519,9 +463,7 @@ const limpiarFiltrosFecha = async () => {
   await aplicarFiltros();
 };
 
-// Cargar sedes y métricas al montar el componente
 onMounted(async () => {
-  await cargarSedes();
   try {
     await aplicarFiltros();
   } catch (err) {

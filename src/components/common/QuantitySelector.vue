@@ -26,8 +26,6 @@
 </template>
 
 <script setup lang="ts">
-
-
 // Componente autocontenido y reutilizable
 // Maneja la selección de cantidad con botones + y -
 

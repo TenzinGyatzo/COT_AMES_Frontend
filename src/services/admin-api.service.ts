@@ -1,34 +1,39 @@
 /**
- * Servicio HTTP para el Panel de Administración
- * Encapsula las llamadas al backend específicas para usuarios admin autenticados
+ * Servicio HTTP para el Panel de Administración AMES
  */
 
 import httpClient from './http';
 import type {
   Cliente,
-  UsuarioCliente,
+  Contacto,
   Servicio,
-  Sede,
+  Plantilla,
   CotizacionDetalleDto,
   PaginatedCotizacionesResponseDto,
-  OrdenTrabajoDetalleDto,
-  PaginatedOrdenesTrabajoResponseDto,
+  Tenant,
+  TenantConfigResponse,
 } from '../types/backend';
+import type { CategoriaServicioCode } from '../constants/categorias-servicio';
 
-/**
- * Filtros para obtener clientes
- */
 export interface AdminClientesFilters {
   empresa?: string;
   rfc?: string;
+  /** Omitido = solo activos. false = inactivos. */
+  activo?: boolean;
+  page?: number;
+  limit?: number;
 }
 
-/**
- * Filtros para obtener cotizaciones admin
- */
+export interface PaginatedClientesResponse {
+  data: Cliente[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface AdminCotizacionesFilters {
   estado?: 'vigente' | 'vencida' | 'aceptada' | 'rechazada';
-  sedeId?: string;
   search?: string;
   fechaDesde?: string;
   fechaHasta?: string;
@@ -36,105 +41,198 @@ export interface AdminCotizacionesFilters {
   limit?: number;
 }
 
-/**
- * Filtros para obtener órdenes de trabajo admin
- */
-export interface AdminOrdenesFilters {
-  clienteId?: string;
-  sedeId?: string;
-  estado?: 'pendiente' | 'en_proceso' | 'completada' | 'cancelada';
-  search?: string;
-  fechaDesde?: string;
-  fechaHasta?: string;
-  page?: number;
-  limit?: number;
-}
-
-/**
- * Filtros para obtener servicios
- */
 export interface AdminServiciosFilters {
-  sedeId?: string;
+  nombre?: string;
+  categoria?: CategoriaServicioCode;
   activo?: boolean;
+  page?: number;
+  limit?: number;
 }
 
-/**
- * Payload para crear un servicio
- */
+export interface PaginatedServiciosResponse {
+  data: Servicio[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 export interface CreateServicioPayload {
-  sedeId: string;
   nombre: string;
   descripcion?: string;
   precioUnitario: number;
+  categoria: CategoriaServicioCode;
   moneda?: string;
   activo?: boolean;
 }
 
-/**
- * Payload para crear un servicio en todas las sedes
- */
-export interface CreateServicioGlobalPayload {
-  nombre: string;
-  descripcion?: string;
-  precioUnitario: number;
-  moneda?: string;
-  activo?: boolean;
-}
-
-/**
- * Payload para actualizar estado de orden
- */
-export interface UpdateOrdenEstadoPayload {
-  estado?: 'pendiente' | 'en_proceso' | 'completada' | 'cancelada';
-  observaciones?: string;
-}
-
-/**
- * Obtiene el listado de clientes
- * @param filters Filtros opcionales (empresa, nombreContacto, correo)
- * @returns Lista de clientes
- */
 export async function getClientes(
   filters: AdminClientesFilters = {},
-): Promise<Cliente[]> {
-  const { data } = await httpClient.get<Cliente[]>('/clientes', {
-    params: filters,
-  });
+): Promise<PaginatedClientesResponse> {
+  const params: Record<string, string | number | boolean> = {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+  };
+  if (filters.empresa) params.empresa = filters.empresa;
+  if (filters.rfc) params.rfc = filters.rfc;
+  if (filters.activo !== undefined) params.activo = filters.activo;
 
+  const { data } = await httpClient.get<PaginatedClientesResponse>(
+    '/clientes',
+    { params },
+  );
   return data;
 }
 
-/**
- * Obtiene el detalle de un cliente específico
- * @param id ID del cliente
- * @returns Detalle completo del cliente
- */
 export async function getClienteById(id: string): Promise<Cliente> {
   const { data } = await httpClient.get<Cliente>(`/clientes/${id}`);
-
   return data;
 }
 
-/**
- * Obtiene los usuarios clientes asociados a un cliente
- * @param id ID del cliente
- * @returns Lista de usuarios clientes
- */
-export async function getUsuariosByClienteId(
+export type CreateClientePayload = {
+  empresa: string;
+  rfc?: string;
+};
+
+export type UpdateClientePayload = {
+  empresa?: string;
+  rfc?: string;
+};
+
+/** POST cliente (Story 3.1). */
+export async function createCliente(
+  payload: CreateClientePayload,
+): Promise<Cliente> {
+  const { data } = await httpClient.post<Cliente>('/clientes', payload);
+  return data;
+}
+
+/** PATCH cliente (Story 3.1). */
+export async function updateCliente(
   id: string,
-): Promise<UsuarioCliente[]> {
-  const { data } = await httpClient.get<UsuarioCliente[]>(
-    `/clientes/${id}/usuarios`,
-  );
-
+  payload: UpdateClientePayload,
+): Promise<Cliente> {
+  const { data } = await httpClient.patch<Cliente>(`/clientes/${id}`, payload);
   return data;
 }
 
-/**
- * Obtiene el listado de cotizaciones admin con filtros y paginación
- * @param filters Filtros opcionales (estado, sedeId, search, fechas, página, límite)
- * @returns Respuesta paginada con las cotizaciones
- */
+/** Soft delete (Story 3.2). */
+export async function deleteCliente(id: string): Promise<Cliente> {
+  const { data } = await httpClient.delete<Cliente>(`/clientes/${id}`);
+  return data;
+}
+
+/** Activar / desactivar (Story 3.2). */
+export async function toggleClienteActivo(id: string): Promise<Cliente> {
+  const { data } = await httpClient.patch<Cliente>(
+    `/clientes/${id}/toggle-activo`,
+  );
+  return data;
+}
+
+/* ——— Contactos CRM (Story 3.3) ——— */
+
+export interface AdminContactosFilters {
+  nombre?: string;
+  activo?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface PaginatedContactosResponse {
+  data: Contacto[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export type CreateContactoPayload = {
+  nombre: string;
+  correo?: string;
+  telefono?: string;
+  cargo?: string;
+};
+
+export type UpdateContactoPayload = {
+  nombre?: string;
+  /** `null` o `''` limpia el campo en el BE. */
+  correo?: string | null;
+  telefono?: string | null;
+  cargo?: string | null;
+};
+
+export async function getContactos(
+  clienteId: string,
+  filters: AdminContactosFilters = {},
+): Promise<PaginatedContactosResponse> {
+  const params: Record<string, string | number | boolean> = {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+  };
+  if (filters.nombre) params.nombre = filters.nombre;
+  if (filters.activo !== undefined) params.activo = filters.activo;
+
+  const { data } = await httpClient.get<PaginatedContactosResponse>(
+    `/clientes/${clienteId}/contactos`,
+    { params },
+  );
+  return data;
+}
+
+export async function getContactoById(
+  clienteId: string,
+  id: string,
+): Promise<Contacto> {
+  const { data } = await httpClient.get<Contacto>(
+    `/clientes/${clienteId}/contactos/${id}`,
+  );
+  return data;
+}
+
+export async function createContacto(
+  clienteId: string,
+  payload: CreateContactoPayload,
+): Promise<Contacto> {
+  const { data } = await httpClient.post<Contacto>(
+    `/clientes/${clienteId}/contactos`,
+    payload,
+  );
+  return data;
+}
+
+export async function updateContacto(
+  clienteId: string,
+  id: string,
+  payload: UpdateContactoPayload,
+): Promise<Contacto> {
+  const { data } = await httpClient.patch<Contacto>(
+    `/clientes/${clienteId}/contactos/${id}`,
+    payload,
+  );
+  return data;
+}
+
+export async function deleteContacto(
+  clienteId: string,
+  id: string,
+): Promise<Contacto> {
+  const { data } = await httpClient.delete<Contacto>(
+    `/clientes/${clienteId}/contactos/${id}`,
+  );
+  return data;
+}
+
+export async function toggleContactoActivo(
+  clienteId: string,
+  id: string,
+): Promise<Contacto> {
+  const { data } = await httpClient.patch<Contacto>(
+    `/clientes/${clienteId}/contactos/${id}/toggle-activo`,
+  );
+  return data;
+}
+
 export async function getCotizacionesAdmin(
   filters: AdminCotizacionesFilters = {},
 ): Promise<PaginatedCotizacionesResponseDto> {
@@ -142,78 +240,64 @@ export async function getCotizacionesAdmin(
     page = 1,
     limit = 10,
     estado,
-    sedeId,
     search,
     fechaDesde,
     fechaHasta,
   } = filters;
 
   const params: any = { page, limit };
-
-  if (estado) {
-    params.estado = estado;
-  }
-  if (sedeId) {
-    params.sedeId = sedeId;
-  }
-  if (search) {
-    params.search = search;
-  }
-  if (fechaDesde) {
-    params.fechaDesde = fechaDesde;
-  }
-  if (fechaHasta) {
-    params.fechaHasta = fechaHasta;
-  }
+  if (estado) params.estado = estado;
+  if (search) params.search = search;
+  if (fechaDesde) params.fechaDesde = fechaDesde;
+  if (fechaHasta) params.fechaHasta = fechaHasta;
 
   const { data } = await httpClient.get<PaginatedCotizacionesResponseDto>(
     '/cotizaciones',
     { params },
   );
-
   return data;
 }
 
-/**
- * Obtiene el detalle de una cotización específica
- * @param id ID de la cotización
- * @returns Detalle completo de la cotización
- */
 export async function getCotizacionAdminById(
   id: string,
 ): Promise<CotizacionDetalleDto> {
   const { data } = await httpClient.get<CotizacionDetalleDto>(
     `/cotizaciones/${id}`,
   );
-
   return data;
 }
 
-/**
- * Payload para crear una cotización admin (para clientes no registrados)
- */
 export interface CreateAdminCotizacionPayload {
-  sedeId: string;
-  nombreEmpresa: string;
-  nombreContacto: string;
+  clienteId?: string;
+  nombreEmpresa?: string;
+  nombreContacto?: string;
   emailContacto?: string;
   telefonoContacto?: string;
   personasAEvaluar?: string;
   items: Array<{
     servicioId: string;
     cantidad: number;
+    /** Overrides de snapshot (Story 6.4) */
+    nombre?: string;
+    descripcion?: string;
+    precioUnitario?: number;
   }>;
   moneda?: string;
   fechaVencimiento?: string;
   enviarEmail?: boolean;
+  /** Destinatarios Para (Story 6.6). */
+  emailsPara?: string[];
+  /** Destinatarios CC (Story 6.6). */
+  emailsCc?: string[];
   incluirDatosBancarios?: boolean;
+  /** Plantillas ordenadas (Story 6.5). Omitido/vacío = ninguna. */
+  plantillas?: Array<{
+    plantillaId: string;
+    nombre?: string;
+    secciones?: Plantilla['secciones'];
+  }>;
 }
 
-/**
- * Crea una nueva cotización para un cliente no registrado
- * @param payload Datos de la cotización y del cliente guest
- * @returns Cotización creada
- */
 export async function createAdminCotizacion(
   payload: CreateAdminCotizacionPayload,
 ): Promise<CotizacionDetalleDto> {
@@ -221,216 +305,150 @@ export async function createAdminCotizacion(
     '/cotizaciones/admin',
     payload,
   );
-
   return data;
 }
 
-/**
- * Payload para aceptar cotización (admin)
- */
-export interface AceptarCotizacionAdminPayload {
-  trabajadores: Array<{
-    primerApellido: string;
-    segundoApellido?: string;
-    nombre: string;
-    fechaNacimiento: string;
-    sexo: string;
-    escolaridad: string;
-    puesto: string;
-    fechaIngreso?: string;
-    telefono?: string;
-    estadoCivil: string;
-    curp?: string;
-  }>;
+export type EnviarCorreoCotizacionOptions = {
+  emailsPara?: string[];
+  emailsCc?: string[];
+};
+
+/** Story 6.8 — envía PDF FE + magic link (multipart). */
+export async function enviarCorreoCotizacion(
+  id: string,
+  pdf: Blob | File,
+  options?: EnviarCorreoCotizacionOptions,
+): Promise<{ ok: true; folio: string }> {
+  const form = new FormData();
+  const file =
+    pdf instanceof File
+      ? pdf
+      : new File([pdf], `${id}.pdf`, { type: 'application/pdf' });
+  form.append('file', file);
+  if (options?.emailsPara) {
+    form.append('emailsPara', JSON.stringify(options.emailsPara));
+  }
+  if (options?.emailsCc) {
+    form.append('emailsCc', JSON.stringify(options.emailsCc));
+  }
+  const { data } = await httpClient.post<{ ok: true; folio: string }>(
+    `/cotizaciones/${id}/enviar-correo`,
+    form,
+  );
+  return data;
 }
 
-/**
- * Acepta una cotización como administrador
- * @param id ID de la cotización
- * @param payload Datos para aceptar (trabajadores)
- * @returns Cotización actualizada
- */
+export interface AceptarCotizacionAdminPayload {
+  // Legacy vacío: aceptación sin trabajadores (Story 1.1)
+}
+
 export async function aceptarCotizacionAdmin(
   id: string,
-  payload: AceptarCotizacionAdminPayload,
+  payload: AceptarCotizacionAdminPayload = {},
 ): Promise<CotizacionDetalleDto> {
   const { data } = await httpClient.patch<CotizacionDetalleDto>(
     `/cotizaciones/${id}/admin/aceptar`,
     payload,
   );
-
   return data;
 }
 
-/**
- * Rechaza una cotización como administrador
- * @param id ID de la cotización
- * @returns Cotización actualizada
- */
 export async function rechazarCotizacionAdmin(
   id: string,
 ): Promise<CotizacionDetalleDto> {
   const { data } = await httpClient.patch<CotizacionDetalleDto>(
     `/cotizaciones/${id}/admin/rechazar`,
   );
-
   return data;
 }
 
-/**
- * Obtiene el listado de órdenes de trabajo admin con filtros y paginación
- * @param filters Filtros opcionales (clienteId, sedeId, estado, fechas, página, límite)
- * @returns Respuesta paginada con las órdenes de trabajo
- */
-export async function getOrdenesAdmin(
-  filters: AdminOrdenesFilters = {},
-): Promise<PaginatedOrdenesTrabajoResponseDto> {
-  const {
-    page = 1,
-    limit = 10,
-    clienteId,
-    sedeId,
-    estado,
-    search,
-    fechaDesde,
-    fechaHasta,
-  } = filters;
-
-  const params: any = { page, limit };
-
-  if (clienteId) {
-    params.clienteId = clienteId;
-  }
-  if (sedeId) {
-    params.sedeId = sedeId;
-  }
-  if (estado) {
-    params.estado = estado;
-  }
-  if (search) {
-    params.search = search;
-  }
-  if (fechaDesde) {
-    params.fechaDesde = fechaDesde;
-  }
-  if (fechaHasta) {
-    params.fechaHasta = fechaHasta;
-  }
-
-  const { data } = await httpClient.get<PaginatedOrdenesTrabajoResponseDto>(
-    '/ordenes-trabajo',
-    { params },
-  );
-
-  return data;
-}
-
-/**
- * Obtiene el detalle de una orden de trabajo específica
- * @param id ID de la orden de trabajo
- * @returns Detalle completo de la orden de trabajo
- */
-export async function getOrdenAdminById(
+/** Story 6.10 — cambio manual a cualquiera de los otros estados. */
+export async function cambiarEstadoCotizacion(
   id: string,
-): Promise<OrdenTrabajoDetalleDto> {
-  const { data } = await httpClient.get<OrdenTrabajoDetalleDto>(
-    `/ordenes-trabajo/${id}`,
+  estado: 'vigente' | 'vencida' | 'aceptada' | 'rechazada',
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.patch<CotizacionDetalleDto>(
+    `/cotizaciones/${id}/estado`,
+    { estado },
   );
-
   return data;
 }
 
-/**
- * Actualiza el estado y observaciones de una orden de trabajo
- * @param id ID de la orden de trabajo
- * @param payload Datos a actualizar (estado, observaciones)
- * @returns Orden de trabajo actualizada
- */
-export async function updateOrdenEstado(
+export type ModoPreciosRepetir = 'originales' | 'actualizados';
+
+export type RepetirCotizacionWarning = {
+  index: number;
+  servicioId: string;
+  motivo: 'inexistente' | 'inactivo';
+};
+
+export type RepetirCotizacionPayload = {
+  modoPrecios: ModoPreciosRepetir;
+  omitirServicioIds?: string[];
+  sustituciones?: Array<{ fromServicioId: string; toServicioId: string }>;
+  fechaVencimiento?: string;
+};
+
+/** Story 6.12 — clona cotización (precios originales o actualizados). */
+export async function repetirCotizacion(
   id: string,
-  payload: UpdateOrdenEstadoPayload,
-): Promise<OrdenTrabajoDetalleDto> {
-  const { data } = await httpClient.patch<OrdenTrabajoDetalleDto>(
-    `/ordenes-trabajo/${id}`,
+  payload: RepetirCotizacionPayload,
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.post<CotizacionDetalleDto>(
+    `/cotizaciones/${id}/repetir`,
     payload,
   );
-
   return data;
 }
 
-/**
- * Obtiene el listado de servicios con filtros opcionales
- * @param filters Filtros opcionales (sedeId, activo)
- * @returns Lista de servicios
- */
 export async function getServicios(
   filters: AdminServiciosFilters = {},
-): Promise<Servicio[]> {
-  const { sedeId, activo } = filters;
+): Promise<PaginatedServiciosResponse> {
+  const params: Record<string, string | number | boolean> = {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+  };
+  if (filters.nombre?.trim()) params.nombre = filters.nombre.trim();
+  if (filters.categoria) params.categoria = filters.categoria;
+  if (filters.activo !== undefined) params.activo = filters.activo;
 
-  const params: any = {};
-
-  if (sedeId) {
-    params.sedeId = sedeId;
-  }
-  if (activo !== undefined) {
-    params.activo = activo;
-  }
-
-  const { data } = await httpClient.get<Servicio[]>('/servicios', {
-    params,
-  });
-
+  const { data } = await httpClient.get<PaginatedServiciosResponse>(
+    '/servicios',
+    { params },
+  );
   return data;
 }
 
-/**
- * Crea un nuevo servicio
- * @param payload Datos del servicio a crear
- * @returns Servicio creado
- */
 export async function createServicio(
   payload: CreateServicioPayload,
 ): Promise<Servicio> {
   const { data } = await httpClient.post<Servicio>('/servicios', payload);
-
   return data;
 }
 
-/**
- * Crea un servicio en todas las sedes
- * @param payload Datos del servicio a crear (sin sedeId)
- * @returns Lista de servicios creados (uno por cada sede)
- */
-export async function createServicioForAllSedes(
-  payload: CreateServicioGlobalPayload,
-): Promise<Servicio[]> {
-  const { data } = await httpClient.post<Servicio[]>(
-    '/servicios/create-for-all-sedes',
+export interface CreateServicioMultiPayload extends CreateServicioPayload {
+  tenantIds: string[];
+}
+
+export async function createServicioMulti(
+  payload: CreateServicioMultiPayload,
+): Promise<{ created: Servicio[] }> {
+  const { data } = await httpClient.post<{ created: Servicio[] }>(
+    '/servicios/multi-tenant',
     payload,
   );
-
   return data;
 }
 
-/**
- * Payload para actualizar un servicio
- */
 export interface UpdateServicioPayload {
-  sedeId?: string;
   nombre?: string;
   descripcion?: string;
   precioUnitario?: number;
+  categoria?: CategoriaServicioCode;
   moneda?: string;
   activo?: boolean;
 }
 
-/**
- * Actualiza un servicio existente
- * @param id ID del servicio
- * @param payload Datos a actualizar
- * @returns Servicio actualizado
- */
 export async function updateServicio(
   id: string,
   payload: UpdateServicioPayload,
@@ -439,107 +457,256 @@ export async function updateServicio(
     `/servicios/${id}`,
     payload,
   );
-
   return data;
 }
 
-/**
- * Activa o desactiva un servicio
- * @param id ID del servicio
- * @returns Servicio con estado actualizado
- */
 export async function toggleServicioActivo(id: string): Promise<Servicio> {
   const { data } = await httpClient.patch<Servicio>(
     `/servicios/${id}/toggle-activo`,
   );
-
   return data;
 }
 
-/**
- * Elimina completamente un servicio de la base de datos
- * @param id ID del servicio
- */
-export async function deleteServicio(id: string): Promise<void> {
-  await httpClient.delete(`/servicios/${id}`);
-}
-
-/**
- * Obtiene el listado de sedes
- * @returns Lista de sedes
- */
-export async function getSedes(): Promise<Sede[]> {
-  const { data } = await httpClient.get<Sede[]>('/sedes');
-
+export async function deleteServicio(id: string): Promise<Servicio> {
+  const { data } = await httpClient.delete<Servicio>(`/servicios/${id}`);
   return data;
 }
 
-/**
- * Obtiene una sede por ID
- * @param id ID de la sede
- * @returns Detalle de la sede
- */
-export async function getSedeById(id: string): Promise<Sede> {
-  const { data } = await httpClient.get<Sede>(`/sedes/${id}`);
-
-  return data;
+export interface AdminPlantillasFilters {
+  nombre?: string;
+  /** Omitido = solo activas. false = inactivas. */
+  activo?: boolean;
+  page?: number;
+  limit?: number;
 }
 
-/**
- * Payload para crear una sede
- */
-import { EstadoMexico } from '../types/estado-mexico.enum';
+export interface PaginatedPlantillasResponse {
+  data: Plantilla[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
 
-export interface CreateSedePayload {
-  clave?: string;
-  ciudad: string;
-  estado?: EstadoMexico;
+export interface CreatePlantillaPayload {
+  nombre: string;
+  secciones: Plantilla['secciones'];
   activo?: boolean;
 }
 
-/**
- * Payload para actualizar una sede
- */
-export interface UpdateSedePayload {
-  clave?: string;
-  ciudad?: string;
-  estado?: EstadoMexico;
+export interface UpdatePlantillaPayload {
+  nombre?: string;
+  secciones?: Plantilla['secciones'];
   activo?: boolean;
 }
 
-/**
- * Crea una nueva sede
- * @param payload Datos de la sede a crear
- * @returns Sede creada
- */
-export async function createSede(payload: CreateSedePayload): Promise<Sede> {
-  const { data } = await httpClient.post<Sede>('/sedes', payload);
+export async function getPlantillas(
+  filters: AdminPlantillasFilters = {},
+): Promise<PaginatedPlantillasResponse> {
+  const params: Record<string, string | number | boolean> = {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+  };
+  if (filters.nombre?.trim()) params.nombre = filters.nombre.trim();
+  if (filters.activo !== undefined) params.activo = filters.activo;
 
+  const { data } = await httpClient.get<PaginatedPlantillasResponse>(
+    '/plantillas',
+    { params },
+  );
   return data;
 }
 
-/**
- * Actualiza una sede existente
- * @param id ID de la sede
- * @param payload Datos a actualizar
- * @returns Sede actualizada
- */
-export async function updateSede(
+export async function getPlantilla(id: string): Promise<Plantilla> {
+  const { data } = await httpClient.get<Plantilla>(`/plantillas/${id}`);
+  return data;
+}
+
+export async function createPlantilla(
+  payload: CreatePlantillaPayload,
+): Promise<Plantilla> {
+  const { data } = await httpClient.post<Plantilla>('/plantillas', payload);
+  return data;
+}
+
+export async function updatePlantilla(
   id: string,
-  payload: UpdateSedePayload,
-): Promise<Sede> {
-  const { data } = await httpClient.patch<Sede>(`/sedes/${id}`, payload);
-
+  payload: UpdatePlantillaPayload,
+): Promise<Plantilla> {
+  const { data } = await httpClient.patch<Plantilla>(
+    `/plantillas/${id}`,
+    payload,
+  );
   return data;
 }
 
-/**
- * Activa o desactiva una sede
- * @param id ID de la sede
- * @returns Sede con estado actualizado
- */
-export async function toggleSedeActivo(id: string): Promise<Sede> {
-  const { data } = await httpClient.patch<Sede>(`/sedes/${id}/toggle-activo`);
+export async function togglePlantillaActivo(id: string): Promise<Plantilla> {
+  const { data } = await httpClient.patch<Plantilla>(
+    `/plantillas/${id}/toggle-activo`,
+  );
+  return data;
+}
 
+export async function deletePlantilla(id: string): Promise<Plantilla> {
+  const { data } = await httpClient.delete<Plantilla>(`/plantillas/${id}`);
+  return data;
+}
+
+/** Listado de tenants activos (sin X-Tenant-Id; chicken-egg AD-2 / 1.7). */
+export async function getTenants(): Promise<Tenant[]> {
+  const { data } = await httpClient.get<Tenant[]>('/tenants');
+  return data;
+}
+
+/** Configuración del tenant activo (admin + X-Tenant-Id). Story 2.1+. */
+export async function getTenantConfig(): Promise<TenantConfigResponse> {
+  const { data } = await httpClient.get<TenantConfigResponse>('/tenant-config');
+  return data;
+}
+
+export type UpdateTenantBrandingPayload = {
+  razonSocial?: string;
+  rfc?: string;
+  domicilio?: string;
+  telefono?: string;
+  emailContacto?: string;
+  sitioWeb?: string;
+};
+
+/** PATCH branding / datos legales (Story 2.2). */
+export async function updateTenantBranding(
+  payload: UpdateTenantBrandingPayload,
+): Promise<TenantConfigResponse> {
+  const { data } = await httpClient.patch<TenantConfigResponse>(
+    '/tenant-config/branding',
+    payload,
+  );
+  return data;
+}
+
+/** Subir o reemplazar logo (multipart). */
+export async function uploadTenantLogo(
+  file: File,
+): Promise<TenantConfigResponse> {
+  const form = new FormData();
+  form.append('file', file);
+  // No setear Content-Type: el interceptor + browser añaden boundary.
+  const { data } = await httpClient.post<TenantConfigResponse>(
+    '/tenant-config/branding/logo',
+    form,
+  );
+  return data;
+}
+
+/** Eliminar logo del tenant activo. */
+export async function deleteTenantLogo(): Promise<TenantConfigResponse> {
+  const { data } = await httpClient.delete<TenantConfigResponse>(
+    '/tenant-config/branding/logo',
+  );
+  return data;
+}
+
+export type UpdateTenantEmailPayload = {
+  emailRemitente?: string;
+  correosNotificacion?: string[];
+};
+
+/** PATCH remitente + correos de notificación (Story 2.3). */
+export async function updateTenantEmailConfig(
+  payload: UpdateTenantEmailPayload,
+): Promise<TenantConfigResponse> {
+  const { data } = await httpClient.patch<TenantConfigResponse>(
+    '/tenant-config/email',
+    payload,
+  );
+  return data;
+}
+
+export type UpdateTenantVigenciaBancariosPayload = {
+  vigenciaDefaultDias?: number;
+  bancarios?: {
+    titular?: string;
+    banco?: string;
+    cuenta?: string;
+    clabe?: string;
+    domicilio?: string;
+    rfc?: string;
+    email?: string;
+  };
+};
+
+/** PATCH vigencia default + datos bancarios (Story 2.4). */
+export async function updateTenantVigenciaBancarios(
+  payload: UpdateTenantVigenciaBancariosPayload,
+): Promise<TenantConfigResponse> {
+  const { data } = await httpClient.patch<TenantConfigResponse>(
+    '/tenant-config/vigencia-bancarios',
+    payload,
+  );
+  return data;
+}
+
+export interface AdminUser {
+  _id: string;
+  email: string;
+  nombre: string;
+  rol: 'operativo' | 'admin_sistema';
+  tenantId?: string;
+  activo: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AdminUsersFilters {
+  activo?: boolean;
+  rol?: 'operativo' | 'admin_sistema';
+  search?: string;
+}
+
+export interface CreateUserPayload {
+  email: string;
+  password: string;
+  nombre: string;
+  rol: 'operativo' | 'admin_sistema';
+  tenantId?: string;
+}
+
+export interface UpdateUserPayload {
+  email?: string;
+  password?: string;
+  nombre?: string;
+  rol?: 'operativo' | 'admin_sistema';
+  tenantId?: string | null;
+  activo?: boolean;
+}
+
+export async function getUsers(
+  filters: AdminUsersFilters = {},
+): Promise<AdminUser[]> {
+  const params: Record<string, string | boolean> = {};
+  if (filters.activo !== undefined) params.activo = filters.activo;
+  if (filters.rol) params.rol = filters.rol;
+  if (filters.search) params.search = filters.search;
+  const { data } = await httpClient.get<AdminUser[]>('/users', { params });
+  return data;
+}
+
+export async function createUser(
+  payload: CreateUserPayload,
+): Promise<AdminUser> {
+  const { data } = await httpClient.post<AdminUser>('/users', payload);
+  return data;
+}
+
+export async function updateUser(
+  id: string,
+  payload: UpdateUserPayload,
+): Promise<AdminUser> {
+  const { data } = await httpClient.patch<AdminUser>(`/users/${id}`, payload);
+  return data;
+}
+
+export async function deactivateUser(id: string): Promise<AdminUser> {
+  const { data } = await httpClient.delete<AdminUser>(`/users/${id}`);
   return data;
 }

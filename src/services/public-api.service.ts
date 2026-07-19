@@ -1,29 +1,34 @@
 import http from './http';
+import type { PublicCotizacionResponse } from '../types/backend';
+
+function publicCotizacionPath(token: string, suffix = ''): string {
+  return `/cotizaciones/public/${encodeURIComponent(token)}${suffix}`;
+}
 
 export const publicApiService = {
-  /**
-   * Obtener detalle de cotización por magic token
-   */
-  async getCotizacionByToken(token: string) {
-    const response = await http.get(`/cotizaciones/public/${token}`);
+  async getCotizacionByToken(token: string): Promise<PublicCotizacionResponse> {
+    const response = await http.get<PublicCotizacionResponse>(
+      publicCotizacionPath(token),
+    );
     return response.data;
   },
 
-  /**
-   * Aceptar cotización por magic token
-   */
-  async aceptarCotizacionByToken(token: string, trabajadores: any[]) {
-    const response = await http.patch(`/cotizaciones/public/${token}/aceptar`, {
-      trabajadores
-    });
+  async aceptarCotizacionByToken(
+    token: string,
+  ): Promise<PublicCotizacionResponse> {
+    const response = await http.patch<PublicCotizacionResponse>(
+      publicCotizacionPath(token, '/aceptar'),
+      {},
+    );
     return response.data;
   },
 
-  /**
-   * Rechazar cotización por magic token
-   */
-  async rechazarCotizacionByToken(token: string) {
-    const response = await http.patch(`/cotizaciones/public/${token}/rechazar`);
+  async rechazarCotizacionByToken(
+    token: string,
+  ): Promise<PublicCotizacionResponse> {
+    const response = await http.patch<PublicCotizacionResponse>(
+      publicCotizacionPath(token, '/rechazar'),
+    );
     return response.data;
-  }
+  },
 };

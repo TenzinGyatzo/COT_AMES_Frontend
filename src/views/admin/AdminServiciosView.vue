@@ -14,34 +14,74 @@
       </button>
     </div>
 
-    <!-- Tabs para ubicaciones -->
-    <div class="mb-6 border-b border-gray-200">
-      <nav class="flex space-x-8 overflow-x-auto scrollbar-hide">
-        <button
-          @click="seleccionarSede(null)"
-          :class="[
-            'py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
-            sedeSeleccionada === null
-              ? 'border-medical-blue-600 text-medical-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700',
-          ]"
-        >
-          Todas
-        </button>
-        <button
-          v-for="sede in sedes"
-          :key="sede._id"
-          @click="seleccionarSede(sede._id || '')"
-          :class="[
-            'py-4 px-1 border-b-2 font-medium text-sm transition-colors whitespace-nowrap',
-            sedeSeleccionada === sede._id
-              ? 'border-medical-blue-600 text-medical-blue-600'
-              : 'border-transparent text-gray-500 hover:text-gray-700',
-          ]"
-        >
-          {{ sede.ciudad }}
-        </button>
-      </nav>
+    <div class="mb-4 space-y-3">
+      <div
+        class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4"
+      >
+        <div class="flex-1 min-w-[180px]">
+          <label
+            for="filtro-nombre-servicio"
+            class="block text-xs font-medium text-gray-600 mb-1"
+            >Buscar por nombre</label
+          >
+          <input
+            id="filtro-nombre-servicio"
+            v-model="filters.nombre"
+            type="text"
+            placeholder="Buscar por nombre..."
+            class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+            @input="handleFilterChange"
+          />
+        </div>
+        <div class="w-full sm:w-56">
+          <label
+            for="filtro-categoria-servicio"
+            class="block text-xs font-medium text-gray-600 mb-1"
+            >Categoría</label
+          >
+          <select
+            id="filtro-categoria-servicio"
+            v-model="filters.categoria"
+            class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+            @change="onCategoriaChange"
+          >
+            <option value="">Todas</option>
+            <option
+              v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
+              :key="opt.code"
+              :value="opt.code"
+            >
+              {{ opt.label }}
+            </option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2 pb-1">
+          <input
+            id="ver-inactivos-servicios"
+            v-model="verInactivos"
+            type="checkbox"
+            class="h-4 w-4 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
+            @change="onVerInactivosChange"
+          />
+          <label for="ver-inactivos-servicios" class="text-sm text-gray-700"
+            >Ver inactivos</label
+          >
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="successMsg"
+      class="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+    >
+      {{ successMsg }}
+    </div>
+
+    <div
+      v-if="actionError"
+      class="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+    >
+      {{ actionError }}
     </div>
 
     <!-- Mensaje de carga -->
@@ -78,14 +118,14 @@
                   Servicio
                 </th>
                 <th
+                  class="w-40 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Categoría
+                </th>
+                <th
                   class="w-[330px] max-w-[330px] px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Descripción
-                </th>
-                <th
-                  class="w-24 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                >
-                  Clave Sede
                 </th>
                 <th
                   class="w-32 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -107,15 +147,25 @@
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="servicios.length === 0">
                 <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                  No hay servicios disponibles
+                  {{ emptyListMessage }}
                 </td>
               </tr>
               <tr v-for="(servicio, index) in servicios" :key="servicio._id">
-                <td class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {{ index + 1 }}
+                <td
+                  class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-500"
+                >
+                  {{ rowNumber(index) }}
                 </td>
                 <td class="px-3 lg:px-4 py-4 text-sm font-medium text-gray-900">
                   <div class="truncate">{{ servicio.nombre }}</div>
+                </td>
+                <td
+                  class="px-3 lg:px-4 py-4 text-sm text-gray-700"
+                  :title="labelCategoriaServicio(servicio.categoria)"
+                >
+                  <div class="truncate">
+                    {{ labelCategoriaServicio(servicio.categoria) }}
+                  </div>
                 </td>
                 <td
                   class="w-[330px] max-w-[330px] px-3 lg:px-4 py-4 text-sm text-gray-500 relative group"
@@ -137,13 +187,15 @@
                     ></div>
                   </div>
                 </td>
-                <td class="w-[330px] max-w-[330px] px-3 lg:px-4 py-4 text-sm text-gray-500" v-else>
+                <td
+                  class="w-[330px] max-w-[330px] px-3 lg:px-4 py-4 text-sm text-gray-500"
+                  v-else
+                >
                   <div class="truncate">-</div>
                 </td>
-                <td class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {{ obtenerClaveSede(servicio) || '-' }}
-                </td>
-                <td class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td
+                  class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-900"
+                >
                   $ {{ servicio.precioUnitario.toFixed(2) }}
                   {{ servicio.moneda || 'MXN' }}
                 </td>
@@ -151,12 +203,12 @@
                   <span
                     :class="[
                       'px-2 py-1 text-xs font-medium rounded-full',
-                      servicio.activo
+                      isServicioActivo(servicio)
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800',
                     ]"
                   >
-                    {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+                    {{ isServicioActivo(servicio) ? 'Activo' : 'Inactivo' }}
                   </span>
                 </td>
                 <td
@@ -170,10 +222,20 @@
                       Editar
                     </button>
                     <button
-                      @click="eliminarServicio(servicio)"
-                      class="text-red-600 hover:text-red-900 text-left"
+                      v-if="isServicioActivo(servicio)"
+                      @click="pedirDesactivar(servicio)"
+                      class="text-red-600 hover:text-red-900 text-left disabled:opacity-50"
+                      :disabled="isMutating"
                     >
-                      Eliminar
+                      Desactivar
+                    </button>
+                    <button
+                      v-else
+                      @click="reactivar(servicio)"
+                      class="text-green-700 hover:text-green-900 text-left disabled:opacity-50"
+                      :disabled="isMutating"
+                    >
+                      Reactivar
                     </button>
                   </div>
                 </td>
@@ -202,14 +264,14 @@
                   Servicio
                 </th>
                 <th
+                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                >
+                  Categoría
+                </th>
+                <th
                   class="w-[330px] max-w-[330px] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Descripción
-                </th>
-                <th
-                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                >
-                  Clave
                 </th>
                 <th
                   class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -231,15 +293,22 @@
             <tbody class="bg-white divide-y divide-gray-200">
               <tr v-if="servicios.length === 0">
                 <td colspan="7" class="px-3 py-4 text-center text-gray-500">
-                  No hay servicios disponibles
+                  {{ emptyListMessage }}
                 </td>
               </tr>
               <tr v-for="(servicio, index) in servicios" :key="servicio._id">
                 <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-500">
-                  {{ index + 1 }}
+                  {{ rowNumber(index) }}
                 </td>
                 <td class="px-3 py-4 text-xs font-medium text-gray-900">
-                  <div class="truncate max-w-[120px]">{{ servicio.nombre }}</div>
+                  <div class="truncate max-w-[120px]">
+                    {{ servicio.nombre }}
+                  </div>
+                </td>
+                <td class="px-3 py-4 text-xs text-gray-700">
+                  <div class="truncate max-w-[100px]">
+                    {{ labelCategoriaServicio(servicio.categoria) }}
+                  </div>
                 </td>
                 <td
                   class="w-[330px] max-w-[330px] px-3 py-4 text-xs text-gray-500 relative group"
@@ -260,11 +329,11 @@
                     ></div>
                   </div>
                 </td>
-                <td class="w-[330px] max-w-[330px] px-3 py-4 text-xs text-gray-500" v-else>
+                <td
+                  class="w-[330px] max-w-[330px] px-3 py-4 text-xs text-gray-500"
+                  v-else
+                >
                   <div class="truncate">-</div>
-                </td>
-                <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-600">
-                  {{ obtenerClaveSede(servicio) || '-' }}
                 </td>
                 <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-900">
                   ${{ servicio.precioUnitario.toFixed(2) }}
@@ -273,17 +342,15 @@
                   <span
                     :class="[
                       'px-1.5 py-0.5 text-xs font-medium rounded-full',
-                      servicio.activo
+                      isServicioActivo(servicio)
                         ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800',
                     ]"
                   >
-                    {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+                    {{ isServicioActivo(servicio) ? 'Activo' : 'Inactivo' }}
                   </span>
                 </td>
-                <td
-                  class="px-3 py-4 whitespace-nowrap text-xs font-medium"
-                >
+                <td class="px-3 py-4 whitespace-nowrap text-xs font-medium">
                   <div class="flex flex-col gap-1">
                     <button
                       @click="abrirModalEditar(servicio)"
@@ -292,10 +359,20 @@
                       Editar
                     </button>
                     <button
-                      @click="eliminarServicio(servicio)"
-                      class="text-red-600 hover:text-red-900 text-left"
+                      v-if="isServicioActivo(servicio)"
+                      @click="pedirDesactivar(servicio)"
+                      class="text-red-600 hover:text-red-900 text-left disabled:opacity-50"
+                      :disabled="isMutating"
                     >
-                      Eliminar
+                      Desactivar
+                    </button>
+                    <button
+                      v-else
+                      @click="reactivar(servicio)"
+                      class="text-green-700 hover:text-green-900 text-left disabled:opacity-50"
+                      :disabled="isMutating"
+                    >
+                      Reactivar
                     </button>
                   </div>
                 </td>
@@ -311,7 +388,7 @@
           v-if="servicios.length === 0"
           class="bg-white shadow-md rounded-lg p-6 text-center"
         >
-          <p class="text-gray-500">No hay servicios disponibles</p>
+          <p class="text-gray-500">{{ emptyListMessage }}</p>
         </div>
         <div
           v-for="(servicio, index) in servicios"
@@ -323,39 +400,43 @@
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <span class="text-xs text-gray-500 font-medium"
-                  >#{{ index + 1 }}</span
+                  >#{{ rowNumber(index) }}</span
                 >
                 <span
                   :class="[
                     'px-2 py-1 text-xs font-medium rounded-full',
-                    servicio.activo
+                    isServicioActivo(servicio)
                       ? 'bg-green-100 text-green-800'
                       : 'bg-red-100 text-red-800',
                   ]"
                 >
-                  {{ servicio.activo ? 'Activo' : 'Inactivo' }}
+                  {{ isServicioActivo(servicio) ? 'Activo' : 'Inactivo' }}
                 </span>
               </div>
               <h3 class="text-lg font-semibold text-gray-900">
                 {{ servicio.nombre }}
               </h3>
+              <p class="text-sm text-gray-600 mt-1">
+                {{ labelCategoriaServicio(servicio.categoria) }}
+              </p>
             </div>
           </div>
 
           <!-- Descripción -->
-          <div v-if="servicio.descripcion && servicio.descripcion.length > 0" class="text-sm text-gray-600">
-            <span class="font-medium text-gray-700 block mb-1">Descripción:</span>
-            <p class="text-gray-600 leading-relaxed">{{ servicio.descripcion }}</p>
+          <div
+            v-if="servicio.descripcion && servicio.descripcion.length > 0"
+            class="text-sm text-gray-600"
+          >
+            <span class="font-medium text-gray-700 block mb-1"
+              >Descripción:</span
+            >
+            <p class="text-gray-600 leading-relaxed">
+              {{ servicio.descripcion }}
+            </p>
           </div>
 
           <!-- Información adicional -->
           <div class="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span class="font-medium text-gray-700">Clave Sede:</span>
-              <span class="ml-1 text-gray-600">{{
-                obtenerClaveSede(servicio) || '-'
-              }}</span>
-            </div>
             <div>
               <span class="font-medium text-gray-700">Precio:</span>
               <span class="ml-1 text-gray-900 font-semibold">
@@ -374,12 +455,59 @@
               Editar
             </button>
             <button
-              @click="eliminarServicio(servicio)"
-              class="w-full px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors font-medium text-sm"
+              v-if="isServicioActivo(servicio)"
+              @click="pedirDesactivar(servicio)"
+              class="w-full px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors font-medium text-sm disabled:opacity-50"
+              :disabled="isMutating"
             >
-              Eliminar
+              Desactivar
+            </button>
+            <button
+              v-else
+              @click="reactivar(servicio)"
+              class="w-full px-4 py-2 bg-green-50 text-green-800 rounded-md hover:bg-green-100 transition-colors font-medium text-sm disabled:opacity-50"
+              :disabled="isMutating"
+            >
+              Reactivar
             </button>
           </div>
+        </div>
+      </div>
+
+      <div
+        v-if="pagination.totalPages > 1"
+        class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white shadow-md rounded-lg px-4 py-3"
+      >
+        <p class="text-sm text-gray-600">
+          Mostrando
+          {{
+            (pagination.page - 1) * pagination.limit +
+            (servicios.length ? 1 : 0)
+          }}–{{
+            Math.min(
+              pagination.page * pagination.limit,
+              pagination.total,
+            )
+          }}
+          de {{ pagination.total }}
+        </p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="px-3 py-1.5 border rounded-md text-sm disabled:opacity-50"
+            :disabled="pagination.page <= 1"
+            @click="prevPage"
+          >
+            Anterior
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 border rounded-md text-sm disabled:opacity-50"
+            :disabled="pagination.page >= pagination.totalPages"
+            @click="nextPage"
+          >
+            Siguiente
+          </button>
         </div>
       </div>
     </template>
@@ -421,59 +549,6 @@
           </div>
 
           <form @submit.prevent="guardarServicio" class="space-y-4">
-            <!-- Opción para crear en todas las sedes (solo al crear) -->
-            <div v-if="!modoEdicion" class="flex items-center">
-              <input
-                id="crearEnTodas"
-                v-model="crearEnTodasLasSedes"
-                type="checkbox"
-                class="h-4 w-4 text-medical-blue-600 focus:ring-medical-blue-500 border-gray-300 rounded"
-                :disabled="isSubmitting"
-                @change="onCambiarCrearEnTodas"
-              />
-              <label
-                for="crearEnTodas"
-                class="ml-2 block text-sm text-gray-700"
-              >
-                Crear este servicio en todas las sedes
-              </label>
-            </div>
-
-            <!-- Sede -->
-            <div v-if="!crearEnTodasLasSedes || modoEdicion">
-              <label
-                for="sede"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Sede <span class="text-red-500">*</span>
-              </label>
-              <select
-                id="sede"
-                v-model="formulario.sedeId"
-                :required="!modoEdicion && !crearEnTodasLasSedes"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmitting || modoEdicion"
-              >
-                <option value="">Seleccione una sede</option>
-                <option v-for="sede in sedes" :key="sede._id" :value="sede._id">
-                  {{ sede.ciudad }}
-                </option>
-              </select>
-            </div>
-
-            <!-- Mensaje informativo cuando se crea en todas las sedes -->
-            <div
-              v-if="crearEnTodasLasSedes && !modoEdicion"
-              class="bg-blue-50 border border-blue-200 rounded-lg p-3"
-            >
-              <p class="text-blue-800 text-sm">
-                <strong>Nota:</strong> Este servicio se creará en todas las
-                sedes con el precio y estado especificados. Podrás editar el
-                precio y estado de cada sede de manera independiente después de
-                crearlo.
-              </p>
-            </div>
-
             <!-- Nombre -->
             <div>
               <label
@@ -491,6 +566,32 @@
                 placeholder="Ej: Examen Médico Laboral"
                 :disabled="isSubmitting"
               />
+            </div>
+
+            <!-- Categoría -->
+            <div>
+              <label
+                for="categoria"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Categoría <span class="text-red-500">*</span>
+              </label>
+              <select
+                id="categoria"
+                v-model="formulario.categoria"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                :disabled="isSubmitting"
+              >
+                <option disabled value="">Selecciona una categoría</option>
+                <option
+                  v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
+                  :key="opt.code"
+                  :value="opt.code"
+                >
+                  {{ opt.label }}
+                </option>
+              </select>
             </div>
 
             <!-- Descripción -->
@@ -517,7 +618,7 @@
                 for="precioUnitario"
                 class="block text-sm font-medium text-gray-700 mb-1"
               >
-                Precio Unitario <span class="text-red-500">*</span>
+                Precio Unitario (MXN) <span class="text-red-500">*</span>
               </label>
               <div class="flex items-center space-x-2">
                 <span class="text-gray-500">$</span>
@@ -532,14 +633,7 @@
                   placeholder="0.00"
                   :disabled="isSubmitting"
                 />
-                <select
-                  v-model="formulario.moneda"
-                  class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                  :disabled="isSubmitting"
-                >
-                  <option value="MXN">MXN</option>
-                  <option value="USD">USD</option>
-                </select>
+                <span class="text-sm text-gray-600 font-medium">MXN</span>
               </div>
             </div>
 
@@ -555,6 +649,39 @@
               <label for="activo" class="ml-2 block text-sm text-gray-700">
                 Servicio activo
               </label>
+            </div>
+
+            <!-- Story 4.4: multi-tenant create — solo admin + modo crear -->
+            <div
+              v-if="!modoEdicion && isAdminSistema"
+              class="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-2"
+            >
+              <p class="text-sm font-medium text-gray-800">
+                Crear en administración(es)
+              </p>
+              <p class="text-xs text-gray-500">
+                Cada administración recibe un registro independiente. Las
+                ediciones posteriores no se sincronizan.
+              </p>
+              <div
+                v-for="t in tenantsDisponibles"
+                :key="t._id"
+                class="flex items-center gap-2"
+              >
+                <input
+                  :id="`tenant-destino-${t._id}`"
+                  v-model="tenantIdsDestino"
+                  type="checkbox"
+                  class="h-4 w-4 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
+                  :value="t._id"
+                  :disabled="isSubmitting"
+                />
+                <label
+                  :for="`tenant-destino-${t._id}`"
+                  class="text-sm text-gray-700"
+                  >{{ t.nombre }}</label
+                >
+              </div>
             </div>
 
             <!-- Mensaje de error -->
@@ -593,42 +720,95 @@
       </div>
     </div>
 
-    <!-- Modal de confirmación para eliminar servicio -->
+    <!-- Modal de confirmación para desactivar servicio -->
     <ConfirmationModal
-      :show="mostrarConfirmEliminar"
-      title="Eliminar Servicio"
-      :message="mensajeConfirmEliminar"
+      :show="mostrarConfirmDesactivar"
+      title="Desactivar Servicio"
+      :message="mensajeConfirmDesactivar"
       type="danger"
-      confirm-text="Eliminar"
+      confirm-text="Desactivar"
       cancel-text="Cancelar"
-      @confirm="ejecutarEliminacion"
-      @cancel="mostrarConfirmEliminar = false"
+      @confirm="ejecutarDesactivar"
+      @cancel="mostrarConfirmDesactivar = false"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import {
   getServicios,
   createServicio,
-  createServicioForAllSedes,
+  createServicioMulti,
   updateServicio,
   deleteServicio,
-  getSedes,
+  toggleServicioActivo,
+  getTenants,
   type CreateServicioPayload,
-  type CreateServicioGlobalPayload,
   type UpdateServicioPayload,
+  type AdminServiciosFilters,
 } from '../../services/admin-api.service';
-import type { Servicio, Sede } from '../../types/backend';
+import type { Servicio, Tenant } from '../../types/backend';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
+import { useAuthStore } from '../../store/auth';
+import {
+  CATEGORIA_SERVICIO_OPTIONS,
+  labelCategoriaServicio,
+  type CategoriaServicioCode,
+} from '../../constants/categorias-servicio';
+
+const authStore = useAuthStore();
+const isAdminSistema = computed(() => authStore.isAdminSistema);
 
 const servicios = ref<Servicio[]>([]);
-const sedes = ref<Sede[]>([]);
-const sedeSeleccionada = ref<string | null>(null);
 const isLoading = ref(false);
 const error = ref<string | null>(null);
+const verInactivos = ref(false);
+const successMsg = ref<string | null>(null);
+const actionError = ref<string | null>(null);
+const isMutating = ref(false);
+let loadSeq = 0;
+let filterTimeout: ReturnType<typeof setTimeout> | null = null;
+
+const filters = ref<{
+  nombre: string;
+  categoria: CategoriaServicioCode | '';
+  page: number;
+  limit: number;
+}>({
+  nombre: '',
+  categoria: '',
+  page: 1,
+  limit: 20,
+});
+
+const pagination = ref({
+  total: 0,
+  page: 1,
+  limit: 20,
+  totalPages: 1,
+});
+
+function isServicioActivo(servicio: Servicio): boolean {
+  return servicio.activo !== false;
+}
+
+const tieneFiltrosBusqueda = computed(
+  () =>
+    !!(filters.value.nombre?.trim() || filters.value.categoria),
+);
+
+const emptyListMessage = computed(() => {
+  if (tieneFiltrosBusqueda.value)
+    return 'No se encontraron servicios con esos filtros';
+  if (verInactivos.value) return 'No hay servicios inactivos';
+  return 'No hay servicios disponibles';
+});
+
+function rowNumber(index: number): number {
+  return (pagination.value.page - 1) * pagination.value.limit + index + 1;
+}
 
 // Estado del modal
 const mostrarModal = ref(false);
@@ -638,92 +818,126 @@ const isSubmitting = ref(false);
 const errorCrear = ref<string | null>(null);
 
 const formulario = ref<CreateServicioPayload>({
-  sedeId: '',
   nombre: '',
   descripcion: '',
   precioUnitario: 0,
+  categoria: '' as CategoriaServicioCode | '',
   moneda: 'MXN',
   activo: true,
 });
 
-// Estado para el modal de confirmación de eliminación
-const mostrarConfirmEliminar = ref(false);
-const mensajeConfirmEliminar = ref('');
-const servicioParaEliminar = ref<Servicio | null>(null);
+const tenantsDisponibles = ref<Tenant[]>([]);
+const tenantIdsDestino = ref<string[]>([]);
 
-// Opción para crear en todas las sedes
-const crearEnTodasLasSedes = ref(false);
+const mostrarConfirmDesactivar = ref(false);
+const mensajeConfirmDesactivar = ref('');
+const servicioADesactivar = ref<Servicio | null>(null);
 
-/**
- * Obtiene la clave de la sede desde el servicio
- */
-const obtenerClaveSede = (servicio: Servicio): string | undefined => {
-  // Primero intentar usar la clave almacenada directamente en el documento
-  if (servicio.claveSede) {
-    return servicio.claveSede;
-  }
-  // Si no está disponible, intentar obtenerla del objeto Sede poblado
-  if (typeof servicio.sedeId === 'object' && servicio.sedeId !== null) {
-    return servicio.sedeId.clave;
-  }
-  // Si sedeId es un string, buscar la sede en el array de sedes
-  const sede = sedes.value.find((s) => s._id === servicio.sedeId);
-  return sede?.clave;
-};
+function extractError(err: any, fallback: string): string {
+  const msg = err?.response?.data?.message;
+  if (Array.isArray(msg)) return msg.join(', ');
+  return msg || fallback;
+}
 
-/**
- * Carga todas las sedes disponibles
- */
-const cargarSedes = async () => {
-  try {
-    const sedesData = await getSedes();
-    sedes.value = sedesData;
-  } catch (err: any) {
-    console.error('Error al cargar sedes:', err);
-    error.value = 'No fue posible cargar las sedes';
-  }
-};
-
-/**
- * Carga los servicios según la sede seleccionada
- */
 const cargarServicios = async () => {
+  const seq = ++loadSeq;
   isLoading.value = true;
   error.value = null;
 
   try {
-    const filters: { sedeId?: string; activo?: boolean } = {};
-
-    if (sedeSeleccionada.value) {
-      filters.sedeId = sedeSeleccionada.value;
+    let page = filters.value.page ?? 1;
+    const limit = filters.value.limit ?? 20;
+    const activeFilters: AdminServiciosFilters = { page, limit };
+    if (filters.value.nombre?.trim()) {
+      activeFilters.nombre = filters.value.nombre.trim();
+    }
+    if (filters.value.categoria) {
+      activeFilters.categoria = filters.value.categoria;
+    }
+    if (verInactivos.value) {
+      activeFilters.activo = false;
     }
 
-    const serviciosData = await getServicios(filters);
-    servicios.value = serviciosData;
+    let res = await getServicios(activeFilters);
+    if (seq !== loadSeq) return;
+
+    // Clamp: página vacía con total > 0 → última página
+    if (
+      res.data.length === 0 &&
+      res.total > 0 &&
+      res.page > res.totalPages
+    ) {
+      page = res.totalPages;
+      filters.value.page = page;
+      res = await getServicios({ ...activeFilters, page });
+      if (seq !== loadSeq) return;
+    }
+
+    servicios.value = res.data;
+    pagination.value = {
+      total: res.total,
+      page: res.page,
+      limit: res.limit,
+      totalPages: res.totalPages,
+    };
+    filters.value.page = res.total === 0 ? 1 : res.page;
   } catch (err: any) {
+    if (seq !== loadSeq) return;
     console.error('Error al cargar servicios:', err);
-    error.value =
-      err.response?.data?.message || 'No fue posible cargar los servicios';
+    error.value = extractError(err, 'No fue posible cargar los servicios');
   } finally {
-    isLoading.value = false;
+    if (seq === loadSeq) isLoading.value = false;
   }
 };
 
-/**
- * Selecciona una sede y recarga los servicios
- */
-const seleccionarSede = (sedeId: string | null) => {
-  sedeSeleccionada.value = sedeId;
-};
-
-/**
- * Maneja el cambio de la opción "crear en todas las sedes"
- */
-const onCambiarCrearEnTodas = () => {
-  if (crearEnTodasLasSedes.value) {
-    formulario.value.sedeId = '';
+function clearFilterDebounce() {
+  if (filterTimeout) {
+    clearTimeout(filterTimeout);
+    filterTimeout = null;
   }
-};
+}
+
+function handleFilterChange() {
+  clearFilterDebounce();
+  filterTimeout = setTimeout(() => {
+    filters.value.page = 1;
+    successMsg.value = null;
+    actionError.value = null;
+    void cargarServicios();
+  }, 500);
+}
+
+function onCategoriaChange() {
+  clearFilterDebounce();
+  filters.value.page = 1;
+  successMsg.value = null;
+  actionError.value = null;
+  void cargarServicios();
+}
+
+function onVerInactivosChange() {
+  clearFilterDebounce();
+  filters.value.page = 1;
+  successMsg.value = null;
+  actionError.value = null;
+  void cargarServicios();
+}
+
+function prevPage() {
+  if ((filters.value.page ?? 1) > 1) {
+    clearFilterDebounce();
+    filters.value.page = (filters.value.page ?? 1) - 1;
+    void cargarServicios();
+  }
+}
+
+function nextPage() {
+  if ((filters.value.page ?? 1) < (pagination.value.totalPages ?? 1)) {
+    clearFilterDebounce();
+    filters.value.page = (filters.value.page ?? 1) + 1;
+    void cargarServicios();
+  }
+}
 
 /**
  * Abre el modal para crear una nueva servicio
@@ -731,15 +945,17 @@ const onCambiarCrearEnTodas = () => {
 const abrirModalCrear = () => {
   modoEdicion.value = false;
   servicioEditando.value = null;
-  crearEnTodasLasSedes.value = false;
   formulario.value = {
-    sedeId: '',
     nombre: '',
     descripcion: '',
     precioUnitario: 0,
+    categoria: '' as CategoriaServicioCode | '',
     moneda: 'MXN',
     activo: true,
   };
+  // Default: solo el tenant activo del sidebar
+  const active = authStore.activeTenantId;
+  tenantIdsDestino.value = active ? [active] : [];
   errorCrear.value = null;
   mostrarModal.value = true;
 };
@@ -750,18 +966,12 @@ const abrirModalCrear = () => {
 const abrirModalEditar = (servicio: Servicio) => {
   modoEdicion.value = true;
   servicioEditando.value = servicio;
-  // Obtener el ID de la sede (puede ser string o objeto Sede poblado)
-  const sedeId =
-    typeof servicio.sedeId === 'string'
-      ? servicio.sedeId
-      : servicio.sedeId._id || '';
-
   formulario.value = {
-    sedeId,
     nombre: servicio.nombre,
     descripcion: servicio.descripcion || '',
     precioUnitario: servicio.precioUnitario,
-    moneda: servicio.moneda || 'MXN',
+    categoria: (servicio.categoria || '') as CategoriaServicioCode | '',
+    moneda: 'MXN',
     activo: servicio.activo !== undefined ? servicio.activo : true,
   };
   errorCrear.value = null;
@@ -775,110 +985,182 @@ const cerrarModal = () => {
   mostrarModal.value = false;
   modoEdicion.value = false;
   servicioEditando.value = null;
-  crearEnTodasLasSedes.value = false;
   errorCrear.value = null;
   formulario.value = {
-    sedeId: '',
     nombre: '',
     descripcion: '',
     precioUnitario: 0,
+    categoria: '' as CategoriaServicioCode | '',
     moneda: 'MXN',
     activo: true,
   };
 };
 
-const {
-  onBackdropPointerDown,
-  onBackdropPointerUp,
-  onBackdropPointerCancel,
-} = useModalDismiss(cerrarModal, mostrarModal);
+const { onBackdropPointerDown, onBackdropPointerUp, onBackdropPointerCancel } =
+  useModalDismiss(cerrarModal, mostrarModal);
 
 /**
  * Guarda un servicio (crear o actualizar)
  */
 const guardarServicio = async () => {
+  const nombre = formulario.value.nombre.trim();
+  if (!nombre) {
+    errorCrear.value = 'Debe proporcionar el nombre del servicio';
+    return;
+  }
+  if (!formulario.value.categoria) {
+    errorCrear.value = 'Debe seleccionar una categoría';
+    return;
+  }
+  if (modoEdicion.value && !servicioEditando.value?._id) {
+    errorCrear.value =
+      'No se puede actualizar: falta el identificador del servicio';
+    return;
+  }
   isSubmitting.value = true;
   errorCrear.value = null;
 
   try {
-    if (modoEdicion.value && servicioEditando.value?._id) {
-      // Actualizar servicio existente
+    if (modoEdicion.value) {
       const payload: UpdateServicioPayload = {
-        nombre: formulario.value.nombre,
-        descripcion: formulario.value.descripcion || undefined,
+        nombre,
+        descripcion: formulario.value.descripcion?.trim() || '',
         precioUnitario: formulario.value.precioUnitario,
-        moneda: formulario.value.moneda,
+        categoria: formulario.value.categoria,
+        moneda: 'MXN',
         activo: formulario.value.activo,
       };
-      await updateServicio(servicioEditando.value._id, payload);
-    } else if (crearEnTodasLasSedes.value) {
-      // Crear servicio en todas las sedes
-      const payload: CreateServicioGlobalPayload = {
-        nombre: formulario.value.nombre,
-        descripcion: formulario.value.descripcion || undefined,
-        precioUnitario: formulario.value.precioUnitario,
-        moneda: formulario.value.moneda,
-        activo: formulario.value.activo,
-      };
-      await createServicioForAllSedes(payload);
-    } else {
-      // Crear nuevo servicio en una sede específica
-      if (!formulario.value.sedeId) {
+      await updateServicio(servicioEditando.value!._id!, payload);
+    } else if (isAdminSistema.value) {
+      const ids = [...new Set(tenantIdsDestino.value.filter(Boolean))];
+      if (ids.length < 1) {
         errorCrear.value =
-          'Debe seleccionar una sede o marcar la opción de crear en todas las sedes';
-        isSubmitting.value = false;
+          'Selecciona al menos una administración destino';
         return;
       }
-      await createServicio(formulario.value);
+      const result = await createServicioMulti({
+        nombre,
+        descripcion: formulario.value.descripcion?.trim() || undefined,
+        precioUnitario: formulario.value.precioUnitario,
+        categoria: formulario.value.categoria,
+        moneda: 'MXN',
+        activo: formulario.value.activo,
+        tenantIds: ids,
+      });
+      const nombres = ids
+        .map(
+          (id) =>
+            tenantsDisponibles.value.find((t) => t._id === id)?.nombre || id,
+        )
+        .join(' y ');
+      successMsg.value =
+        result.created.length > 1
+          ? `Servicio creado en ${nombres}. El listado muestra la administración activa.`
+          : 'Servicio creado.';
+    } else {
+      await createServicio({
+        nombre,
+        descripcion: formulario.value.descripcion?.trim() || undefined,
+        precioUnitario: formulario.value.precioUnitario,
+        categoria: formulario.value.categoria,
+        moneda: 'MXN',
+        activo: formulario.value.activo,
+      });
+      successMsg.value = 'Servicio creado.';
     }
     cerrarModal();
-    // Recargar servicios después de guardar
     await cargarServicios();
   } catch (err: any) {
     console.error('Error al guardar servicio:', err);
-    errorCrear.value =
-      err.response?.data?.message || 'No fue posible guardar el servicio';
+    const msg = err.response?.data?.message;
+    errorCrear.value = Array.isArray(msg)
+      ? msg.join(', ')
+      : msg || 'No fue posible guardar el servicio';
   } finally {
     isSubmitting.value = false;
   }
 };
 
 /**
- * Elimina completamente un servicio de la base de datos
+ * Desactiva (soft delete) o reactiva un servicio
  */
-const eliminarServicio = (servicio: Servicio) => {
+const pedirDesactivar = (servicio: Servicio) => {
   if (!servicio._id) return;
-
-  servicioParaEliminar.value = servicio;
-  mensajeConfirmEliminar.value = `¿Estás seguro de que deseas eliminar permanentemente el servicio "${servicio.nombre}"?\n\nEsta acción no se puede deshacer y el servicio será eliminado completamente de la base de datos.`;
-  mostrarConfirmEliminar.value = true;
+  servicioADesactivar.value = servicio;
+  mensajeConfirmDesactivar.value = `¿Desactivar el servicio "${servicio.nombre}"?\n\nDejará de aparecer en el cotizador. Las cotizaciones históricas conservan su información. Puedes reactivarlo desde "Ver inactivos".`;
+  mostrarConfirmDesactivar.value = true;
 };
 
-const ejecutarEliminacion = async () => {
-  if (!servicioParaEliminar.value?._id) return;
-
-  mostrarConfirmEliminar.value = false;
+const ejecutarDesactivar = async () => {
+  if (isMutating.value) {
+    actionError.value =
+      'Hay otra operación en curso. Espera un momento e intenta de nuevo.';
+    return;
+  }
+  const id = servicioADesactivar.value?._id;
+  if (!id) {
+    mostrarConfirmDesactivar.value = false;
+    return;
+  }
+  mostrarConfirmDesactivar.value = false;
+  isMutating.value = true;
+  actionError.value = null;
   try {
-    await deleteServicio(servicioParaEliminar.value._id);
-    // Recargar servicios después de eliminar
+    await deleteServicio(id);
+    successMsg.value = 'Servicio desactivado.';
+    // Optimista: quitar de listado activos antes del reload
+    servicios.value = servicios.value.filter((s) => s._id !== id);
     await cargarServicios();
   } catch (err: any) {
-    console.error('Error al eliminar servicio:', err);
-    alert(err.response?.data?.message || 'No fue posible eliminar el servicio');
+    console.error('Error al desactivar servicio:', err);
+    successMsg.value = null;
+    actionError.value = extractError(err, 'No se pudo desactivar el servicio');
   } finally {
-    servicioParaEliminar.value = null;
+    isMutating.value = false;
+    servicioADesactivar.value = null;
+  }
+};
+
+const reactivar = async (servicio: Servicio) => {
+  if (!servicio._id || isMutating.value) return;
+  isMutating.value = true;
+  actionError.value = null;
+  try {
+    await toggleServicioActivo(servicio._id);
+    successMsg.value = 'Servicio reactivado.';
+    // Optimista: quitar de listado inactivos para no permitir segundo toggle
+    servicios.value = servicios.value.filter((s) => s._id !== servicio._id);
+    await cargarServicios();
+  } catch (err: any) {
+    console.error('Error al reactivar servicio:', err);
+    successMsg.value = null;
+    actionError.value = extractError(err, 'No se pudo reactivar el servicio');
+  } finally {
+    isMutating.value = false;
   }
 };
 
 // Cargar datos al montar el componente
 onMounted(async () => {
-  await cargarSedes();
   await cargarServicios();
+  if (authStore.isAdminSistema) {
+    try {
+      const tenants = await getTenants();
+      tenantsDisponibles.value = tenants.filter(
+        (t) => t.activo !== false && t._id,
+      );
+    } catch (err) {
+      console.error('Error al cargar tenants:', err);
+      actionError.value = extractError(
+        err,
+        'No se pudieron cargar las administraciones destino',
+      );
+    }
+  }
 });
 
-// Recargar servicios cuando cambia la sede seleccionada
-watch(sedeSeleccionada, () => {
-  cargarServicios();
+onUnmounted(() => {
+  clearFilterDebounce();
 });
 </script>
 

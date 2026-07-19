@@ -5,7 +5,8 @@
         Recuperar contraseña
       </h2>
       <p class="text-sm text-gray-600 mb-6 text-center">
-        Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
+        Ingresa tu correo electrónico y te enviaremos un enlace para restablecer
+        tu contraseña
       </p>
 
       <form v-if="!emailSent" @submit.prevent="handleSubmit" class="space-y-4">
@@ -36,10 +37,7 @@
         </button>
       </form>
 
-      <div
-        v-if="emailSent"
-        class="text-center space-y-4"
-      >
+      <div v-if="emailSent" class="text-center space-y-4">
         <div class="flex justify-center">
           <svg
             class="h-16 w-16 text-green-500"
@@ -56,7 +54,8 @@
           </svg>
         </div>
         <p class="text-gray-700">
-          Si el correo existe en nuestro sistema, recibirás un enlace para restablecer tu contraseña.
+          Si el correo existe en nuestro sistema, recibirás un enlace para
+          restablecer tu contraseña.
         </p>
         <p class="text-sm text-gray-600">
           Por favor, revisa tu bandeja de entrada y la carpeta de spam.
@@ -102,9 +101,12 @@ const handleSubmit = async () => {
 
   try {
     await authApiService.requestPasswordResetAdmin({ email: email.value });
+    // Siempre UI genérica (anti-enumeración FR-2); no revelar existencia.
     emailSent.value = true;
-  } catch (err: any) {
-    error.value = err.response?.data?.message || 'Error al enviar el correo. Por favor, intenta de nuevo.';
+  } catch {
+    // Red/5xx: mensaje genérico — no filtrar body del servidor.
+    error.value =
+      'No se pudo completar la solicitud. Intenta de nuevo en unos minutos.';
   } finally {
     isLoading.value = false;
   }

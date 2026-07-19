@@ -55,7 +55,7 @@ export const formatDate = (date: string | Date | undefined): string => {
 export const formatDateShort = (date: string | Date | undefined): string => {
   if (!date) return '-';
   const d = typeof date === 'string' ? new Date(date) : date;
-  // Ajustar zona horaria si es necesario o usar UTC methods, 
+  // Ajustar zona horaria si es necesario o usar UTC methods,
   // pero para consistencia con simple date string:
   const day = d.getUTCDate().toString().padStart(2, '0');
   const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');

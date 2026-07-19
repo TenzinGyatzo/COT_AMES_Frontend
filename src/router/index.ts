@@ -10,18 +10,11 @@ import { useAuthStore } from '../store/auth';
 // Importar layouts
 import MainLayout from '../layouts/MainLayout.vue';
 import AdminLayout from '../layouts/AdminLayout.vue';
-import ClienteLayout from '../layouts/ClienteLayout.vue';
 
 // Importar vistas principales
-import HomeView from '../views/HomeView.vue';
-import CotizadorView from '../views/CotizadorView.vue';
 import LoginView from '../views/LoginView.vue';
 import ForgotPasswordView from '../views/ForgotPasswordView.vue';
 import ResetPasswordView from '../views/ResetPasswordView.vue';
-import ClienteLoginView from '../views/ClienteLoginView.vue';
-import ClienteForgotPasswordView from '../views/ClienteForgotPasswordView.vue';
-import ClienteResetPasswordView from '../views/ClienteResetPasswordView.vue';
-import ClienteRegisterView from '../views/ClienteRegisterView.vue';
 import GuestCotizacionDetalleView from '../views/GuestCotizacionDetalleView.vue';
 
 // Importar vistas de administración
@@ -31,19 +24,11 @@ import AdminCotizacionDetalleView from '../views/admin/AdminCotizacionDetalleVie
 import AdminCotizadorView from '../views/admin/AdminCotizadorView.vue';
 import AdminClientesView from '../views/admin/AdminClientesView.vue';
 import AdminClienteDetalleView from '../views/admin/AdminClienteDetalleView.vue';
-import AdminOrdenesView from '../views/admin/AdminOrdenesView.vue';
-import AdminOrdenDetalleView from '../views/admin/AdminOrdenDetalleView.vue';
 import AdminServiciosView from '../views/admin/AdminServiciosView.vue';
-import AdminSedesView from '../views/admin/AdminSedesView.vue';
 import AdminMetricasView from '../views/admin/AdminMetricasView.vue';
-
-// Importar vistas del portal cliente
-import ClienteDashboardView from '../views/cliente/ClienteDashboardView.vue';
-import ClienteCotizacionesView from '../views/cliente/ClienteCotizacionesView.vue';
-import ClienteCotizacionDetalleView from '../views/cliente/ClienteCotizacionDetalleView.vue';
-import ClienteOrdenesView from '../views/cliente/ClienteOrdenesView.vue';
-import ClienteOrdenDetalleView from '../views/cliente/ClienteOrdenDetalleView.vue';
-import ClientePerfilView from '../views/cliente/ClientePerfilView.vue';
+import AdminUsuariosView from '../views/admin/AdminUsuariosView.vue';
+import AdminPlantillasView from '../views/admin/AdminPlantillasView.vue';
+import AdminConfiguracionView from '../views/admin/AdminConfiguracionView.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -52,8 +37,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        name: 'home',
-        component: HomeView,
+        redirect: { name: 'admin-login' },
       },
       {
         path: 'admin/login',
@@ -71,26 +55,6 @@ const routes: RouteRecordRaw[] = [
         component: ResetPasswordView,
       },
       {
-        path: 'cliente/login',
-        name: 'cliente-login',
-        component: ClienteLoginView,
-      },
-      {
-        path: 'cliente/forgot-password',
-        name: 'cliente-forgot-password',
-        component: ClienteForgotPasswordView,
-      },
-      {
-        path: 'cliente/reset-password',
-        name: 'cliente-reset-password',
-        component: ClienteResetPasswordView,
-      },
-      {
-        path: 'cliente/register',
-        name: 'cliente-register',
-        component: ClienteRegisterView,
-      },
-      {
         path: 'cotizacion-publica/:token',
         name: 'guest-cotizacion-detalle',
         component: GuestCotizacionDetalleView,
@@ -100,124 +64,99 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/admin',
     component: AdminLayout,
-    meta: { requiresAuth: true, allowedRoles: ['admin'] },
+    meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
     children: [
       {
         path: '',
         name: 'admin-dashboard',
         component: AdminDashboardView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
       },
       {
         path: 'clientes',
         name: 'admin-clientes',
         component: AdminClientesView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
       },
       {
         path: 'clientes/:id',
         name: 'admin-cliente-detalle',
         component: AdminClienteDetalleView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
       },
       {
         path: 'cotizaciones',
         name: 'admin-cotizaciones',
         component: AdminCotizacionesView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
       },
       {
         path: 'cotizaciones/nueva',
         name: 'admin-cotizacion-nueva',
         component: AdminCotizadorView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
       },
       {
         path: 'cotizaciones/:id',
         name: 'admin-cotizacion-detalle',
         component: AdminCotizacionDetalleView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
-      },
-      {
-        path: 'ordenes',
-        name: 'admin-ordenes',
-        component: AdminOrdenesView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
-      },
-      {
-        path: 'ordenes/:id',
-        name: 'admin-orden-detalle',
-        component: AdminOrdenDetalleView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
       },
       {
         path: 'servicios',
         name: 'admin-servicios',
         component: AdminServiciosView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
-      },
-      {
-        path: 'sedes',
-        name: 'admin-sedes',
-        component: AdminSedesView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
       },
       {
         path: 'metricas',
         name: 'admin-metricas',
         component: AdminMetricasView,
-        meta: { requiresAuth: true, allowedRoles: ['admin'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+      },
+      {
+        path: 'plantillas',
+        name: 'admin-plantillas',
+        component: AdminPlantillasView,
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+      },
+      {
+        path: 'configuracion',
+        name: 'admin-configuracion',
+        component: AdminConfiguracionView,
+        meta: { requiresAuth: true, allowedRoles: ['admin_sistema'] },
+      },
+      {
+        path: 'usuarios',
+        name: 'admin-usuarios',
+        component: AdminUsuariosView,
+        meta: { requiresAuth: true, allowedRoles: ['admin_sistema'] },
       },
     ],
   },
+  // Deep-links heredados MOC → redirigir (Story 1.1)
+  { path: '/cliente/:pathMatch(.*)*', redirect: { name: 'admin-login' } },
+  { path: '/admin/ordenes/:pathMatch(.*)*', redirect: '/admin/cotizaciones' },
+  { path: '/admin/ordenes', redirect: '/admin/cotizaciones' },
+  { path: '/admin/sedes/:pathMatch(.*)*', redirect: '/admin' },
+  { path: '/admin/sedes', redirect: '/admin' },
+  // Emails viejos / path incorrecto → ruta FE real (Story 1.4)
   {
-    path: '/cliente',
-    component: ClienteLayout,
-    meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-    children: [
-      {
-        path: '',
-        name: 'cliente-dashboard',
-        component: ClienteDashboardView,
-        meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-      },
-      {
-        path: 'cotizaciones',
-        name: 'cliente-cotizaciones',
-        component: ClienteCotizacionesView,
-        meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-      },
-      {
-        path: 'cotizaciones/nueva',
-        name: 'cliente-cotizacion-nueva',
-        component: CotizadorView,
-        meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-      },
-      {
-        path: 'cotizaciones/:id',
-        name: 'cliente-cotizacion-detalle',
-        component: ClienteCotizacionDetalleView,
-        meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-      },
-      {
-        path: 'ordenes',
-        name: 'cliente-ordenes',
-        component: ClienteOrdenesView,
-        meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-      },
-      {
-        path: 'ordenes/:id',
-        name: 'cliente-orden-detalle',
-        component: ClienteOrdenDetalleView,
-        meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-      },
-      {
-        path: 'perfil',
-        name: 'cliente-perfil',
-        component: ClientePerfilView,
-        meta: { requiresAuth: true, allowedRoles: ['cliente'] },
-      },
-    ],
+    path: '/reset-password',
+    redirect: (to) => ({
+      path: '/admin/reset-password',
+      query: to.query,
+    }),
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: () => {
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated && authStore.isAmesUser) {
+        return { path: '/admin' };
+      }
+      return { name: 'admin-login' };
+    },
   },
 ];
 
@@ -226,80 +165,50 @@ const router = createRouter({
   routes,
 });
 
-// Guards de rutas: protege rutas según roles usando metadatos
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
 
-  // Determinar si la ruta requiere autenticación y qué roles acepta
   const requiresAuth = to.matched.some((record) => record.meta?.requiresAuth);
-  const allowedRoles = new Set<string>();
-  to.matched.forEach((record) => {
+  // Deepest route wins (child overrides parent) — evita unión que debilitaba AC #3
+  let allowedRolesList: string[] = [];
+  for (const record of to.matched) {
     const roles = record.meta?.allowedRoles as string[] | undefined;
-    roles?.forEach((r) => allowedRoles.add(r));
-  });
+    if (roles?.length) {
+      allowedRolesList = roles;
+    }
+  }
+  const allowedRoles = new Set(allowedRolesList);
 
-  // Manejar redirecciones de login cuando ya está autenticado
   if (to.name === 'admin-login' && authStore.isAuthenticated) {
     if (authStore.isAdmin) {
       return next('/admin');
     }
-    // Cliente autenticado: no tiene sentido ir al login admin
-    return next('/');
+    authStore.logout();
+    return next();
   }
 
-  if (to.name === 'cliente-login' && authStore.isAuthenticated) {
-    if (authStore.isCliente) {
-      return next('/cliente');
-    }
-    // Admin autenticado: no tiene sentido ir al login cliente
-    return next('/admin');
-  }
-
-  if (to.name === 'cliente-register' && authStore.isAuthenticated) {
-    if (authStore.isCliente) {
-      return next('/cliente');
-    }
-    // Admin autenticado: no tiene sentido ir al registro cliente
-    return next('/admin');
-  }
-
-  // Si no requiere auth, permitir el acceso
   if (!requiresAuth) {
     return next();
   }
 
-  // Si requiere auth y no está autenticado, redirigir al login correcto
   if (!authStore.isAuthenticated) {
-    // Si la ruta permite múltiples roles, redirigir por defecto al login de cliente
-    if (allowedRoles.has('cliente')) {
-      return next({ name: 'cliente-login', query: { redirect: to.fullPath } });
-    }
-    if (allowedRoles.has('admin')) {
-      return next({ name: 'admin-login', query: { redirect: to.fullPath } });
-    }
-    // Fallback: redirigir al login de cliente por defecto
-    return next({ name: 'cliente-login', query: { redirect: to.fullPath } });
+    return next({ name: 'admin-login', query: { redirect: to.fullPath } });
   }
 
-  // Si está autenticado pero su rol no está permitido en esa ruta
   const user = authStore.user;
   if (allowedRoles.size > 0) {
-    const userRole = user?.tipoUsuario; // 'admin' | 'cliente'
+    const userRole = user?.rol;
 
     if (!userRole || !allowedRoles.has(userRole)) {
-      // Acceso denegado por rol
-      if (authStore.isAdmin) {
-        return next('/admin');
+      // Soft-deny: no tumbar sesión AMES por deep-link a ruta admin-only
+      if (authStore.isAmesUser) {
+        return next({ name: 'admin-dashboard' });
       }
-      if (authStore.isCliente) {
-        return next('/cliente');
-      }
-      // Fallback genérico
-      return next('/');
+      authStore.logout();
+      return next({ name: 'admin-login', query: { redirect: to.fullPath } });
     }
   }
 
-  // Si pasa todas las validaciones, permitir acceso
   return next();
 });
 

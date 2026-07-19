@@ -3,32 +3,41 @@
     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
       {{ index }}
     </td>
-    <td class="px-6 py-4 text-sm font-medium text-gray-900">
-      <div class="w-32 break-words">{{ servicio.nombre }}</div>
+    <td class="px-6 py-4 text-sm">
+      <input
+        type="text"
+        :value="nombre"
+        class="w-full min-w-[8rem] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-900 focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none"
+        @input="
+          $emit(
+            'update:nombre',
+            ($event.target as HTMLInputElement).value,
+          )
+        "
+      />
     </td>
-    <td
-      class="px-6 py-4 text-sm text-gray-500 relative group"
-      v-if="servicio.descripcion && servicio.descripcion.length > 0"
-    >
-      <div> <!-- Opcionalmente se puede agregar la clase truncate aquí -->
-        {{ servicio.descripcion }}
-      </div>
-      <!-- Tooltip personalizado 
-       <div
-        class="absolute left-0 bottom-full mb-2 hidden group-hover:block z-50 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg pointer-events-none"
-      >
-        <div class="whitespace-normal break-words">
-          {{ servicio.descripcion }}
-        </div>
-        
-        <div
-          class="absolute top-full left-4 border-4 border-transparent border-t-gray-900"
-        ></div> 
-      </div> 
-      -->
+    <td class="px-6 py-4 text-sm">
+      <textarea
+        :value="descripcion"
+        rows="2"
+        class="w-full min-w-[10rem] px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none resize-y"
+        @input="
+          $emit(
+            'update:descripcion',
+            ($event.target as HTMLTextAreaElement).value,
+          )
+        "
+      />
     </td>
-    <td class="px-6 py-4 text-sm text-gray-500" v-else>
-      <div class="truncate">-</div>
+    <td class="px-6 py-4 whitespace-nowrap text-sm">
+      <input
+        type="number"
+        min="0"
+        step="0.01"
+        :value="precioUnitario"
+        class="w-28 px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-900 focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none"
+        @input="onPrecioInput"
+      />
     </td>
     <td class="px-6 py-4 whitespace-nowrap">
       <QuantitySelector
@@ -36,11 +45,15 @@
         @update:model-value="handleQuantityChange"
       />
     </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 text-right">
+      {{ formatMoney(subtotal) }}
+    </td>
     <td class="px-6 py-4 whitespace-nowrap">
       <button
-        @click="handleRemove"
+        type="button"
         class="text-red-600 hover:text-red-800 transition-colors"
         title="Eliminar servicio"
+        @click="handleRemove"
       >
         <svg
           class="w-5 h-5"
@@ -63,24 +76,35 @@
 <script setup lang="ts">
 import QuantitySelector from './QuantitySelector.vue';
 
-// Componente atómico con una sola responsabilidad:
-// Mostrar un servicio y permitir ajustar cantidad
-
-interface Servicio {
-  nombre: string;
-  descripcion?: string;
-}
-
 defineProps<{
-  servicio: Servicio;
   index: number;
+  nombre: string;
+  descripcion: string;
+  precioUnitario: number;
   cantidad: number;
+  subtotal: number;
 }>();
 
 const emit = defineEmits<{
+  'update:nombre': [value: string];
+  'update:descripcion': [value: string];
+  'update:precioUnitario': [value: number];
   'update:cantidad': [value: number];
   remove: [];
 }>();
+
+function formatMoney(n: number): string {
+  return n.toLocaleString('es-MX', {
+    style: 'currency',
+    currency: 'MXN',
+  });
+}
+
+function onPrecioInput(event: Event) {
+  const raw = (event.target as HTMLInputElement).value;
+  const n = Number(raw);
+  emit('update:precioUnitario', Number.isFinite(n) && n >= 0 ? n : 0);
+}
 
 const handleQuantityChange = (value: number) => {
   emit('update:cantidad', value);

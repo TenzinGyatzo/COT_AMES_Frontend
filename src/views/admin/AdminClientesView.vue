@@ -1,8 +1,18 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">Clientes</h1>
+    <div
+      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6"
+    >
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-900">Clientes</h1>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-sm font-medium"
+        @click="abrirNuevo"
+      >
+        Nuevo cliente
+      </button>
+    </div>
 
-    <!-- Mensaje de error -->
     <div
       v-if="error"
       class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
@@ -10,9 +20,24 @@
       {{ error }}
     </div>
 
+    <div
+      v-if="actionError"
+      class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
+      role="alert"
+    >
+      {{ actionError }}
+    </div>
+
+    <div
+      v-if="successMsg"
+      class="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-800"
+    >
+      {{ successMsg }}
+    </div>
+
     <!-- Filtros -->
     <div class="mb-4 md:mb-6 bg-white shadow-md rounded-lg p-4 md:p-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Empresa
@@ -37,10 +62,21 @@
             @input="handleFilterChange"
           />
         </div>
+        <div class="flex items-center gap-2 pb-1">
+          <input
+            id="ver-inactivos"
+            v-model="verInactivos"
+            type="checkbox"
+            class="h-4 w-4 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
+            @change="onVerInactivosChange"
+          />
+          <label for="ver-inactivos" class="text-sm text-gray-700"
+            >Ver inactivos</label
+          >
+        </div>
       </div>
     </div>
 
-    <!-- Tabla de clientes agrupados por empresa -->
     <BaseSectionLoader
       v-if="isLoadingClientes"
       message="Cargando clientes..."
@@ -51,22 +87,34 @@
         v-if="clientesAgrupados.length === 0"
         class="bg-white shadow-md rounded-lg p-6 md:p-8 text-center"
       >
-        <p class="text-sm md:text-base text-gray-500">
-          No se encontraron clientes
+        <p class="text-sm md:text-base text-gray-500 mb-4">
+          {{ emptyStateMessage }}
         </p>
+        <button
+          v-if="!verInactivos && !tieneFiltrosBusqueda"
+          type="button"
+          class="inline-flex items-center px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 text-sm font-medium"
+          @click="abrirNuevo"
+        >
+          Crear primer cliente
+        </button>
       </div>
 
-      <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6">
+      <div
+        v-else
+        class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5 md:gap-6"
+      >
         <div
           v-for="grupo in clientesAgrupados"
           :key="grupo.clienteId"
           class="bg-white shadow-md rounded-lg overflow-hidden"
         >
-          <!-- Encabezado de la empresa -->
           <div
             class="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 bg-gray-50 border-b border-gray-200"
           >
-            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+            <div
+              class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4"
+            >
               <div class="flex-1 min-w-0">
                 <div class="mb-2 sm:mb-3">
                   <span
@@ -75,8 +123,12 @@
                     {{ grupo.empresa || 'Sin nombre' }}
                   </span>
                 </div>
-                <div class="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0">
-                  <span class="text-xs sm:text-sm text-gray-600 break-all">{{ grupo.rfc }}</span>
+                <div
+                  class="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0"
+                >
+                  <span class="text-xs sm:text-sm text-gray-600 break-all">{{
+                    grupo.rfc || 'Sin RFC'
+                  }}</span>
                   <span class="sm:ml-3 md:ml-4">
                     <span
                       v-if="grupo.activo !== false"
@@ -96,65 +148,47 @@
                   class="mt-2 sm:mt-3 flex flex-wrap gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm text-gray-600"
                 >
                   <span class="whitespace-nowrap">
-                    <span class="font-medium">Usuarios:</span>
-                    <span class="ml-1 font-semibold text-gray-900">{{
-                      grupo.totalUsuarios || 0
-                    }}</span>
-                  </span>
-                  <span class="whitespace-nowrap">
                     <span class="font-medium">Cotizaciones:</span>
                     <span class="ml-1 font-semibold text-gray-900">{{
                       grupo.totalCotizaciones || 0
                     }}</span>
                   </span>
-                  <span class="whitespace-nowrap">
-                    <span class="font-medium">Órdenes:</span>
-                    <span class="ml-1 font-semibold text-gray-900">{{
-                      grupo.totalOrdenesTrabajo || 0
-                    }}</span>
-                  </span>
-                </div>
-                <div
-                  v-if="grupo.clave"
-                  class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2 mt-2 sm:mt-3 md:mt-4"
-                >
-                  <label class="text-xs font-medium text-gray-700 whitespace-nowrap">
-                    Clave de la empresa:
-                  </label>
-                  <div class="flex items-center gap-2">
-                    <input
-                      :value="grupo.clave"
-                      type="text"
-                      readonly
-                      class="w-20 sm:w-24 rounded-md border-gray-300 text-xs px-2 py-1.5 border bg-gray-50 text-gray-900 font-mono font-semibold"
-                    />
-                    <button
-                      type="button"
-                      @click="copiarClave(grupo.clave)"
-                      class="px-2 sm:px-3 py-1.5 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs font-medium whitespace-nowrap"
-                      title="Copiar clave"
-                    >
-                      Copiar
-                    </button>
-                  </div>
-                </div>
-                <!-- Mensaje de éxito -->
-                <div
-                  v-if="successMessage"
-                  class="mt-2 sm:mt-3 md:mt-4 rounded-md bg-green-50 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 md:py-3 text-xs sm:text-sm text-green-700 max-w-full sm:max-w-xs"
-                >
-                  {{ successMessage }}
                 </div>
               </div>
               <div
-                class="flex items-center justify-end sm:justify-start sm:flex-shrink-0 sm:ml-4 md:ml-6"
+                class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:flex-shrink-0"
               >
+                <button
+                  type="button"
+                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium"
+                  @click="abrirEditar(grupo)"
+                >
+                  Editar
+                </button>
+                <button
+                  v-if="grupo.activo !== false"
+                  type="button"
+                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-red-200 text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
+                  :disabled="isMutating"
+                  @click="pedirDesactivar(grupo)"
+                >
+                  Desactivar
+                </button>
+                <button
+                  v-else
+                  type="button"
+                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-green-200 text-green-800 bg-green-50 rounded-md hover:bg-green-100 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
+                  :disabled="isMutating"
+                  @click="reactivar(grupo)"
+                >
+                  Reactivar
+                </button>
                 <router-link
                   :to="{
                     name: 'admin-cliente-detalle',
                     params: { id: grupo.clienteId },
                   }"
-                  class="inline-flex items-center px-3 sm:px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap w-full sm:w-auto justify-center"
+                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
                 >
                   Ver detalle
                   <svg
@@ -176,70 +210,293 @@
           </div>
         </div>
       </div>
+
+      <div
+        v-if="clientesPagination.totalPages > 1"
+        class="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white shadow-md rounded-lg px-4 py-3"
+      >
+        <p class="text-sm text-gray-600">
+          Mostrando
+          {{
+            (clientesPagination.page - 1) * clientesPagination.limit +
+            (clientesAgrupados.length ? 1 : 0)
+          }}–{{
+            Math.min(
+              clientesPagination.page * clientesPagination.limit,
+              clientesPagination.total,
+            )
+          }}
+          de {{ clientesPagination.total }}
+        </p>
+        <div class="flex gap-2">
+          <button
+            type="button"
+            class="px-3 py-1.5 border rounded-md text-sm disabled:opacity-50"
+            :disabled="clientesPagination.page <= 1"
+            @click="prevPage"
+          >
+            Anterior
+          </button>
+          <button
+            type="button"
+            class="px-3 py-1.5 border rounded-md text-sm disabled:opacity-50"
+            :disabled="clientesPagination.page >= clientesPagination.totalPages"
+            @click="nextPage"
+          >
+            Siguiente
+          </button>
+        </div>
+      </div>
     </div>
+
+    <!-- Modal crear/editar -->
+    <div
+      v-if="mostrarModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @pointerdown="onBackdropPointerDown"
+      @pointerup="onBackdropPointerUp"
+      @pointercancel="onBackdropPointerCancel"
+    >
+      <div
+        class="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto"
+        @pointerdown.stop
+      >
+        <div class="p-4 sm:p-6">
+          <div class="flex justify-between items-center mb-4 sm:mb-6">
+            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
+              {{ modoEdicion ? 'Editar cliente' : 'Nuevo cliente' }}
+            </h2>
+            <button
+              type="button"
+              class="text-gray-400 hover:text-gray-600 transition-colors"
+              :disabled="isSubmitting"
+              @click="cerrarModal"
+            >
+              <svg
+                class="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div
+            v-if="formError"
+            class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
+            role="alert"
+          >
+            {{ formError }}
+          </div>
+
+          <form class="space-y-4" @submit.prevent="guardar">
+            <div>
+              <label
+                for="cliente-empresa"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Empresa <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="cliente-empresa"
+                v-model="formulario.empresa"
+                type="text"
+                required
+                maxlength="200"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                placeholder="Nombre de la empresa"
+                :disabled="isSubmitting"
+              />
+            </div>
+            <div>
+              <label
+                for="cliente-rfc"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                RFC
+              </label>
+              <input
+                id="cliente-rfc"
+                v-model="formulario.rfc"
+                type="text"
+                maxlength="20"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 uppercase"
+                placeholder="Opcional"
+                :disabled="isSubmitting"
+              />
+              <p class="mt-1 text-xs text-gray-500">
+                Opcional. Si se captura, debe ser único en esta administración.
+              </p>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                class="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                :disabled="isSubmitting"
+                @click="cerrarModal"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 bg-medical-blue-600 text-white rounded-md text-sm font-medium hover:bg-medical-blue-700 disabled:opacity-50"
+                :disabled="isSubmitting"
+              >
+                {{ isSubmitting ? 'Guardando…' : 'Guardar' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <ConfirmationModal
+      :show="mostrarConfirmDesactivar"
+      title="Desactivar cliente"
+      :message="mensajeConfirmDesactivar"
+      type="danger"
+      confirm-text="Desactivar"
+      cancel-text="Cancelar"
+      @confirm="ejecutarDesactivar"
+      @cancel="mostrarConfirmDesactivar = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
-import type { AdminClientesFilters } from '../../services/admin-api.service';
+import {
+  createCliente,
+  updateCliente,
+  deleteCliente,
+  toggleClienteActivo,
+  type AdminClientesFilters,
+} from '../../services/admin-api.service';
 import type { Cliente } from '../../types/backend';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
+import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
+import { useModalDismiss } from '../../composables/useModalDismiss';
 
-const { clientes, isLoadingClientes, error, obtenerClientes } = useAdmin();
+const {
+  clientes,
+  clientesPagination,
+  isLoadingClientes,
+  error,
+  obtenerClientes,
+} = useAdmin();
 
 const filters = ref<AdminClientesFilters>({
   empresa: '',
   rfc: '',
+  page: 1,
+  limit: 20,
+});
+const verInactivos = ref(false);
+
+const successMsg = ref<string | null>(null);
+const actionError = ref<string | null>(null);
+const isMutating = ref(false);
+const mostrarModal = ref(false);
+const modoEdicion = ref(false);
+const clienteEditandoId = ref<string | null>(null);
+const isSubmitting = ref(false);
+const formError = ref<string | null>(null);
+const formulario = ref({ empresa: '', rfc: '' });
+
+const mostrarConfirmDesactivar = ref(false);
+const clienteADesactivar = ref<{ clienteId: string; empresa?: string } | null>(
+  null,
+);
+const mensajeConfirmDesactivar = computed(() => {
+  const nombre = clienteADesactivar.value?.empresa || 'este cliente';
+  return `¿Desactivar «${nombre}»? No aparecerá al crear cotizaciones; el histórico se conserva.`;
 });
 
-const successMessage = ref<string | null>(null);
+const {
+  onBackdropPointerDown,
+  onBackdropPointerUp,
+  onBackdropPointerCancel,
+} = useModalDismiss(() => {
+  if (!isSubmitting.value) cerrarModal();
+}, mostrarModal);
 
 let filterTimeout: ReturnType<typeof setTimeout> | null = null;
 
-// Manejar cambios en filtros con debounce
 function handleFilterChange() {
-  if (filterTimeout) {
-    clearTimeout(filterTimeout);
-  }
-
+  if (filterTimeout) clearTimeout(filterTimeout);
   filterTimeout = setTimeout(() => {
+    filters.value.page = 1;
     loadClientes();
   }, 500);
 }
 
+function onVerInactivosChange() {
+  filters.value.page = 1;
+  loadClientes();
+}
+
 async function loadClientes() {
   try {
-    const activeFilters: AdminClientesFilters = {};
-
-    if (filters.value.empresa) {
-      activeFilters.empresa = filters.value.empresa;
+    const activeFilters: AdminClientesFilters = {
+      page: filters.value.page ?? 1,
+      limit: filters.value.limit ?? 20,
+    };
+    if (filters.value.empresa) activeFilters.empresa = filters.value.empresa;
+    if (filters.value.rfc) activeFilters.rfc = filters.value.rfc;
+    if (verInactivos.value) {
+      activeFilters.activo = false;
     }
-    if (filters.value.rfc) {
-      activeFilters.rfc = filters.value.rfc;
-    }
-
     await obtenerClientes(activeFilters);
+    // Sync tras clamp de página en store
+    filters.value.page = clientesPagination.value.page;
   } catch (err) {
-    // El error ya se maneja en el store
     console.error('Error al cargar clientes:', err);
   }
 }
 
-// Agrupar clientes por empresa (clienteId)
+const tieneFiltrosBusqueda = computed(
+  () => !!(filters.value.empresa?.trim() || filters.value.rfc?.trim()),
+);
+
+const emptyStateMessage = computed(() => {
+  if (verInactivos.value) return 'No hay clientes inactivos';
+  if (tieneFiltrosBusqueda.value) return 'No se encontraron clientes con esos filtros';
+  return 'No se encontraron clientes';
+});
+
+function prevPage() {
+  if ((filters.value.page ?? 1) > 1) {
+    filters.value.page = (filters.value.page ?? 1) - 1;
+    loadClientes();
+  }
+}
+
+function nextPage() {
+  if (
+    (filters.value.page ?? 1) < (clientesPagination.value.totalPages ?? 1)
+  ) {
+    filters.value.page = (filters.value.page ?? 1) + 1;
+    loadClientes();
+  }
+}
+
 const clientesAgrupados = computed(() => {
   const grupos = new Map<
     string,
     {
       clienteId: string;
       empresa?: string;
-      rfc: string;
-      clave?: string;
+      rfc?: string;
       activo?: boolean;
-      totalUsuarios?: number;
       totalCotizaciones?: number;
-      totalOrdenesTrabajo?: number;
     }
   >();
 
@@ -250,11 +507,8 @@ const clientesAgrupados = computed(() => {
         clienteId,
         empresa: cliente.empresa,
         rfc: cliente.rfc,
-        clave: cliente.clave,
         activo: cliente.activo,
-        totalUsuarios: cliente.totalUsuarios,
         totalCotizaciones: cliente.totalCotizaciones,
-        totalOrdenesTrabajo: cliente.totalOrdenesTrabajo,
       });
     }
   });
@@ -262,32 +516,130 @@ const clientesAgrupados = computed(() => {
   return Array.from(grupos.values());
 });
 
-// Función para copiar la clave al portapapeles
-const copiarClave = async (clave: string) => {
-  try {
-    await navigator.clipboard.writeText(clave);
-    successMessage.value = 'Clave copiada al portapapeles';
-    setTimeout(() => {
-      successMessage.value = null;
-    }, 3000);
-  } catch (err) {
-    console.error('Error al copiar:', err);
-    // Fallback para navegadores que no soportan clipboard API
-    const input = document.createElement('input');
-    input.value = clave;
-    document.body.appendChild(input);
-    input.select();
-    document.execCommand('copy');
-    document.body.removeChild(input);
-    successMessage.value = 'Clave copiada al portapapeles';
-    setTimeout(() => {
-      successMessage.value = null;
-    }, 3000);
-  }
-};
+function extractError(err: unknown, fallback: string): string {
+  const e = err as {
+    response?: { status?: number; data?: { message?: string | string[] } };
+  };
+  const raw = e?.response?.data?.message;
+  const msg = Array.isArray(raw)
+    ? raw.join('. ')
+    : typeof raw === 'string'
+      ? raw
+      : '';
+  if (msg.trim()) return msg;
+  return fallback;
+}
 
-// Cargar clientes al montar el componente
+function abrirNuevo() {
+  modoEdicion.value = false;
+  clienteEditandoId.value = null;
+  formulario.value = { empresa: '', rfc: '' };
+  formError.value = null;
+  successMsg.value = null;
+  mostrarModal.value = true;
+}
+
+function abrirEditar(grupo: {
+  clienteId: string;
+  empresa?: string;
+  rfc?: string;
+}) {
+  modoEdicion.value = true;
+  clienteEditandoId.value = grupo.clienteId;
+  formulario.value = {
+    empresa: grupo.empresa || '',
+    rfc: grupo.rfc || '',
+  };
+  formError.value = null;
+  successMsg.value = null;
+  mostrarModal.value = true;
+}
+
+function cerrarModal() {
+  mostrarModal.value = false;
+  formError.value = null;
+  isSubmitting.value = false;
+}
+
+function pedirDesactivar(grupo: { clienteId: string; empresa?: string }) {
+  clienteADesactivar.value = grupo;
+  mostrarConfirmDesactivar.value = true;
+}
+
+async function ejecutarDesactivar() {
+  const id = clienteADesactivar.value?.clienteId;
+  mostrarConfirmDesactivar.value = false;
+  if (!id || isMutating.value) return;
+  isMutating.value = true;
+  actionError.value = null;
+  try {
+    await deleteCliente(id);
+    successMsg.value = 'Cliente desactivado.';
+    await loadClientes();
+  } catch (e) {
+    successMsg.value = null;
+    actionError.value = extractError(e, 'No se pudo desactivar');
+  } finally {
+    isMutating.value = false;
+  }
+}
+
+async function reactivar(grupo: { clienteId: string }) {
+  if (isMutating.value) return;
+  isMutating.value = true;
+  actionError.value = null;
+  try {
+    await toggleClienteActivo(grupo.clienteId);
+    successMsg.value = 'Cliente reactivado.';
+    await loadClientes();
+  } catch (e) {
+    successMsg.value = null;
+    actionError.value = extractError(e, 'No se pudo reactivar');
+  } finally {
+    isMutating.value = false;
+  }
+}
+
+async function guardar() {
+  const empresa = formulario.value.empresa.trim();
+  if (!empresa) {
+    formError.value = 'Debe proporcionar el nombre de la empresa';
+    return;
+  }
+
+  isSubmitting.value = true;
+  formError.value = null;
+  try {
+    const rfc = formulario.value.rfc.trim().toUpperCase();
+    if (modoEdicion.value && clienteEditandoId.value) {
+      await updateCliente(clienteEditandoId.value, {
+        empresa,
+        rfc,
+      });
+      successMsg.value = 'Cliente actualizado.';
+    } else {
+      await createCliente({
+        empresa,
+        ...(rfc ? { rfc } : {}),
+      });
+      successMsg.value = 'Cliente creado.';
+      filters.value = { empresa: '', rfc: '', page: 1, limit: 20 };
+      verInactivos.value = false;
+    }
+    cerrarModal();
+    await loadClientes();
+  } catch (e) {
+    formError.value = extractError(e, 'No se pudo guardar el cliente');
+  } finally {
+    isSubmitting.value = false;
+  }
+}
+
 onMounted(() => {
   loadClientes();
+});
+
+onUnmounted(() => {
+  if (filterTimeout) clearTimeout(filterTimeout);
 });
 </script>

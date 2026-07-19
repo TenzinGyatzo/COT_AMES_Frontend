@@ -1,12 +1,21 @@
-
 import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
-import type { CotizacionDetalleDto, OrdenTrabajoDetalleDto } from '../types/backend';
-import { getCotizacionDefinition } from './cotizacionPdfTemplate';
-import { getOrdenTrabajoDefinition } from './ordenTrabajoPdfTemplate';
+import type {
+  CotizacionDetalleDto,
+  TenantBranding,
+  TenantConfigResponse,
+} from '../types/backend';
+import {
+  getCotizacionDefinition,
+  type PdfBankPageOptions,
+  type PdfEmisorBranding,
+} from './cotizacionPdfTemplate';
 import { getBase64ImageFromURL } from './pdfUtils';
-import logoImg from '../assets/logos/exin-cv-salud-laboral-logo.png';
-import mocLogoImg from '../assets/logos/moc-caborca-logo.png';
+import logoImg from '../assets/logos/ames-logo-cuadrado.png';
+import { API_BASE_URL } from '../config/api';
+import { getTenantConfig } from '../services/admin-api.service';
+import { useAuthStore } from '../store/auth';
+import { hasBancariosUtiles } from './bancarios.util';
 
 // Inicializar vfs para fuentes (necesario para pdfmake en cliente)
 if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
@@ -15,25 +24,117 @@ if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
   // Fallback si la estructura es diferente
   pdfMake.vfs = (pdfFonts as any).vfs;
 } else {
-  console.warn('Advertencia: No se pudo asignar pdfMake.vfs. La generación de PDF podría fallar si usa fuentes personalizadas o estándar embebidas.');
+  console.warn(
+    'Advertencia: No se pudo asignar pdfMake.vfs. La generación de PDF podría fallar si usa fuentes personalizadas o estándar embebidas.',
+  );
 }
 
+/** Misma resolución que preview en Configuración (proxy /uploads). */
+function resolvePublicUrl(pathOrUrl: string): string {
+  if (pathOrUrl.startsWith('http') || pathOrUrl.startsWith('data:')) {
+    return pathOrUrl;
+  }
+  const apiBase = API_BASE_URL.replace(/\/api\/?$/, '');
+  if (apiBase.startsWith('http')) return `${apiBase}${pathOrUrl}`;
+  return pathOrUrl;
+}
+
+async function resolveTenantConfigForPdf(): Promise<
+  TenantConfigResponse | undefined
+> {
+  try {
+    const auth = useAuthStore();
+    // Roles AMES: operativo (tenant JWT) o admin_sistema (X-Tenant-Id).
+    if (!auth.isAmesUser) return undefined;
+    if (auth.isAdminSistema && !auth.activeTenantId) return undefined;
+    return await getTenantConfig();
+  } catch {
+    return undefined;
+  }
+}
 
 /**
- * Genera y descarga el PDF de una cotización
+ * Arma el docDefinition pdfmake (cuerpo → plantillas → bancarios).
+ * Solo FE — no llama render PDF del BE (Story 6.7 / AD-5 UI path).
  */
-export async function downloadCotizacionPDF(cotizacion: CotizacionDetalleDto): Promise<void> {
-  try {
-    const logoBase64 = await getBase64ImageFromURL(logoImg);
-    const mocLogoBase64 = cotizacion.incluirDatosBancarios
-      ? await getBase64ImageFromURL(mocLogoImg)
-      : undefined;
-    const docDefinition = getCotizacionDefinition(
-      cotizacion,
+async function buildCotizacionDocDefinition(
+  cotizacion: CotizacionDetalleDto,
+): Promise<ReturnType<typeof getCotizacionDefinition>> {
+  const cfg = await resolveTenantConfigForPdf();
+  const branding: TenantBranding | undefined = cfg?.branding;
+  let logoBase64: string;
+  if (branding?.logoUrl) {
+    try {
+      logoBase64 = await getBase64ImageFromURL(
+        resolvePublicUrl(branding.logoUrl),
+      );
+    } catch {
+      logoBase64 = await getBase64ImageFromURL(logoImg);
+    }
+  } else {
+    logoBase64 = await getBase64ImageFromURL(logoImg);
+  }
+
+  let bankPage: PdfBankPageOptions | undefined;
+  if (cotizacion.incluirDatosBancarios && hasBancariosUtiles(cfg?.bancarios)) {
+    const raw = cfg!.bancarios || {};
+    bankPage = {
       logoBase64,
-      mocLogoBase64,
-    );
-    
+      bancarios: {
+        titular: raw.titular || branding?.razonSocial,
+        banco: raw.banco,
+        cuenta: raw.cuenta,
+        clabe: raw.clabe,
+        domicilio: raw.domicilio || branding?.domicilio,
+        rfc: raw.rfc || branding?.rfc,
+        email: raw.email || branding?.emailContacto,
+      },
+    };
+  }
+
+  const emisor: PdfEmisorBranding | undefined = branding
+    ? {
+        razonSocial: branding.razonSocial,
+        domicilio: branding.domicilio,
+        telefono: branding.telefono,
+        emailContacto: branding.emailContacto,
+        sitioWeb: branding.sitioWeb,
+      }
+    : undefined;
+
+  return getCotizacionDefinition(cotizacion, logoBase64, bankPage, emisor);
+}
+
+/**
+ * Genera el PDF como Blob (mismo doc que preview/download).
+ * Story 6.8 — adjunto para enviar-correo.
+ */
+export async function generateCotizacionPdfBlob(
+  cotizacion: CotizacionDetalleDto,
+): Promise<Blob> {
+  const docDefinition = await buildCotizacionDocDefinition(cotizacion);
+  return new Promise((resolve, reject) => {
+    try {
+      pdfMake.createPdf(docDefinition).getBlob((b: Blob) => {
+        if (!b || b.size === 0) reject(new Error('PDF blob vacío'));
+        else resolve(b);
+      });
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+
+/**
+ * Genera y descarga el PDF de una cotización.
+ * Usuarios AMES: branding + bancarios del tenant (Stories 2.2 / 2.4).
+ * Fallback logo: AMES. Sin literales Exin/MOC.
+ */
+export async function downloadCotizacionPDF(
+  cotizacion: CotizacionDetalleDto,
+): Promise<void> {
+  try {
+    const docDefinition = await buildCotizacionDocDefinition(cotizacion);
     const filename = `${cotizacion.folio}.pdf`;
     pdfMake.createPdf(docDefinition).download(filename);
   } catch (error) {
@@ -43,21 +144,32 @@ export async function downloadCotizacionPDF(cotizacion: CotizacionDetalleDto): P
 }
 
 /**
- * Genera y descarga el PDF de una orden de trabajo
+ * Previsualiza el PDF en una pestaña (mismo doc que download).
+ * Usa blob URL tras await — evita popup blockers de createPdf().open().
  */
-export async function downloadOrdenTrabajoPDF(orden: OrdenTrabajoDetalleDto): Promise<void> {
+export async function previewCotizacionPDF(
+  cotizacion: CotizacionDetalleDto,
+): Promise<void> {
   try {
-    const logoBase64 = await getBase64ImageFromURL(logoImg);
-    const docDefinition = getOrdenTrabajoDefinition(orden, logoBase64);
-    
-    const filename = `${orden.folio}.pdf`;
-    pdfMake.createPdf(docDefinition).download(filename);
+    const blob = await generateCotizacionPdfBlob(cotizacion);
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (!win) {
+      URL.revokeObjectURL(url);
+      alert(
+        'No se pudo abrir la vista previa (ventana bloqueada). Revisa el bloqueador de ventanas emergentes o usa Descargar PDF.',
+      );
+      return;
+    }
+    // Liberar URL tras dar tiempo a la pestaña a cargar el blob
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
   } catch (error) {
-    console.error('Error al generar PDF de orden de trabajo:', error);
-    alert('Ocurrió un error al generar el PDF. Por favor intenta de nuevo.');
+    console.error('Error al previsualizar PDF de cotización:', error);
+    alert(
+      'Ocurrió un error al previsualizar el PDF. Por favor intenta de nuevo.',
+    );
   }
 }
-
 
 /**
  * @deprecated Mantener por compatibilidad si es usado en otros lados,
@@ -66,9 +178,9 @@ export async function downloadOrdenTrabajoPDF(orden: OrdenTrabajoDetalleDto): Pr
 export function downloadDummyPDF(
   filename: string,
   title: string = 'Documento',
-  content: string[] = []
+  content: string[] = [],
 ): void {
-    // Implementación original dummy para fallback extrema
+  // Implementación original dummy para fallback extrema
   const escapedTitle = title.replace(/[()\\]/g, (m) => '\\' + m);
   const escapedContent = content
     .map((line) => line.replace(/[()\\]/g, (m) => '\\' + m))

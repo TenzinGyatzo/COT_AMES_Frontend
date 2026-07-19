@@ -3,52 +3,113 @@
  * Estos tipos representan las estructuras de datos que se intercambian con la API
  */
 
-import { EstadoMexico } from './estado-mexico.enum';
+import type { CategoriaServicioCode } from '../constants/categorias-servicio';
 
-// Tipo para una sede (ubicación geográfica del negocio)
-export interface Sede {
+/** Tenant AMES (Story 1.2) */
+export interface Tenant {
   _id?: string;
-  clave?: string;
-  ciudad: string;
-  estado?: EstadoMexico;
+  nombre: string;
+  clave: string;
   activo?: boolean;
 }
 
-// Tipo para un usuario cliente
-export interface UsuarioCliente {
-  _id?: string;
-  email: string;
-  nombre: string;
+/** Branding / datos legales por tenant (Story 2.2) */
+export interface TenantBranding {
+  logoUrl?: string;
+  razonSocial?: string;
+  rfc?: string;
+  domicilio?: string;
   telefono?: string;
-  clienteId: string;
-  activo?: boolean;
-  totalCotizaciones?: number;
-  totalOrdenesTrabajo?: number;
+  emailContacto?: string;
+  sitioWeb?: string;
+}
+
+/** Datos bancarios por tenant (Story 2.4) */
+export interface TenantBancarios {
+  titular?: string;
+  banco?: string;
+  cuenta?: string;
+  clabe?: string;
+  domicilio?: string;
+  rfc?: string;
+  email?: string;
+}
+
+/** Configuración por tenant (Stories 2.1–2.4) */
+export interface TenantConfigResponse {
+  _id: string;
+  tenantId: string;
+  branding?: TenantBranding;
+  emailRemitente?: string;
+  correosNotificacion?: string[];
+  vigenciaDefaultDias?: number;
+  bancarios?: TenantBancarios;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Tipo para un servicio médico
 export interface Servicio {
   _id?: string;
-  sedeId: string | Sede; // Puede ser string o objeto Sede poblado
-  claveSede?: string; // Clave de la sede almacenada directamente en el documento
+  tenantId?: string;
   nombre: string;
   descripcion?: string;
   precioUnitario: number;
+  /** Categoría fija MED…OTR (Story 4.1). Legacy backfill → OTR. */
+  categoria: CategoriaServicioCode;
   moneda?: string;
   activo?: boolean;
+}
+
+/** Sección plantilla PDF JSON v1 (Story 5.1 / AD-6). TipTap doc en 5.3. */
+export type SeccionPlantilla =
+  | {
+      id: string;
+      tipo: 'richtext';
+      titulo?: string;
+      cuerpo: { text: string; doc?: Record<string, unknown> };
+    }
+  | {
+      id: string;
+      tipo: 'tabla';
+      titulo?: string;
+      encabezados: string[];
+      filas: string[][];
+    };
+
+/** Plantilla PDF maestra por tenant (Story 5.2 / FR-47). */
+export interface Plantilla {
+  _id?: string;
+  tenantId?: string;
+  nombre: string;
+  claveSeed?: string;
+  schemaVersion?: number;
+  secciones: SeccionPlantilla[];
+  activo?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // Tipo para un cliente
 export interface Cliente {
   _id?: string;
-  clave?: string;
+  tenantId?: string;
   empresa: string;
-  rfc: string;
-  sedeId?: string | Sede; // Puede ser string o objeto Sede poblado
+  rfc?: string;
   activo?: boolean;
-  totalUsuarios?: number;
   totalCotizaciones?: number;
-  totalOrdenesTrabajo?: number;
+}
+
+/** Contacto CRM de un cliente (Story 3.3). Sin login. */
+export interface Contacto {
+  _id?: string;
+  tenantId?: string;
+  clienteId?: string;
+  nombre: string;
+  correo?: string;
+  telefono?: string;
+  cargo?: string;
+  activo?: boolean;
 }
 
 // Tipo para un item dentro de una cotización
@@ -64,9 +125,9 @@ export interface ItemCotizacion {
 // Tipo para una cotización completa
 export interface Cotizacion {
   _id?: string;
+  tenantId?: string;
   folio: string;
   clienteId: string;
-  sedeId: string;
   emailContacto: string;
   items: ItemCotizacion[];
   total: number;
@@ -83,44 +144,56 @@ export interface CreatePublicCotizacionDto {
   nombreContacto?: string;
   correo: string;
   telefono?: string;
-  sedeId: string;
   items: Array<{
     servicioId: string;
     cantidad: number;
   }>;
 }
 
-// Tipo para la respuesta de una cotización pública creada
+/** DTO público magic link (Story 6.9) — sin token/tenant/emails. */
+export interface PublicCotizacionItem {
+  nombre: string;
+  descripcion?: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+}
+
+export interface PublicCotizacionBranding {
+  razonSocial?: string;
+  logoUrl?: string;
+}
+
 export interface PublicCotizacionResponse {
-  id?: string;
-  _id?: string; // MongoDB devuelve _id, pero puede ser transformado a id
   folio: string;
+  estado: 'vigente' | 'vencida' | 'aceptada' | 'rechazada' | string;
   total: number;
-  fechaVencimiento: Date;
-  cliente?: {
-    empresa?: string;
-    nombreContacto?: string;
-    correo: string;
-    telefono?: string;
-  };
-  items?: Array<{
-    servicioId: string;
-    nombreServicioSnapshot: string;
-    descripcionServicioSnapshot?: string;
-    precioUnitarioSnapshot: number;
-    cantidad: number;
-    subtotal: number;
-  }>;
+  moneda: string;
+  fechaCreacion: string;
+  fechaVencimiento: string;
+  fechaAceptacion?: string;
+  fechaRechazo?: string;
+  nombreEmpresa?: string;
+  nombreContacto?: string;
+  telefonoContacto?: string;
+  personasAEvaluar?: string;
+  items: PublicCotizacionItem[];
+  branding?: PublicCotizacionBranding;
+  alreadyResponded?: boolean;
 }
 
 // Tipo para un usuario del sistema
+export type AmesRole = 'operativo' | 'admin_sistema';
+
 export interface User {
   _id: string;
   email: string;
   nombre: string;
-  rol: 'admin' | 'cliente';
-  tipoUsuario: 'admin' | 'cliente';
-  clienteId?: string;
+  rol: AmesRole;
+  /** Alineado al rol (compat); preferir `rol`. */
+  tipoUsuario: AmesRole;
+  /** Opcional hasta roles tenant en 1.3/1.6 */
+  tenantId?: string;
   activo?: boolean;
 }
 
@@ -137,15 +210,12 @@ export interface ClientMetricDto {
   rfc: string;
   fechaUltimaCotizacion?: Date;
   totalCotizaciones: number;
-  totalOrdenesTrabajo: number;
 }
 
 // Tipo para métricas de servicios
 export interface ServiceMetricDto {
   servicioId: string;
   nombreServicio: string;
-  sedeId: string;
-  claveSede?: string;
   precioUnitario: number;
   vecesContratado: number;
 }
@@ -155,7 +225,6 @@ export interface ClienteSolicitanteDto {
   clienteId: string;
   empresa?: string;
   rfc: string;
-  nombreUsuarioCliente?: string;
   totalCotizaciones: number;
 }
 
@@ -163,7 +232,6 @@ export interface ClienteSolicitanteDto {
 export interface ServicioSolicitadoDto {
   servicioId: string;
   nombreServicio: string;
-  claveSede?: string;
   vecesSolicitado: number;
 }
 
@@ -171,7 +239,6 @@ export interface ServicioSolicitadoDto {
 export interface ServicioRentableDto {
   servicioId: string;
   nombreServicio: string;
-  claveSede?: string;
   ingresosTotales: number;
 }
 
@@ -185,6 +252,11 @@ export interface TotalsMetricDto {
   cotizacionesMes: number;
   cotizacionesAnio: number;
   cotizacionesTotales: number;
+  /** Story 7.1 / FR-43 — emitidas = match del periodo (= cotizacionesTotales). */
+  cotizacionesEmitidas: number;
+  cotizacionesAceptadas: number;
+  cotizacionesRechazadas: number;
+  /** aceptadas / emitidas */
   tasaConversion: number;
   ingresosTotales: number;
 }
@@ -197,10 +269,12 @@ export interface CotizacionListItemDto {
   montoTotal: number;
   empresa?: string;
   nombreSolicitante?: string;
-  sede?: string;
-  correo: string;
+  /** RFC del cliente CRM (vacío en guest). */
+  rfc?: string;
   estado: string;
   pdfUrl?: string;
+  fechaAceptacion?: Date;
+  fechaRechazo?: Date;
 }
 
 // Tipo para respuesta paginada de cotizaciones
@@ -212,98 +286,12 @@ export interface PaginatedCotizacionesResponseDto {
   totalPages: number;
 }
 
-// Tipo para un trabajador
-export interface Trabajador {
-  primerApellido: string;
-  segundoApellido?: string;
-  nombre: string;
-  fechaNacimiento: Date | string;
-  sexo: 'Masculino' | 'Femenino';
-  escolaridad:
-    | 'Primaria'
-    | 'Secundaria'
-    | 'Preparatoria'
-    | 'Licenciatura'
-    | 'Maestría'
-    | 'Doctorado'
-    | 'Nula';
-  puesto: string;
-  fechaIngreso?: Date | string;
-  telefono?: string;
-  estadoCivil:
-    | 'Soltero/a'
-    | 'Casado/a'
-    | 'Unión libre'
-    | 'Separado/a'
-    | 'Divorciado/a'
-    | 'Viudo/a';
-  curp?: string;
-}
-
-// DTO para crear un trabajador
-export interface CreateTrabajadorDto {
-  primerApellido: string;
-  segundoApellido?: string;
-  nombre: string;
-  fechaNacimiento: string;
-  sexo: string;
-  escolaridad: string;
-  puesto: string;
-  fechaIngreso?: string;
-  telefono?: string;
-  estadoCivil: string;
-  curp?: string;
-}
-
-// DTO para actualizar un trabajador
-export interface UpdateTrabajadorDto {
-  primerApellido?: string;
-  segundoApellido?: string;
-  nombre?: string;
-  fechaNacimiento?: string;
-  sexo?: string;
-  escolaridad?: string;
-  puesto?: string;
-  fechaIngreso?: string;
-  telefono?: string;
-  estadoCivil?: string;
-  curp?: string;
-}
-
-// Tipo para el perfil del cliente autenticado
-export interface MiPerfilResponse {
-  usuario: {
-    _id: string;
-    nombre: string;
-    email: string;
-    telefono?: string;
-    clienteId: string;
-    activo: boolean;
-  };
-  cliente: {
-    _id: string;
-    empresa: string;
-    correo: string;
-    rfc: string;
-    sedeId?: string;
-    clave?: string;
-  };
-}
-
-// Tipo para actualizar el perfil del cliente
-export interface UpdateMiPerfilPayload {
-  nombre?: string;
-  email?: string;
-  telefono?: string;
-}
-
 // Tipo para el detalle completo de una cotización (con campos poblados)
 export interface CotizacionDetalleDto {
   _id: string;
+  tenantId?: string;
   folio: string;
   clienteId: string | Cliente; // Puede ser string o objeto Cliente poblado
-  usuarioClienteId?: string | UsuarioCliente; // Puede ser string o objeto UsuarioCliente poblado
-  sedeId: string | Sede; // Puede ser string o objeto Sede poblado
   emailContacto: string;
   items: Array<{
     servicioId: string | Servicio; // Puede ser string o objeto Servicio poblado
@@ -330,85 +318,30 @@ export interface CotizacionDetalleDto {
   fechaEstadoVencida?: Date | string;
   fechaEstadoAceptada?: Date | string;
   fechaEstadoRechazada?: Date | string;
-  ordenTrabajoId?: string;
-  ordenTrabajoFolio?: string;
+  /** Story 6.9/6.10 — origen del último cambio de estado */
+  estadoOrigen?: 'magic_link' | 'usuario' | 'cron' | string;
+  estadoOrigenAt?: Date | string;
+  estadoCambiadoPorNombre?: string;
+  /** Story 6.13 — creador AMES (no exponer en DTO público). */
+  creadoPorUserId?: string;
+  creadoPorEmail?: string;
   pdfUrl?: string;
   personasAEvaluar?: string;
   nombreEmpresa?: string;
   nombreContacto?: string;
   telefonoContacto?: string;
   incluirDatosBancarios?: boolean;
+  /** Destinatarios Para (Story 6.6). */
+  emailsPara?: string[];
+  /** Destinatarios CC (Story 6.6). */
+  emailsCc?: string[];
+  /** Snapshots de plantillas (Story 6.5). Orden = páginas tras el cuerpo. */
+  plantillasSnapshot?: Array<{
+    plantillaId: string;
+    nombreSnapshot: string;
+    schemaVersion: number;
+    secciones: SeccionPlantilla[];
+  }>;
   createdAt?: Date | string;
   updatedAt?: Date | string;
-}
-
-// Tipo para un item de orden de trabajo en la lista
-export interface OrdenTrabajoListItemDto {
-  id: string;
-  folio: string;
-  fechaCreacion: Date | string;
-  estado: 'pendiente' | 'en_proceso' | 'completada' | 'cancelada';
-  empresa?: string;
-  nombreSolicitante?: string;
-  nombreSede?: string;
-  folioCotizacion?: string;
-}
-
-// Tipo para respuesta paginada de órdenes de trabajo
-export interface PaginatedOrdenesTrabajoResponseDto {
-  data: OrdenTrabajoListItemDto[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-// Tipo para el detalle completo de una orden de trabajo (con campos poblados)
-export interface OrdenTrabajoDetalleDto {
-  id: string;
-  folio: string;
-  cotizacionId: string;
-  cotizacion?: {
-    _id?: string;
-    folio?: string;
-    items?: Array<{
-      servicioId?: string;
-      nombreServicioSnapshot?: string;
-      descripcionServicioSnapshot?: string;
-      cantidad?: number;
-    }>;
-  };
-  clienteId: string;
-  cliente?: {
-    _id?: string;
-    empresa?: string;
-    rfc?: string;
-    nombreContacto?: string;
-    correo?: string;
-  };
-  usuarioClienteId: string;
-  usuarioCliente?: {
-    _id?: string;
-    nombre?: string;
-    email?: string;
-    telefono?: string;
-  };
-  sedeId: string;
-  sede?: {
-    _id?: string;
-    ciudad?: string;
-    clave?: string;
-  };
-  estado: 'pendiente' | 'en_proceso' | 'completada' | 'cancelada';
-  fechaCreacion: Date | string;
-  fechaInicio?: Date | string;
-  fechaCompletacion?: Date | string;
-  fechaEstadoPendiente?: Date | string;
-  fechaEstadoEnProceso?: Date | string;
-  fechaEstadoCompletada?: Date | string;
-  fechaEstadoCancelada?: Date | string;
-  observaciones?: Array<{ texto: string; timestamp: Date | string }> | string;
-  trabajadores?: Trabajador[];
-  createdAt: Date | string;
-  updatedAt: Date | string;
 }

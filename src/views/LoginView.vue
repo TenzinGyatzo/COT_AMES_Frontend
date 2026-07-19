@@ -142,7 +142,7 @@ const mensaje = ref('');
 const showPassword = ref(false);
 
 const handleSubmit = async () => {
-  // Validación básica
+  mensaje.value = '';
   if (!email.value || !password.value) {
     mensaje.value = 'Por favor, complete todos los campos';
     return;
@@ -150,12 +150,18 @@ const handleSubmit = async () => {
 
   try {
     await login(email.value, password.value);
-    // Si el login es exitoso, redirigir a admin o a la ruta de redirect si existe
     const redirect = route.query.redirect as string | undefined;
-    router.push(redirect || '/admin');
-  } catch (err) {
-    // El error ya está manejado en el store/composable
-    // Solo mostramos el mensaje de error que viene del composable
+    const safeRedirect =
+      redirect &&
+      redirect.startsWith('/admin') &&
+      !redirect.startsWith('/admin/login') &&
+      !redirect.startsWith('/admin/ordenes') &&
+      !redirect.startsWith('/admin/sedes')
+        ? redirect
+        : '/admin';
+    await router.push(safeRedirect);
+  } catch {
+    // `error` del store ya está poblado; el mensaje se muestra en el template
   }
 };
 </script>

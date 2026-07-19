@@ -1,22 +1,51 @@
 /**
- * Store de Pinia para autenticación
- * Maneja el estado de autenticación del usuario (token, datos del usuario, estados de carga y errores)
- * Persiste el token y datos básicos del usuario en localStorage para mantener sesión
+ * Store de Pinia para autenticación AMES (operativo | admin_sistema)
  */
 
 import { defineStore } from 'pinia';
-import type { User, LoginResponse } from '../types/backend';
+import type { User, LoginResponse, AmesRole } from '../types/backend';
 import httpClient from '../services/http';
+import { getTenants } from '../services/admin-api.service';
 
 interface AuthState {
   accessToken: string | null;
   user: User | null;
   isLoading: boolean;
   error: string | null;
+  /** Tenant activo para admin_sistema (header X-Tenant-Id). Selector UI: Story 1.7. */
+  activeTenantId: string | null;
 }
 
 const STORAGE_KEY_TOKEN = 'auth_token';
 const STORAGE_KEY_USER = 'auth_user';
+const STORAGE_KEY_TENANT = 'auth_active_tenant_id';
+
+const AMES_ROLES: AmesRole[] = ['operativo', 'admin_sistema'];
+
+function isAmesRole(rol: unknown): rol is AmesRole {
+  return typeof rol === 'string' && (AMES_ROLES as string[]).includes(rol);
+}
+
+/** Normaliza mensajes Nest/Axios para mostrarlos en UI. */
+export function extractAuthErrorMessage(error: any): string {
+  const raw = error?.response?.data?.message;
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map(String).join('. ');
+  }
+  if (typeof raw === 'string' && raw.trim()) {
+    return raw;
+  }
+  if (error?.code === 'ERR_NETWORK' || error?.message === 'Network Error') {
+    return 'No se pudo conectar con el servidor. ¿Está corriendo el backend?';
+  }
+  if (error?.response?.status === 401) {
+    return 'Credenciales inválidas';
+  }
+  if (error?.response?.status) {
+    return `Error del servidor (${error.response.status})`;
+  }
+  return 'No se pudo iniciar sesión. Intente de nuevo.';
+}
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
@@ -24,58 +53,109 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     isLoading: false,
     error: null,
+    activeTenantId: null,
   }),
 
   getters: {
-    /**
-     * Indica si el usuario está autenticado (tiene token válido)
-     */
     isAuthenticated(): boolean {
       return !!this.accessToken;
     },
 
-    /**
-     * Retorna el usuario actual o null si no está autenticado
-     */
     currentUser(): User | null {
       return this.user;
     },
 
-    /**
-     * Indica si el usuario actual es un administrador
-     */
-    isAdmin(): boolean {
-      return this.user?.tipoUsuario === 'admin';
+    /** Usuario AMES autenticado (cualquier rol v1). */
+    isAmesUser(): boolean {
+      return isAmesRole(this.user?.rol);
     },
 
-    /**
-     * Indica si el usuario actual es un cliente
-     */
-    isCliente(): boolean {
-      return this.user?.tipoUsuario === 'cliente';
+    isAdminSistema(): boolean {
+      return this.user?.rol === 'admin_sistema';
+    },
+
+    /** @deprecated Prefer isAmesUser / isAdminSistema. Alias: cualquier usuario AMES. */
+    isAdmin(): boolean {
+      return this.isAmesUser;
     },
   },
 
   actions: {
-    /**
-     * Maneja la respuesta del login y guarda token y usuario en estado y localStorage
-     * Método interno privado para factorizar lógica común entre login y loginCliente
-     * @param response - Respuesta del endpoint de login con access_token y user
-     */
-    _handleLoginResponse(response: LoginResponse): void {
-      this.accessToken = response.access_token;
-      this.user = response.user;
-
-      // Persistir en localStorage
-      localStorage.setItem(STORAGE_KEY_TOKEN, this.accessToken);
-      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.user));
+    setActiveTenantId(tenantId: string | null): void {
+      this.activeTenantId = tenantId;
+      if (tenantId) {
+        localStorage.setItem(STORAGE_KEY_TENANT, tenantId);
+      } else {
+        localStorage.removeItem(STORAGE_KEY_TENANT);
+      }
     },
 
     /**
-     * Realiza login contra el backend y guarda token y datos del usuario
-     * @param email - Correo electrónico del usuario
-     * @param password - Contraseña del usuario
+     * Tras login / restore admin: asegura activeTenantId válido.
+     * Revalida el persistido contra GET /tenants (existe + activo);
+     * si no hay match, toma el primer tenant activo.
+     * GET /tenants no exige X-Tenant-Id.
      */
+    async ensureAdminTenantContext(): Promise<void> {
+      if (this.user?.rol !== 'admin_sistema') {
+        this.setActiveTenantId(null);
+        return;
+      }
+
+      const stored = localStorage.getItem(STORAGE_KEY_TENANT)?.trim() || null;
+
+      try {
+        const tenants = await getTenants();
+        const active = tenants.filter((t) => t.activo !== false && t._id);
+
+        if (stored && active.some((t) => t._id === stored)) {
+          this.setActiveTenantId(stored);
+          return;
+        }
+
+        const first = active[0];
+        if (first?._id) {
+          this.setActiveTenantId(first._id);
+        } else {
+          this.setActiveTenantId(null);
+        }
+      } catch {
+        // Smoke: listados fallarán sin header; no tumbar el login.
+        // Si el stored ya no es usable en memoria, no forzar header muerto.
+        if (!stored) {
+          this.setActiveTenantId(null);
+        } else {
+          this.activeTenantId = stored;
+        }
+      }
+    },
+
+    async _handleLoginResponse(response: LoginResponse): Promise<void> {
+      const user = response.user;
+      if (!user || !isAmesRole(user.rol)) {
+        this.logout();
+        const err: any = new Error('Acceso no autorizado');
+        err.response = {
+          data: {
+            message:
+              'Solo usuarios AMES (operativo o admin de sistema) pueden iniciar sesión',
+          },
+        };
+        throw err;
+      }
+
+      // Alinear tipoUsuario al rol (BE los emite iguales)
+      user.tipoUsuario = user.rol;
+
+      this.accessToken = response.access_token;
+      this.user = user;
+
+      localStorage.setItem(STORAGE_KEY_TOKEN, this.accessToken);
+      localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.user));
+
+      await this.ensureAdminTenantContext();
+    },
+
     async login(email: string, password: string): Promise<void> {
       this.isLoading = true;
       this.error = null;
@@ -86,137 +166,66 @@ export const useAuthStore = defineStore('auth', {
           password,
         });
 
-        this._handleLoginResponse(response.data);
+        await this._handleLoginResponse(response.data);
       } catch (error: any) {
-        this.error =
-          error.response?.data?.message || 'Credenciales incorrectas';
+        this.error = extractAuthErrorMessage(error);
         throw error;
       } finally {
         this.isLoading = false;
       }
     },
 
-    /**
-     * Realiza login de cliente contra el backend y guarda token y datos del usuario
-     * @param email - Correo electrónico del cliente
-     * @param password - Contraseña del cliente
-     */
-    async loginCliente(email: string, password: string): Promise<void> {
-      this.isLoading = true;
-      this.error = null;
-
-      try {
-        const response = await httpClient.post<LoginResponse>(
-          '/auth/cliente/login',
-          {
-            email,
-            password,
-          },
-        );
-
-        this._handleLoginResponse(response.data);
-      } catch (error: any) {
-        this.error =
-          error.response?.data?.message || 'Credenciales incorrectas';
-        throw error;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    /**
-     * Registra un nuevo cliente completo (cliente + usuario)
-     * Después del registro exitoso, hace login automático
-     * @param registerData - Datos de registro del cliente completo
-     */
-    async registerCliente(registerData: {
-      email: string;
-      password: string;
-      nombre: string;
-      empresa?: string;
-      nombreContacto?: string;
-      correoCliente?: string;
-      telefono?: string;
-      sedeId?: string;
-      claveEmpresa?: string;
-    }): Promise<void> {
-      this.isLoading = true;
-      this.error = null;
-
-      try {
-        // Registrar el cliente completo
-        await httpClient.post('/auth/cliente/register', registerData);
-
-        // Después de registro exitoso, hacer login automático
-        await this.loginCliente(registerData.email, registerData.password);
-      } catch (error: any) {
-        this.error =
-          error.response?.data?.message || 'Error al registrar cliente';
-        throw error;
-      } finally {
-        this.isLoading = false;
-      }
-    },
-
-    /**
-     * Cierra sesión limpiando estado y localStorage
-     */
     logout(): void {
       this.accessToken = null;
       this.user = null;
       this.error = null;
+      this.activeTenantId = null;
 
       localStorage.removeItem(STORAGE_KEY_TOKEN);
       localStorage.removeItem(STORAGE_KEY_USER);
+      localStorage.removeItem(STORAGE_KEY_TENANT);
     },
 
     /**
-     * Carga el estado de autenticación desde localStorage al iniciar la app
-     * Debe llamarse antes de montar la aplicación en main.ts
-     * Valida que el usuario parseado tenga la estructura correcta antes de restaurarlo
-     * Para usuarios cliente, valida adicionalmente que clienteId esté presente
+     * Restaura sesión desde localStorage.
+     * Para admin_sistema, revalida/asigna tenant antes de resolver
+     * (el caller debe await antes de montar o navegar a admin).
      */
-    loadFromStorage(): void {
+    async loadFromStorage(): Promise<void> {
       const token = localStorage.getItem(STORAGE_KEY_TOKEN);
       const userStr = localStorage.getItem(STORAGE_KEY_USER);
 
-      if (token && userStr) {
-        try {
-          const parsedUser = JSON.parse(userStr);
+      if (!token || !userStr) {
+        return;
+      }
 
-          // Validar campos mínimos requeridos
-          const hasBasicFields =
-            parsedUser &&
-            typeof parsedUser._id === 'string' &&
-            typeof parsedUser.email === 'string' &&
-            typeof parsedUser.rol === 'string' &&
-            typeof parsedUser.tipoUsuario === 'string' &&
-            (parsedUser.rol === 'admin' || parsedUser.rol === 'cliente') &&
-            (parsedUser.tipoUsuario === 'admin' ||
-              parsedUser.tipoUsuario === 'cliente');
+      try {
+        const parsedUser = JSON.parse(userStr);
 
-          if (!hasBasicFields) {
-            // Estructura incompleta o inválida, limpiar localStorage
-            this.logout();
-            return;
-          }
+        const hasBasicFields =
+          parsedUser &&
+          typeof parsedUser._id === 'string' &&
+          typeof parsedUser.email === 'string' &&
+          isAmesRole(parsedUser.rol);
 
-          // Validación adicional para usuarios cliente: deben tener clienteId
-          if (parsedUser.tipoUsuario === 'cliente') {
-            if (typeof parsedUser.clienteId !== 'string') {
-              // Usuario cliente sin clienteId válido, limpiar localStorage
-              this.logout();
-              return;
-            }
-          }
-
-          // Validación pasada, restaurar estado
-          this.accessToken = token;
-          this.user = parsedUser;
-        } catch (error) {
-          // Si hay error al parsear, limpiar localStorage
+        if (!hasBasicFields) {
           this.logout();
+          return;
         }
+
+        parsedUser.tipoUsuario = parsedUser.rol;
+        this.accessToken = token;
+        this.user = parsedUser;
+
+        if (parsedUser.rol === 'admin_sistema') {
+          // Restaura provisionalmente; ensure revalida contra catálogo.
+          this.activeTenantId = localStorage.getItem(STORAGE_KEY_TENANT);
+          await this.ensureAdminTenantContext();
+        } else {
+          this.setActiveTenantId(null);
+        }
+      } catch {
+        this.logout();
       }
     },
   },

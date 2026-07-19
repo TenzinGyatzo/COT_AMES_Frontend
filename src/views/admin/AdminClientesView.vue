@@ -37,7 +37,7 @@
 
     <!-- Filtros -->
     <div class="mb-4 md:mb-6 bg-white shadow-md rounded-lg p-4 md:p-6">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">
             Empresa
@@ -45,7 +45,19 @@
           <input
             v-model="filters.empresa"
             type="text"
-            placeholder="Buscar por empresa..."
+            placeholder="Nombre comercial"
+            class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+            @input="handleFilterChange"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            Razón Social
+          </label>
+          <input
+            v-model="filters.razonSocial"
+            type="text"
+            placeholder="Buscar por razón social..."
             class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
             @input="handleFilterChange"
           />
@@ -57,7 +69,7 @@
           <input
             v-model="filters.rfc"
             type="text"
-            placeholder="Buscar por RFC..."
+            placeholder="Ej. ABC010101AB1"
             class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500 uppercase"
             @input="handleFilterChange"
           />
@@ -124,12 +136,22 @@
                   </span>
                 </div>
                 <div
+                  v-if="grupo.razonSocial"
+                  class="text-xs sm:text-sm text-gray-600 break-words mb-1"
+                >
+                  {{ grupo.razonSocial }}
+                </div>
+                <div
                   class="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0"
                 >
-                  <span class="text-xs sm:text-sm text-gray-600 break-all">{{
-                    grupo.rfc || 'Sin RFC'
-                  }}</span>
-                  <span class="sm:ml-3 md:ml-4">
+                  <span
+                    v-if="grupo.rfc"
+                    class="text-xs sm:text-sm text-gray-600 break-all font-mono uppercase"
+                    >{{ grupo.rfc }}</span
+                  >
+                  <span
+                    :class="grupo.rfc ? 'sm:ml-3 md:ml-4' : ''"
+                  >
                     <span
                       v-if="grupo.activo !== false"
                       class="inline-block px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
@@ -311,9 +333,27 @@
                 required
                 maxlength="200"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                placeholder="Nombre de la empresa"
+                placeholder="Nombre comercial"
                 :disabled="isSubmitting"
               />
+            </div>
+            <div>
+              <label
+                for="cliente-razon-social"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Razón Social
+              </label>
+              <input
+                id="cliente-razon-social"
+                v-model="formulario.razonSocial"
+                type="text"
+                maxlength="300"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                placeholder="Ej. Servicios Industriales del Pacífico"
+                :disabled="isSubmitting"
+              />
+              <p class="mt-1 text-xs text-gray-500">Opcional</p>
             </div>
             <div>
               <label
@@ -328,7 +368,7 @@
                 type="text"
                 maxlength="20"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 uppercase"
-                placeholder="Opcional"
+                placeholder="Ej. ABC010101AB1"
                 :disabled="isSubmitting"
               />
               <p class="mt-1 text-xs text-gray-500">
@@ -395,6 +435,7 @@ const {
 
 const filters = ref<AdminClientesFilters>({
   empresa: '',
+  razonSocial: '',
   rfc: '',
   page: 1,
   limit: 20,
@@ -409,7 +450,7 @@ const modoEdicion = ref(false);
 const clienteEditandoId = ref<string | null>(null);
 const isSubmitting = ref(false);
 const formError = ref<string | null>(null);
-const formulario = ref({ empresa: '', rfc: '' });
+const formulario = ref({ empresa: '', razonSocial: '', rfc: '' });
 
 const mostrarConfirmDesactivar = ref(false);
 const clienteADesactivar = ref<{ clienteId: string; empresa?: string } | null>(
@@ -450,6 +491,8 @@ async function loadClientes() {
       limit: filters.value.limit ?? 20,
     };
     if (filters.value.empresa) activeFilters.empresa = filters.value.empresa;
+    if (filters.value.razonSocial)
+      activeFilters.razonSocial = filters.value.razonSocial;
     if (filters.value.rfc) activeFilters.rfc = filters.value.rfc;
     if (verInactivos.value) {
       activeFilters.activo = false;
@@ -463,7 +506,12 @@ async function loadClientes() {
 }
 
 const tieneFiltrosBusqueda = computed(
-  () => !!(filters.value.empresa?.trim() || filters.value.rfc?.trim()),
+  () =>
+    !!(
+      filters.value.empresa?.trim() ||
+      filters.value.razonSocial?.trim() ||
+      filters.value.rfc?.trim()
+    ),
 );
 
 const emptyStateMessage = computed(() => {
@@ -494,6 +542,7 @@ const clientesAgrupados = computed(() => {
     {
       clienteId: string;
       empresa?: string;
+      razonSocial?: string;
       rfc?: string;
       activo?: boolean;
       totalCotizaciones?: number;
@@ -506,6 +555,7 @@ const clientesAgrupados = computed(() => {
       grupos.set(clienteId, {
         clienteId,
         empresa: cliente.empresa,
+        razonSocial: cliente.razonSocial,
         rfc: cliente.rfc,
         activo: cliente.activo,
         totalCotizaciones: cliente.totalCotizaciones,
@@ -533,7 +583,7 @@ function extractError(err: unknown, fallback: string): string {
 function abrirNuevo() {
   modoEdicion.value = false;
   clienteEditandoId.value = null;
-  formulario.value = { empresa: '', rfc: '' };
+  formulario.value = { empresa: '', razonSocial: '', rfc: '' };
   formError.value = null;
   successMsg.value = null;
   mostrarModal.value = true;
@@ -542,12 +592,14 @@ function abrirNuevo() {
 function abrirEditar(grupo: {
   clienteId: string;
   empresa?: string;
+  razonSocial?: string;
   rfc?: string;
 }) {
   modoEdicion.value = true;
   clienteEditandoId.value = grupo.clienteId;
   formulario.value = {
     empresa: grupo.empresa || '',
+    razonSocial: grupo.razonSocial || '',
     rfc: grupo.rfc || '',
   };
   formError.value = null;
@@ -611,19 +663,28 @@ async function guardar() {
   formError.value = null;
   try {
     const rfc = formulario.value.rfc.trim().toUpperCase();
+    const razonSocial = formulario.value.razonSocial.trim();
     if (modoEdicion.value && clienteEditandoId.value) {
       await updateCliente(clienteEditandoId.value, {
         empresa,
+        razonSocial,
         rfc,
       });
       successMsg.value = 'Cliente actualizado.';
     } else {
       await createCliente({
         empresa,
+        ...(razonSocial ? { razonSocial } : {}),
         ...(rfc ? { rfc } : {}),
       });
       successMsg.value = 'Cliente creado.';
-      filters.value = { empresa: '', rfc: '', page: 1, limit: 20 };
+      filters.value = {
+        empresa: '',
+        razonSocial: '',
+        rfc: '',
+        page: 1,
+        limit: 20,
+      };
       verInactivos.value = false;
     }
     cerrarModal();

@@ -43,15 +43,6 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
     },
   ];
 
-  if (opts.logoBase64) {
-    stack.push({
-      image: opts.logoBase64,
-      width: 180,
-      alignment: 'center',
-      margin: [0, 0, 0, 16],
-    });
-  }
-
   if (b.titular?.trim()) stack.push(bankLine('Nombre:', b.titular.trim()));
   if (b.domicilio?.trim()) stack.push(bankLine('Domicilio:', b.domicilio.trim()));
   if (b.titular?.trim() || b.domicilio?.trim()) {
@@ -62,7 +53,7 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
     const email = b.email.trim();
     stack.push({
       text: [
-        { text: 'E-mail: ', bold: true },
+        { text: 'Mandar comprobante a: ', bold: true },
         {
           text: email,
           link: `mailto:${email}`,
@@ -74,9 +65,41 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
       margin: [0, 0, 0, 0],
     });
   }
-  if (b.banco?.trim() || b.cuenta?.trim() || b.clabe?.trim()) {
+
+  // Logo banco inmediatamente antes de «Banco:» (Story 2.5)
+  if (opts.logoBase64) {
+    stack.push({ text: ' ', margin: [0, 10] });
+    stack.push({
+      table: {
+        widths: ['auto'],
+        body: [
+          [
+            {
+              image: opts.logoBase64,
+              width: 100,
+              alignment: 'center',
+              margin: [6, 6, 6, 6],
+            },
+          ],
+        ],
+      },
+      layout: {
+        hLineWidth: () => 1,
+        vLineWidth: () => 1,
+        hLineColor: () => '#000000',
+        vLineColor: () => '#000000',
+        paddingLeft: () => 0,
+        paddingRight: () => 0,
+        paddingTop: () => 0,
+        paddingBottom: () => 0,
+      },
+      alignment: 'center',
+      margin: [0, 0, 0, 10],
+    });
+  } else if (b.banco?.trim() || b.cuenta?.trim() || b.clabe?.trim()) {
     stack.push({ text: ' ', margin: [0, 12] });
   }
+
   if (b.banco?.trim()) stack.push(bankLine('Banco:', b.banco.trim()));
   if (b.cuenta?.trim()) stack.push(bankLine('No. De Cuenta:', b.cuenta.trim()));
   if (b.clabe?.trim()) {

@@ -88,7 +88,7 @@
         </div>
 
         <div
-          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"
+          class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
         >
           <div>
             <label
@@ -97,7 +97,18 @@
               Empresa
             </label>
             <p class="text-sm md:text-base text-gray-900 font-medium">
-              {{ clienteDetalle.empresa || 'No especificado' }}
+              {{ clienteDetalle.empresa || '—' }}
+            </p>
+          </div>
+
+          <div>
+            <label
+              class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
+            >
+              Razón Social
+            </label>
+            <p class="text-sm md:text-base text-gray-900">
+              {{ clienteDetalle.razonSocial || '—' }}
             </p>
           </div>
 
@@ -108,18 +119,18 @@
               RFC
             </label>
             <p class="text-sm md:text-base text-gray-900 font-mono uppercase">
-              {{ clienteDetalle.rfc || 'Sin RFC' }}
+              {{ clienteDetalle.rfc || '—' }}
             </p>
           </div>
 
-          <div v-if="clienteDetalle._id">
+          <div>
             <label
               class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
             >
               ID del Cliente
             </label>
             <p class="text-xs text-gray-500 font-mono break-all">
-              {{ clienteDetalle._id }}
+              {{ clienteDetalle._id || '—' }}
             </p>
           </div>
         </div>
@@ -341,26 +352,51 @@
           </div>
           <form class="space-y-4" @submit.prevent="guardar">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
+              <label
+                for="detalle-cliente-empresa"
+                class="block text-sm font-medium text-gray-700 mb-1"
                 >Empresa <span class="text-red-500">*</span></label
               >
               <input
+                id="detalle-cliente-empresa"
                 v-model="formulario.empresa"
                 type="text"
                 required
                 maxlength="200"
+                placeholder="Nombre comercial"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
                 :disabled="isSubmitting"
               />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1"
+              <label
+                for="detalle-cliente-razon-social"
+                class="block text-sm font-medium text-gray-700 mb-1"
+                >Razón Social</label
+              >
+              <input
+                id="detalle-cliente-razon-social"
+                v-model="formulario.razonSocial"
+                type="text"
+                maxlength="300"
+                placeholder="Ej. Servicios Industriales del Pacífico"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                :disabled="isSubmitting"
+              />
+              <p class="mt-1 text-xs text-gray-500">Opcional</p>
+            </div>
+            <div>
+              <label
+                for="detalle-cliente-rfc"
+                class="block text-sm font-medium text-gray-700 mb-1"
                 >RFC</label
               >
               <input
+                id="detalle-cliente-rfc"
                 v-model="formulario.rfc"
                 type="text"
                 maxlength="20"
+                placeholder="Ej. ABC010101AB1"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500 uppercase"
                 :disabled="isSubmitting"
               />
@@ -575,7 +611,7 @@ const isMutating = ref(false);
 const formError = ref<string | null>(null);
 const successMsg = ref<string | null>(null);
 const actionError = ref<string | null>(null);
-const formulario = ref({ empresa: '', rfc: '' });
+const formulario = ref({ empresa: '', razonSocial: '', rfc: '' });
 const mostrarConfirmDesactivar = ref(false);
 const mensajeConfirmDesactivar = computed(() => {
   const nombre = clienteDetalle.value?.empresa || 'este cliente';
@@ -652,6 +688,7 @@ function abrirEditar() {
   if (!clienteDetalle.value) return;
   formulario.value = {
     empresa: clienteDetalle.value.empresa || '',
+    razonSocial: clienteDetalle.value.razonSocial || '',
     rfc: clienteDetalle.value.rfc || '',
   };
   formError.value = null;
@@ -715,6 +752,7 @@ async function guardar() {
   try {
     await updateCliente(id, {
       empresa,
+      razonSocial: formulario.value.razonSocial.trim(),
       rfc: formulario.value.rfc.trim().toUpperCase(),
     });
     successMsg.value = 'Cliente actualizado.';

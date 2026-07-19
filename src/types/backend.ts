@@ -24,8 +24,10 @@ export interface TenantBranding {
   sitioWeb?: string;
 }
 
-/** Datos bancarios por tenant (Story 2.4) */
+/** Datos bancarios por tenant (Story 2.4 / 2.5) */
 export interface TenantBancarios {
+  /** Logo del banco (≠ branding.logoUrl) */
+  logoUrl?: string;
   titular?: string;
   banco?: string;
   cuenta?: string;
@@ -95,6 +97,8 @@ export interface Cliente {
   _id?: string;
   tenantId?: string;
   empresa: string;
+  /** Nombre fiscal opcional (Story 3.5). */
+  razonSocial?: string;
   rfc?: string;
   activo?: boolean;
   totalCotizaciones?: number;

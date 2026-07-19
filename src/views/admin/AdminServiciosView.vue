@@ -33,29 +33,7 @@
             @input="handleFilterChange"
           />
         </div>
-        <div class="w-full sm:w-56">
-          <label
-            for="filtro-categoria-servicio"
-            class="block text-xs font-medium text-gray-600 mb-1"
-            >Categoría</label
-          >
-          <select
-            id="filtro-categoria-servicio"
-            v-model="filters.categoria"
-            class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-            @change="onCategoriaChange"
-          >
-            <option value="">Todas</option>
-            <option
-              v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
-              :key="opt.code"
-              :value="opt.code"
-            >
-              {{ opt.label }}
-            </option>
-          </select>
-        </div>
-        <div class="flex items-center gap-2 pb-1">
+        <div class="flex items-center gap-2 pb-1 sm:pb-2">
           <input
             id="ver-inactivos-servicios"
             v-model="verInactivos"
@@ -66,6 +44,54 @@
           <label for="ver-inactivos-servicios" class="text-sm text-gray-700"
             >Ver inactivos</label
           >
+        </div>
+      </div>
+
+      <div>
+        <p class="block text-xs font-medium text-gray-600 mb-2">Categoría</p>
+        <div
+          class="overflow-x-auto"
+          role="tablist"
+          aria-label="Categorías de servicio"
+        >
+          <div
+            class="inline-grid grid-flow-col auto-cols-[2.75rem] gap-1"
+          >
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="!filters.categoria"
+              aria-label="Todas las categorías"
+              title="Todas las categorías"
+              class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
+              :class="
+                !filters.categoria
+                  ? 'bg-medical-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              "
+              @click="selectCategoria('')"
+            >
+              Todas
+            </button>
+            <button
+              v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
+              :key="opt.code"
+              type="button"
+              role="tab"
+              :aria-selected="filters.categoria === opt.code"
+              :aria-label="opt.label"
+              :title="opt.label"
+              class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
+              :class="
+                filters.categoria === opt.code
+                  ? 'bg-medical-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              "
+              @click="selectCategoria(opt.code)"
+            >
+              {{ opt.code }}
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -913,6 +939,12 @@ function onCategoriaChange() {
   successMsg.value = null;
   actionError.value = null;
   void cargarServicios();
+}
+
+function selectCategoria(code: CategoriaServicioCode | '') {
+  if (filters.value.categoria === code) return;
+  filters.value.categoria = code;
+  onCategoriaChange();
 }
 
 function onVerInactivosChange() {

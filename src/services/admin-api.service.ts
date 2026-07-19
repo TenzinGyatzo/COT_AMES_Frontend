@@ -17,6 +17,7 @@ import type { CategoriaServicioCode } from '../constants/categorias-servicio';
 
 export interface AdminClientesFilters {
   empresa?: string;
+  razonSocial?: string;
   rfc?: string;
   /** Omitido = solo activos. false = inactivos. */
   activo?: boolean;
@@ -74,6 +75,7 @@ export async function getClientes(
     limit: filters.limit ?? 20,
   };
   if (filters.empresa) params.empresa = filters.empresa;
+  if (filters.razonSocial) params.razonSocial = filters.razonSocial;
   if (filters.rfc) params.rfc = filters.rfc;
   if (filters.activo !== undefined) params.activo = filters.activo;
 
@@ -91,11 +93,13 @@ export async function getClienteById(id: string): Promise<Cliente> {
 
 export type CreateClientePayload = {
   empresa: string;
+  razonSocial?: string;
   rfc?: string;
 };
 
 export type UpdateClientePayload = {
   empresa?: string;
+  razonSocial?: string;
   rfc?: string;
 };
 
@@ -602,6 +606,27 @@ export async function uploadTenantLogo(
 export async function deleteTenantLogo(): Promise<TenantConfigResponse> {
   const { data } = await httpClient.delete<TenantConfigResponse>(
     '/tenant-config/branding/logo',
+  );
+  return data;
+}
+
+/** Subir o reemplazar logo del banco (Story 2.5). */
+export async function uploadTenantBankLogo(
+  file: File,
+): Promise<TenantConfigResponse> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await httpClient.post<TenantConfigResponse>(
+    '/tenant-config/bancarios/logo',
+    form,
+  );
+  return data;
+}
+
+/** Eliminar logo del banco. */
+export async function deleteTenantBankLogo(): Promise<TenantConfigResponse> {
+  const { data } = await httpClient.delete<TenantConfigResponse>(
+    '/tenant-config/bancarios/logo',
   );
   return data;
 }

@@ -288,40 +288,41 @@
       </form>
 
       <form
-        class="bg-white shadow rounded-lg p-6 space-y-4"
-        @submit.prevent="onSaveVigenciaBancarios"
+        class="bg-white shadow rounded-lg p-6 space-y-4 mb-6"
+        @submit.prevent="onSaveVigencia"
       >
         <div>
           <h2 class="text-lg font-medium text-gray-900">
-            Vigencia y datos bancarios
+            Vigencia de Cotizaciones
           </h2>
           <p class="mt-1 text-sm text-gray-500">
-            Días de vigencia al crear cotizaciones sin fecha explícita, y
-            contenido de la página bancaria del PDF (el toggle sigue siendo por
-            cotización).
+            Días de vigencia al crear cotizaciones sin fecha explícita.
           </p>
         </div>
 
         <div
-          v-if="vbFormError"
+          v-if="vigenciaFormError"
           class="rounded-md bg-red-50 border border-red-200 px-4 py-3"
           role="alert"
         >
-          <p class="text-sm text-red-800">{{ vbFormError }}</p>
+          <p class="text-sm text-red-800">{{ vigenciaFormError }}</p>
         </div>
         <div
-          v-if="vbFormSuccess"
+          v-if="vigenciaFormSuccess"
           class="rounded-md bg-green-50 border border-green-200 px-4 py-3"
           role="status"
         >
-          <p class="text-sm text-green-800">{{ vbFormSuccess }}</p>
+          <p class="text-sm text-green-800">{{ vigenciaFormSuccess }}</p>
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700"
+          <label
+            for="config-vigencia-dias"
+            class="block text-sm font-medium text-gray-700"
             >Vigencia default (días)</label
           >
           <input
+            id="config-vigencia-dias"
             v-model.number="vbForm.vigenciaDefaultDias"
             type="number"
             min="1"
@@ -329,97 +330,202 @@
             step="1"
             class="mt-1 block w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             :disabled="isBusy"
-            @input="onVbFormEdited"
+            @input="onVigenciaFormEdited"
           />
           <p class="mt-1 text-xs text-gray-500">Entero entre 1 y 365.</p>
         </div>
 
+        <div class="flex justify-end pt-2">
+          <button
+            type="submit"
+            class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
+            :disabled="isBusy"
+          >
+            {{ isSavingVigencia ? 'Guardando…' : 'Guardar vigencia' }}
+          </button>
+        </div>
+      </form>
+
+      <form
+        class="bg-white shadow rounded-lg p-6 space-y-4"
+        @submit.prevent="onSaveBancarios"
+      >
+        <div>
+          <h2 class="text-lg font-medium text-gray-900">Datos Bancarios</h2>
+          <p class="mt-1 text-sm text-gray-500">
+            Contenido de la página bancaria del PDF (el toggle sigue siendo por
+            cotización).
+          </p>
+        </div>
+
+        <div
+          v-if="bancariosFormError"
+          class="rounded-md bg-red-50 border border-red-200 px-4 py-3"
+          role="alert"
+        >
+          <p class="text-sm text-red-800">{{ bancariosFormError }}</p>
+        </div>
+        <div
+          v-if="bancariosFormSuccess"
+          class="rounded-md bg-green-50 border border-green-200 px-4 py-3"
+          role="status"
+        >
+          <p class="text-sm text-green-800">{{ bancariosFormSuccess }}</p>
+        </div>
+
+        <div class="border border-gray-100 rounded-md p-4 space-y-3">
+          <p class="text-sm font-medium text-gray-700">Logotipo del banco</p>
+          <div class="flex flex-wrap items-center gap-4">
+            <div
+              class="w-24 h-24 rounded border border-gray-200 bg-gray-50 flex items-center justify-center overflow-hidden"
+            >
+              <img
+                v-if="bankLogoPreviewUrl"
+                :src="bankLogoPreviewUrl"
+                alt="Logo del banco"
+                class="max-w-full max-h-full object-contain"
+              />
+              <span v-else class="text-xs text-gray-400 text-center px-2"
+                >Sin logo</span
+              >
+            </div>
+            <div class="flex flex-col gap-2">
+              <input
+                ref="bankLogoInputRef"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                class="text-sm text-gray-600 disabled:opacity-50"
+                :disabled="isBusy"
+                @change="onBankLogoSelected"
+              />
+              <p class="text-xs text-gray-500">PNG, JPEG o WebP · máx. 1MB</p>
+              <button
+                v-if="config.bancarios?.logoUrl"
+                type="button"
+                class="text-sm text-red-600 hover:text-red-800 self-start disabled:opacity-50"
+                :disabled="isBusy"
+                @click="eliminarBankLogo"
+              >
+                Eliminar logo del banco
+              </button>
+            </div>
+          </div>
+          <p v-if="bankLogoError" class="text-sm text-red-700">
+            {{ bankLogoError }}
+          </p>
+        </div>
+
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700"
+            <label
+              for="config-bancarios-titular"
+              class="block text-sm font-medium text-gray-700"
               >Titular</label
             >
             <input
+              id="config-bancarios-titular"
               v-model="vbForm.titular"
               type="text"
               maxlength="200"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               :disabled="isBusy"
-              @input="onVbFormEdited"
+              @input="onBancariosFormEdited"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700">Banco</label>
+            <label
+              for="config-bancarios-banco"
+              class="block text-sm font-medium text-gray-700"
+              >Banco</label
+            >
             <input
+              id="config-bancarios-banco"
               v-model="vbForm.banco"
               type="text"
               maxlength="120"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               :disabled="isBusy"
-              @input="onVbFormEdited"
+              @input="onBancariosFormEdited"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
+            <label
+              for="config-bancarios-cuenta"
+              class="block text-sm font-medium text-gray-700"
               >No. de cuenta</label
             >
             <input
+              id="config-bancarios-cuenta"
               v-model="vbForm.cuenta"
               type="text"
               maxlength="40"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               :disabled="isBusy"
-              @input="onVbFormEdited"
+              @input="onBancariosFormEdited"
             />
           </div>
           <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700">CLABE</label>
+            <label
+              for="config-bancarios-clabe"
+              class="block text-sm font-medium text-gray-700"
+              >CLABE</label
+            >
             <input
+              id="config-bancarios-clabe"
               v-model="vbForm.clabe"
               type="text"
               maxlength="20"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               :disabled="isBusy"
-              @input="onVbFormEdited"
+              @input="onBancariosFormEdited"
             />
           </div>
           <div class="sm:col-span-2">
-            <label class="block text-sm font-medium text-gray-700"
+            <label
+              for="config-bancarios-domicilio"
+              class="block text-sm font-medium text-gray-700"
               >Domicilio (opcional)</label
             >
             <input
+              id="config-bancarios-domicilio"
               v-model="vbForm.domicilio"
               type="text"
               maxlength="500"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               :disabled="isBusy"
-              @input="onVbFormEdited"
+              @input="onBancariosFormEdited"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
+            <label
+              for="config-bancarios-rfc"
+              class="block text-sm font-medium text-gray-700"
               >RFC (opcional)</label
             >
             <input
+              id="config-bancarios-rfc"
               v-model="vbForm.rfc"
               type="text"
               maxlength="20"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               :disabled="isBusy"
-              @input="onVbFormEdited"
+              @input="onBancariosFormEdited"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700"
-              >Email bancario (opcional)</label
+            <label
+              for="config-bancarios-email"
+              class="block text-sm font-medium text-gray-700"
+              >Email para recibir comprobantes de pago</label
             >
             <input
+              id="config-bancarios-email"
               v-model="vbForm.email"
               type="email"
               maxlength="120"
               class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               :disabled="isBusy"
-              @input="onVbFormEdited"
+              @input="onBancariosFormEdited"
             />
           </div>
         </div>
@@ -430,7 +536,7 @@
             class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
             :disabled="isBusy"
           >
-            {{ isSavingVb ? 'Guardando…' : 'Guardar vigencia y bancarios' }}
+            {{ isSavingBancarios ? 'Guardando…' : 'Guardar datos bancarios' }}
           </button>
         </div>
       </form>
@@ -441,12 +547,14 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import {
+  deleteTenantBankLogo,
   deleteTenantLogo,
   getTenantConfig,
   getTenants,
   updateTenantBranding,
   updateTenantEmailConfig,
   updateTenantVigenciaBancarios,
+  uploadTenantBankLogo,
   uploadTenantLogo,
 } from '../../services/admin-api.service';
 import type { Tenant, TenantConfigResponse } from '../../types/backend';
@@ -489,23 +597,31 @@ const vbForm = reactive({
 
 const isSaving = ref(false);
 const isSavingLogo = ref(false);
+const isSavingBankLogo = ref(false);
 const isSavingEmail = ref(false);
-const isSavingVb = ref(false);
+const isSavingVigencia = ref(false);
+const isSavingBancarios = ref(false);
 const formError = ref<string | null>(null);
 const formSuccess = ref<string | null>(null);
 const emailFormError = ref<string | null>(null);
 const emailFormSuccess = ref<string | null>(null);
-const vbFormError = ref<string | null>(null);
-const vbFormSuccess = ref<string | null>(null);
+const vigenciaFormError = ref<string | null>(null);
+const vigenciaFormSuccess = ref<string | null>(null);
+const bancariosFormError = ref<string | null>(null);
+const bancariosFormSuccess = ref<string | null>(null);
 const logoError = ref<string | null>(null);
+const bankLogoError = ref<string | null>(null);
 const logoInputRef = ref<HTMLInputElement | null>(null);
+const bankLogoInputRef = ref<HTMLInputElement | null>(null);
 
 const isBusy = computed(
   () =>
     isSaving.value ||
     isSavingLogo.value ||
+    isSavingBankLogo.value ||
     isSavingEmail.value ||
-    isSavingVb.value,
+    isSavingVigencia.value ||
+    isSavingBancarios.value,
 );
 
 const MAX_LOGO_BYTES = 1_000_000;
@@ -527,6 +643,15 @@ const tenantLabel = computed(() => {
 /** Resuelve URL pública del logo (proxy /uploads en dev). */
 const logoPreviewUrl = computed(() => {
   const path = config.value?.branding?.logoUrl;
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const apiBase = API_BASE_URL.replace(/\/api\/?$/, '');
+  if (apiBase.startsWith('http')) return `${apiBase}${path}`;
+  return path;
+});
+
+const bankLogoPreviewUrl = computed(() => {
+  const path = config.value?.bancarios?.logoUrl;
   if (!path) return null;
   if (path.startsWith('http')) return path;
   const apiBase = API_BASE_URL.replace(/\/api\/?$/, '');
@@ -573,8 +698,12 @@ function onEmailFormEdited() {
   notifDraftError.value = null;
 }
 
-function onVbFormEdited() {
-  vbFormSuccess.value = null;
+function onVigenciaFormEdited() {
+  vigenciaFormSuccess.value = null;
+}
+
+function onBancariosFormEdited() {
+  bancariosFormSuccess.value = null;
 }
 
 function extractError(err: unknown, fallback: string): string {
@@ -610,9 +739,12 @@ async function cargar() {
   formSuccess.value = null;
   emailFormError.value = null;
   emailFormSuccess.value = null;
-  vbFormError.value = null;
-  vbFormSuccess.value = null;
+  vigenciaFormError.value = null;
+  vigenciaFormSuccess.value = null;
+  bancariosFormError.value = null;
+  bancariosFormSuccess.value = null;
   logoError.value = null;
+  bankLogoError.value = null;
   notifDraftError.value = null;
 
   const requestedTenantId = authStore.activeTenantId;
@@ -755,21 +887,98 @@ async function guardarEmail() {
   }
 }
 
-async function onSaveVigenciaBancarios() {
-  if (isBusy.value) return;
-  vbFormError.value = null;
-  vbFormSuccess.value = null;
+async function onBankLogoSelected(ev: Event) {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
 
-  const days = Number(vbForm.vigenciaDefaultDias);
-  if (!Number.isInteger(days) || days < 1 || days > 365) {
-    vbFormError.value = 'La vigencia debe ser un entero entre 1 y 365.';
+  bankLogoError.value = null;
+  bancariosFormSuccess.value = null;
+
+  const mime = (file.type || '').split(';')[0].trim().toLowerCase();
+  if (!ALLOWED_LOGO_TYPES.has(mime)) {
+    bankLogoError.value =
+      'Tipo de imagen no permitido (use PNG, JPEG o WebP).';
+    if (bankLogoInputRef.value) bankLogoInputRef.value.value = '';
+    return;
+  }
+  if (file.size > MAX_LOGO_BYTES) {
+    bankLogoError.value = 'El logo no puede superar 1MB.';
+    if (bankLogoInputRef.value) bankLogoInputRef.value.value = '';
     return;
   }
 
-  isSavingVb.value = true;
+  if (isBusy.value) {
+    if (bankLogoInputRef.value) bankLogoInputRef.value.value = '';
+    return;
+  }
+
+  isSavingBankLogo.value = true;
+  try {
+    const updated = await uploadTenantBankLogo(file);
+    config.value = updated;
+    bancariosFormSuccess.value = 'Logo del banco actualizado.';
+  } catch (e) {
+    bankLogoError.value = extractError(e, 'No se pudo subir el logo del banco');
+  } finally {
+    isSavingBankLogo.value = false;
+    if (bankLogoInputRef.value) bankLogoInputRef.value.value = '';
+  }
+}
+
+async function eliminarBankLogo() {
+  if (isBusy.value) return;
+  bankLogoError.value = null;
+  bancariosFormSuccess.value = null;
+  isSavingBankLogo.value = true;
+  try {
+    const updated = await deleteTenantBankLogo();
+    config.value = updated;
+    bancariosFormSuccess.value = 'Logo del banco eliminado.';
+  } catch (e) {
+    bankLogoError.value = extractError(
+      e,
+      'No se pudo eliminar el logo del banco',
+    );
+  } finally {
+    isSavingBankLogo.value = false;
+  }
+}
+
+async function onSaveVigencia() {
+  if (isBusy.value) return;
+  vigenciaFormError.value = null;
+  vigenciaFormSuccess.value = null;
+
+  const days = Number(vbForm.vigenciaDefaultDias);
+  if (!Number.isInteger(days) || days < 1 || days > 365) {
+    vigenciaFormError.value = 'La vigencia debe ser un entero entre 1 y 365.';
+    return;
+  }
+
+  isSavingVigencia.value = true;
   try {
     const updated = await updateTenantVigenciaBancarios({
       vigenciaDefaultDias: days,
+    });
+    config.value = updated;
+    fillVbFromConfig(updated);
+    vigenciaFormSuccess.value = 'Vigencia guardada.';
+  } catch (e) {
+    vigenciaFormError.value = extractError(e, 'No se pudo guardar la vigencia');
+  } finally {
+    isSavingVigencia.value = false;
+  }
+}
+
+async function onSaveBancarios() {
+  if (isBusy.value) return;
+  bancariosFormError.value = null;
+  bancariosFormSuccess.value = null;
+
+  isSavingBancarios.value = true;
+  try {
+    const updated = await updateTenantVigenciaBancarios({
       bancarios: {
         titular: vbForm.titular.trim(),
         banco: vbForm.banco.trim(),
@@ -782,14 +991,14 @@ async function onSaveVigenciaBancarios() {
     });
     config.value = updated;
     fillVbFromConfig(updated);
-    vbFormSuccess.value = 'Vigencia y datos bancarios guardados.';
+    bancariosFormSuccess.value = 'Datos bancarios guardados.';
   } catch (e) {
-    vbFormError.value = extractError(
+    bancariosFormError.value = extractError(
       e,
-      'No se pudo guardar vigencia/datos bancarios',
+      'No se pudo guardar los datos bancarios',
     );
   } finally {
-    isSavingVb.value = false;
+    isSavingBancarios.value = false;
   }
 }
 

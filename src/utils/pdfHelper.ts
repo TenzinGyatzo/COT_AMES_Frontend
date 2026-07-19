@@ -78,8 +78,18 @@ async function buildCotizacionDocDefinition(
   let bankPage: PdfBankPageOptions | undefined;
   if (cotizacion.incluirDatosBancarios && hasBancariosUtiles(cfg?.bancarios)) {
     const raw = cfg!.bancarios || {};
+    let bankLogoBase64: string | undefined;
+    if (raw.logoUrl) {
+      try {
+        bankLogoBase64 = await getBase64ImageFromURL(
+          resolvePublicUrl(raw.logoUrl),
+        );
+      } catch {
+        bankLogoBase64 = undefined;
+      }
+    }
     bankPage = {
-      logoBase64,
+      logoBase64: bankLogoBase64,
       bancarios: {
         titular: raw.titular || branding?.razonSocial,
         banco: raw.banco,

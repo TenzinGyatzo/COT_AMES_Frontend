@@ -41,7 +41,7 @@
         <div>
           <h2 class="text-xl font-bold text-gray-800">Identidad</h2>
           <p class="text-sm text-gray-500">
-            Cliente y solicitante opcionales. Continuar desbloquea Servicios.
+            Cliente y solicitante opcionales.
           </p>
         </div>
       </div>
@@ -82,7 +82,7 @@
               class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 whitespace-nowrap"
               @click="abrirModalCliente"
             >
-              + Cliente
+              Registrar Cliente Nuevo
             </button>
           </div>
           <div v-else class="space-y-1.5">
@@ -146,7 +146,7 @@
               "
               @click="abrirModalContacto"
             >
-              + Contacto
+              Registrar Contacto Nuevo
             </button>
           </div>
           <div v-else class="space-y-1.5">

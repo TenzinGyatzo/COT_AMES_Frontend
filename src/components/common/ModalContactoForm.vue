@@ -45,6 +45,7 @@
               type="text"
               required
               maxlength="200"
+              placeholder="Ej. María Fernanda López"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               :disabled="isSubmitting"
             />
@@ -63,6 +64,7 @@
               inputmode="email"
               autocomplete="email"
               maxlength="200"
+              placeholder="nombre@empresa.com"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               :disabled="isSubmitting"
             />
@@ -80,6 +82,7 @@
               v-model="local.telefono"
               type="text"
               maxlength="40"
+              placeholder="Ej. 668 123 456"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               :disabled="isSubmitting"
             />
@@ -96,6 +99,7 @@
               v-model="local.cargo"
               type="text"
               maxlength="120"
+              placeholder="Ej. Coordinador de Seguridad"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
               :disabled="isSubmitting"
             />

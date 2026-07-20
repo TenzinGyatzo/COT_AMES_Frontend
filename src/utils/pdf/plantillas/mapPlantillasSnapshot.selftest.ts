@@ -151,6 +151,16 @@ assert.deepEqual(mapPlantillasSnapshot([]), []);
     ),
     'sin pageBreak si solo una plantilla útil',
   );
+  const titulo = pages.find(
+    (c) =>
+      c &&
+      typeof c === 'object' &&
+      (c as { text?: string }).text === 'SoloUtil',
+  ) as { margin?: number[] };
+  assert.ok(
+    Array.isArray(titulo?.margin) && (titulo.margin[1] ?? 0) >= 36,
+    'título de plantilla con offset bajo el logo',
+  );
 }
 
 // --- doc vacío + text legacy ---

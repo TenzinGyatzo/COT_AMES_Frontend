@@ -129,29 +129,29 @@
               </p>
             </div>
 
-            <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+            <div class="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
               <template v-if="cotizacionDetalle.estado === 'vigente'">
                 <BaseButtonLoader
                   type="button"
                   variant="primary"
-                  size="sm"
+                  size="md"
                   :disabled="isProcessing"
                   :loading="isProcessing"
                   custom-class="bg-green-600 hover:bg-green-700 focus:ring-green-500 w-full sm:w-auto justify-center"
                   @click="handleAceptar"
                 >
-                  Aceptar
+                  Aceptada
                 </BaseButtonLoader>
                 <BaseButtonLoader
                   type="button"
                   variant="danger"
-                  size="sm"
+                  size="md"
                   :disabled="isProcessing"
                   :loading="isProcessing"
                   custom-class="w-full sm:w-auto justify-center"
                   @click="handleRechazar"
                 >
-                  Rechazar
+                  Rechazada
                 </BaseButtonLoader>
               </template>
               <button

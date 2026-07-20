@@ -60,7 +60,7 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
   ];
 
   if (opts.brandingLogoBase64) {
-    stack.push(centeredImage(opts.brandingLogoBase64, 88, 60, 12));
+    stack.push(centeredImage(opts.brandingLogoBase64, 140, 100, 12));
   }
 
   if (b.titular?.trim()) stack.push(bankLine('Nombre:', b.titular.trim()));
@@ -84,7 +84,7 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
   }
 
   if (opts.logoBase64) {
-    stack.push(centeredImage(opts.logoBase64, 70, 48, 10));
+    stack.push(centeredImage(opts.logoBase64, 120, 90, 10));
   }
 
   if (b.banco?.trim()) stack.push(bankLine('Banco:', b.banco.trim()));

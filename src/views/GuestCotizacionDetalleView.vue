@@ -15,9 +15,16 @@
       </p>
     </div>
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-      <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
-        Detalle de Cotización
-      </h1>
+      <div class="flex items-center gap-3">
+        <img
+          src="../assets/logos/ames-logo-cuadrado.png"
+          alt="AMES"
+          class="w-16"
+        />
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+          Detalle de Cotización
+        </h1>
+      </div>
       <div v-if="cotizacion" class="sm:text-right">
         <p class="text-sm font-medium text-gray-500">Folio</p>
         <p class="text-lg font-mono font-bold text-medical-blue-600">

@@ -1,8 +1,5 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Navbar superior -->
-    <Navbar />
-
     <!-- Guest: menos padding (evita doble marco con la vista pública). -->
     <main
       class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
@@ -16,7 +13,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
-import Navbar from '../components/layout/Navbar.vue';
 
 const route = useRoute();
 const isGuestPublic = computed(

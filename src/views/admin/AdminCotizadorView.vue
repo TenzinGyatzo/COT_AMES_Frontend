@@ -47,29 +47,70 @@
       </div>
 
       <div
-        class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-start"
+        class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6 items-start"
       >
         <!-- Cliente -->
-        <div class="min-w-0 space-y-2">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <label class="text-sm font-bold text-gray-700 ml-1">Cliente</label>
-            <label
-              class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
+        <div class="min-w-0 flex flex-col gap-2">
+          <h3 class="text-sm font-bold text-gray-800">Cliente</h3>
+
+          <div
+            class="inline-flex w-full rounded-xl border border-gray-200 bg-gray-100 p-1"
+            role="radiogroup"
+            aria-label="Modo de cliente"
+            @keydown="onClienteModoKeydown"
+          >
+            <button
+              type="button"
+              role="radio"
+              :aria-checked="!cotizarSinCliente"
+              :tabindex="cotizarSinCliente ? -1 : 0"
+              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1"
+              :class="
+                !cotizarSinCliente
+                  ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                  : 'text-gray-600 hover:text-gray-800'
+              "
+              @click="setClienteModo(false)"
             >
-              <input
-                v-model="cotizarSinCliente"
-                type="checkbox"
-                class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
-                @change="onCotizarSinClienteChange"
-              />
-              Cotizar sin registrar cliente
-            </label>
+              Registrado
+            </button>
+            <button
+              type="button"
+              role="radio"
+              :aria-checked="cotizarSinCliente"
+              :tabindex="cotizarSinCliente ? 0 : -1"
+              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1"
+              :class="
+                cotizarSinCliente
+                  ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                  : 'text-gray-600 hover:text-gray-800'
+              "
+              @click="setClienteModo(true)"
+            >
+              Temporal
+            </button>
           </div>
-          <div v-if="!cotizarSinCliente" class="flex gap-2 min-w-0">
+
+          <div v-if="!cotizarSinCliente" class="space-y-1.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <label
+                for="clienteCrm"
+                class="text-sm font-medium text-gray-600"
+                >Cliente del catálogo
+                <span class="text-gray-400 font-normal">(Opcional)</span></label
+              >
+              <button
+                type="button"
+                class="text-sm font-medium text-medical-blue-700 hover:text-medical-blue-800 hover:underline"
+                @click="abrirModalCliente"
+              >
+                + Nuevo cliente
+              </button>
+            </div>
             <select
               id="clienteCrm"
               v-model="clienteId"
-              class="min-w-0 flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
+              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
               @change="onClienteChange"
             >
               <option value="">— Sin cliente —</option>
@@ -77,19 +118,13 @@
                 {{ c.empresa }}
               </option>
             </select>
-            <button
-              type="button"
-              class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 whitespace-nowrap"
-              @click="abrirModalCliente"
-            >
-              Registrar Cliente Nuevo
-            </button>
           </div>
+
           <div v-else class="space-y-1.5">
             <label
               for="empresaGuest"
-              class="text-sm font-medium text-gray-600 ml-1"
-              >Nombre de la Empresa
+              class="text-sm font-medium text-gray-600"
+              >Nombre de la empresa
               <span class="text-gray-400 font-normal">(Opcional)</span></label
             >
             <input
@@ -97,37 +132,100 @@
               v-model="datosCliente.empresa"
               type="text"
               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-              placeholder="Opcional"
+              placeholder="Ej. Transportes del Norte"
             />
+            <p class="text-xs text-gray-500 leading-relaxed">
+              Se utilizará únicamente en esta cotización y no se agregará al
+              catálogo de clientes.
+            </p>
           </div>
         </div>
 
-        <!-- Contacto Solicitante -->
-        <div class="min-w-0 space-y-2">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <label class="text-sm font-bold text-gray-700 ml-1"
-              >Contacto Solicitante</label
+        <!-- Contacto solicitante -->
+        <div class="min-w-0 flex flex-col gap-2">
+          <h3 class="text-sm font-bold text-gray-800">
+            Contacto solicitante
+          </h3>
+
+          <div
+            class="inline-flex w-full rounded-xl border border-gray-200 bg-gray-100 p-1"
+            role="radiogroup"
+            aria-label="Modo de contacto solicitante"
+            :aria-describedby="
+              cotizarSinCliente ? 'contacto-modo-disabled-help' : undefined
+            "
+            @keydown="onContactoModoKeydown"
+          >
+            <button
+              type="button"
+              role="radio"
+              :aria-checked="!cotizarSinContacto"
+              :aria-disabled="cotizarSinCliente"
+              :disabled="cotizarSinCliente"
+              :tabindex="contactoModoTabIndex(false)"
+              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:text-gray-400"
+              :class="
+                !cotizarSinContacto
+                  ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                  : 'text-gray-600 hover:text-gray-800 disabled:hover:text-gray-400'
+              "
+              @click="setContactoModo(false)"
             >
-            <label
-              class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer"
-              :class="{ 'opacity-50 cursor-not-allowed': cotizarSinCliente }"
+              Registrado
+            </button>
+            <button
+              type="button"
+              role="radio"
+              :aria-checked="cotizarSinContacto"
+              :tabindex="contactoModoTabIndex(true)"
+              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1"
+              :class="
+                cotizarSinContacto
+                  ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                  : 'text-gray-600 hover:text-gray-800'
+              "
+              @click="setContactoModo(true)"
             >
-              <input
-                v-model="cotizarSinContacto"
-                type="checkbox"
-                class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
-                :disabled="cotizarSinCliente"
-                @change="onCotizarSinContactoChange"
-              />
-              Cotizar sin registrar contacto
-            </label>
+              Temporal
+            </button>
           </div>
-          <div v-if="!cotizarSinContacto" class="flex gap-2 min-w-0">
+
+          <p
+            v-if="cotizarSinCliente"
+            class="text-xs text-gray-500 leading-relaxed"
+            id="contacto-modo-disabled-help"
+          >
+            Registrado no está disponible mientras el cliente sea temporal.
+            Captura el solicitante abajo como nombre temporal.
+          </p>
+
+          <div v-if="!cotizarSinContacto" class="space-y-1.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <label
+                for="contactoCrm"
+                class="text-sm font-medium text-gray-600"
+                >Contacto del catálogo
+                <span class="text-gray-400 font-normal">(Opcional)</span></label
+              >
+              <button
+                type="button"
+                :disabled="!clienteId"
+                class="text-sm font-medium text-medical-blue-700 hover:text-medical-blue-800 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                :title="
+                  !clienteId
+                    ? 'Selecciona un cliente primero'
+                    : 'Nuevo contacto'
+                "
+                @click="abrirModalContacto"
+              >
+                + Nuevo contacto
+              </button>
+            </div>
             <select
               id="contactoCrm"
               v-model="contactoId"
               :disabled="!clienteId"
-              class="min-w-0 flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm disabled:opacity-50"
+              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm disabled:opacity-50"
               @change="onContactoChange"
             >
               <option value="">— Sin solicitante —</option>
@@ -135,25 +233,25 @@
                 {{ ct.nombre }}
               </option>
             </select>
-            <button
-              type="button"
-              :disabled="!clienteId"
-              class="px-3 py-2 text-sm font-bold rounded-xl border border-medical-blue-200 text-medical-blue-700 bg-medical-blue-50 hover:bg-medical-blue-100 disabled:opacity-40 whitespace-nowrap"
-              :title="
-                !clienteId
-                  ? 'Selecciona un cliente primero'
-                  : 'Nuevo contacto'
-              "
-              @click="abrirModalContacto"
+            <p
+              v-if="!clienteId"
+              class="text-xs text-gray-500 leading-relaxed"
             >
-              Registrar Contacto Nuevo
-            </button>
+              Selecciona un cliente registrado para listar sus contactos.
+            </p>
+            <p
+              v-else-if="contactos.length === 0 && !loadingContactos"
+              class="text-xs text-gray-500 leading-relaxed"
+            >
+              Sin contactos activos. Usa «+ Nuevo contacto» para agregar uno.
+            </p>
           </div>
+
           <div v-else class="space-y-1.5">
             <label
               for="solicitanteGuest"
-              class="text-sm font-medium text-gray-600 ml-1"
-              >Solicitante de la Cotización
+              class="text-sm font-medium text-gray-600"
+              >Nombre del solicitante
               <span class="text-gray-400 font-normal">(Opcional)</span></label
             >
             <input
@@ -161,36 +259,15 @@
               v-model="datosCliente.nombreContacto"
               type="text"
               class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-              placeholder="Opcional"
+              placeholder="Ej. Laura Martínez"
             />
+            <p class="text-xs text-gray-500 leading-relaxed">
+              Se utilizará únicamente en esta cotización y no se agregará al
+              catálogo de contactos.
+            </p>
           </div>
-          <p
-            v-if="
-              !cotizarSinContacto &&
-              clienteId &&
-              contactos.length === 0 &&
-              !loadingContactos
-            "
-            class="text-xs text-gray-500 ml-1"
-          >
-            Sin contactos activos.
-            <button
-              type="button"
-              class="underline text-medical-blue-600"
-              @click="abrirModalContacto"
-            >
-              Agregar al vuelo
-            </button>
-          </p>
         </div>
       </div>
-
-      <p
-        v-if="!tieneSolicitante"
-        class="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-4 py-2"
-      >
-        Sin solicitante — la cotización se puede guardar igual.
-      </p>
 
       <div class="flex justify-end pt-2">
         <button
@@ -622,7 +699,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue';
+import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import ModalSeleccionServicios from '../../components/common/ModalSeleccionServicios.vue';
 import ModalCotizacionCreada from '../../components/common/ModalCotizacionCreada.vue';
@@ -747,10 +824,6 @@ const mostrarModalContacto = ref(false);
 const guardandoContacto = ref(false);
 const errorModalContacto = ref<string | null>(null);
 
-const tieneSolicitante = computed(
-  () => !!datosCliente.value.nombreContacto.trim(),
-);
-
 function confirmarIdentidad() {
   identidadConfirmada.value = true;
 }
@@ -758,6 +831,63 @@ function confirmarIdentidad() {
 function clearDestinatariosIdentidad() {
   emailsPara.value = [];
   emailsCc.value = [];
+}
+
+function setClienteModo(temporal: boolean) {
+  if (cotizarSinCliente.value === temporal) return;
+  cotizarSinCliente.value = temporal;
+  onCotizarSinClienteChange();
+}
+
+function setContactoModo(temporal: boolean) {
+  if (cotizarSinCliente.value && !temporal) return;
+  if (cotizarSinContacto.value === temporal) return;
+  cotizarSinContacto.value = temporal;
+  onCotizarSinContactoChange();
+}
+
+function contactoModoTabIndex(temporalOption: boolean): number {
+  if (cotizarSinCliente.value) {
+    return temporalOption ? 0 : -1;
+  }
+  return (cotizarSinContacto.value === temporalOption) ? 0 : -1;
+}
+
+function onClienteModoKeydown(event: KeyboardEvent) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && event.key !== 'Home' && event.key !== 'End') {
+    return;
+  }
+  event.preventDefault();
+  const goTemporal =
+    event.key === 'End' ||
+    event.key === 'ArrowRight' ||
+    event.key === 'ArrowDown';
+  setClienteModo(goTemporal);
+  void nextTick(() => {
+    const checked = (event.currentTarget as HTMLElement)?.querySelector(
+      '[role="radio"][aria-checked="true"]',
+    ) as HTMLElement | null;
+    checked?.focus();
+  });
+}
+
+function onContactoModoKeydown(event: KeyboardEvent) {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'ArrowUp' && event.key !== 'ArrowDown' && event.key !== 'Home' && event.key !== 'End') {
+    return;
+  }
+  event.preventDefault();
+  if (cotizarSinCliente.value) return;
+  const goTemporal =
+    event.key === 'End' ||
+    event.key === 'ArrowRight' ||
+    event.key === 'ArrowDown';
+  setContactoModo(goTemporal);
+  void nextTick(() => {
+    const checked = (event.currentTarget as HTMLElement)?.querySelector(
+      '[role="radio"][aria-checked="true"]',
+    ) as HTMLElement | null;
+    checked?.focus();
+  });
 }
 
 function onCotizarSinClienteChange() {
@@ -1051,7 +1181,11 @@ function moverPlantilla(id: string, delta: number) {
   const i = arr.indexOf(id);
   const j = i + delta;
   if (i < 0 || j < 0 || j >= arr.length) return;
-  [arr[i], arr[j]] = [arr[j], arr[i]];
+  const current = arr[i];
+  const neighbor = arr[j];
+  if (current === undefined || neighbor === undefined) return;
+  arr[i] = neighbor;
+  arr[j] = current;
   plantillasSeleccionadasIds.value = arr;
 }
 

@@ -190,15 +190,6 @@
             </button>
           </div>
 
-          <p
-            v-if="cotizarSinCliente"
-            class="text-xs text-gray-500 leading-relaxed"
-            id="contacto-modo-disabled-help"
-          >
-            Registrado no está disponible mientras el cliente sea temporal.
-            Captura el solicitante abajo como nombre temporal.
-          </p>
-
           <div v-if="!cotizarSinContacto" class="space-y-1.5">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <label
@@ -333,8 +324,8 @@
             Plantillas adicionales
           </h3>
           <p class="text-xs text-gray-500 mb-3">
-            Opcional. El orden de las seleccionadas define el orden de páginas
-            tras el cuerpo del PDF.
+            Opcional. Arriba ves el orden real de páginas tras el cuerpo del PDF
+            (1, 2, 3…). Abajo agregas plantillas; con ↑ ↓ cambias ese orden.
           </p>
           <div
             v-if="isLoadingPlantillas"
@@ -355,55 +346,121 @@
           >
             No hay plantillas activas. Puedes continuar sin plantillas.
           </div>
-          <ul v-else class="space-y-2">
-            <li
-              v-for="p in plantillasDisponibles"
-              :key="p._id"
-              class="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-gray-200 bg-white"
+          <div v-else class="space-y-4">
+            <!-- Orden real de páginas en el PDF -->
+            <div
+              v-if="plantillasEnOrdenPdf.length > 0"
+              class="rounded-2xl border border-medical-blue-200 bg-medical-blue-50/40 p-3"
             >
-              <label class="flex items-center gap-2 flex-1 min-w-[12rem] cursor-pointer">
-                <input
-                  type="checkbox"
-                  class="rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
-                  :checked="isPlantillaSeleccionada(p._id || '')"
-                  @change="togglePlantillaSeleccion(p)"
-                />
-                <span class="text-sm font-medium text-gray-800">{{
-                  p.nombre
-                }}</span>
-              </label>
-              <template v-if="isPlantillaSeleccionada(p._id || '')">
-                <button
-                  type="button"
-                  class="px-2 py-1 text-xs font-bold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-                  :disabled="plantillaOrderIndex(p._id || '') <= 0"
-                  title="Subir"
-                  @click="moverPlantilla(p._id || '', -1)"
+              <div class="flex items-baseline justify-between gap-2 mb-2">
+                <h4 class="text-xs font-bold uppercase tracking-wide text-medical-blue-800">
+                  Orden en el PDF
+                </h4>
+                <span class="text-[11px] text-medical-blue-700">
+                  1 = primera página tras el cuerpo
+                </span>
+              </div>
+              <ol class="space-y-2" aria-label="Orden de plantillas en el PDF">
+                <li
+                  v-for="(item, index) in plantillasEnOrdenPdf"
+                  :key="item.id"
+                  class="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-medical-blue-100 bg-white"
                 >
-                  ↑
-                </button>
-                <button
-                  type="button"
-                  class="px-2 py-1 text-xs font-bold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-                  :disabled="
-                    plantillaOrderIndex(p._id || '') >=
-                    plantillasSeleccionadasIds.length - 1
-                  "
-                  title="Bajar"
-                  @click="moverPlantilla(p._id || '', 1)"
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-medical-blue-600 text-sm font-bold text-white"
+                    :aria-label="`Página ${index + 1} tras el cuerpo`"
+                  >
+                    {{ index + 1 }}
+                  </span>
+                  <span class="flex-1 min-w-[10rem] text-sm font-medium text-gray-800">
+                    {{ item.nombre }}
+                  </span>
+                  <div class="flex items-center gap-1">
+                    <button
+                      type="button"
+                      class="px-2 py-1 text-xs font-bold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                      :disabled="index <= 0"
+                      :title="`Subir (ahora página ${index + 1})`"
+                      :aria-label="`Subir ${item.nombre} en el orden del PDF`"
+                      @click="moverPlantilla(item.id, -1)"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      class="px-2 py-1 text-xs font-bold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                      :disabled="index >= plantillasEnOrdenPdf.length - 1"
+                      :title="`Bajar (ahora página ${index + 1})`"
+                      :aria-label="`Bajar ${item.nombre} en el orden del PDF`"
+                      @click="moverPlantilla(item.id, 1)"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-xs font-bold rounded-xl bg-medical-blue-50 text-medical-blue-700 hover:bg-medical-blue-100"
+                    :aria-label="`Personalizar ${item.nombre}`"
+                    @click="abrirPersonalizarPorId(item.id)"
+                  >
+                    Personalizar
+                  </button>
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-xs font-bold rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    :aria-label="`Quitar ${item.nombre} del PDF`"
+                    @click="quitarPlantilla(item.id)"
+                  >
+                    Quitar
+                  </button>
+                </li>
+              </ol>
+            </div>
+            <div
+              v-else
+              class="text-xs text-gray-500 py-2 px-3 rounded-xl border border-dashed border-gray-200"
+            >
+              Ninguna plantilla en el PDF aún. Usa «Agregar» abajo; el número 1
+              será la primera página tras el cuerpo.
+            </div>
+
+            <!-- Catálogo: solo agregar -->
+            <div v-if="plantillasParaAgregar.length > 0">
+              <div class="flex items-baseline justify-between gap-2 mb-2">
+                <h4 class="text-xs font-bold uppercase tracking-wide text-gray-600">
+                  Agregar plantillas
+                </h4>
+                <span class="text-[11px] text-gray-400">
+                  Cada una se agrega al final del orden
+                </span>
+              </div>
+              <ul class="space-y-2">
+                <li
+                  v-for="p in plantillasParaAgregar"
+                  :key="p._id"
+                  class="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-gray-200 bg-white"
                 >
-                  ↓
-                </button>
-                <button
-                  type="button"
-                  class="px-3 py-1.5 text-xs font-bold rounded-xl bg-medical-blue-50 text-medical-blue-700 hover:bg-medical-blue-100"
-                  @click="abrirPersonalizar(p)"
-                >
-                  Personalizar
-                </button>
-              </template>
-            </li>
-          </ul>
+                  <span class="flex-1 min-w-[12rem] text-sm font-medium text-gray-800">{{
+                    p.nombre
+                  }}</span>
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-xs font-bold rounded-xl bg-medical-blue-600 text-white hover:bg-medical-blue-700"
+                    :aria-label="`Agregar ${p.nombre} al final del orden del PDF`"
+                    @click="agregarPlantilla(p)"
+                  >
+                    Agregar
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <p
+              v-else-if="plantillasEnOrdenPdf.length > 0"
+              class="text-[11px] text-gray-500"
+            >
+              Todas las plantillas activas ya están en el orden del PDF.
+            </p>
+          </div>
         </div>
 
         <!-- Bancarios -->
@@ -801,7 +858,7 @@ const bancariosUtiles = ref(false);
 const plantillasDisponibles = ref<Plantilla[]>([]);
 const isLoadingPlantillas = ref(false);
 const errorPlantillas = ref('');
-/** Orden = páginas tras el cuerpo. */
+/** Orden de IDs = orden de páginas tras el cuerpo del PDF (1-based en UI). */
 const plantillasSeleccionadasIds = ref<string[]>([]);
 const plantillaSnapshots = ref<
   Record<string, { nombre: string; secciones: SeccionPlantilla[] }>
@@ -1144,23 +1201,44 @@ function isPlantillaSeleccionada(id: string): boolean {
   return plantillasSeleccionadasIds.value.includes(id);
 }
 
-function plantillaOrderIndex(id: string): number {
-  return plantillasSeleccionadasIds.value.indexOf(id);
+/** Lista numerada = orden exacto de páginas tras el cuerpo del PDF. */
+const plantillasEnOrdenPdf = computed(() => {
+  const byId = new Map(
+    plantillasDisponibles.value
+      .filter((p) => p._id)
+      .map((p) => [p._id as string, p]),
+  );
+  return plantillasSeleccionadasIds.value.map((id) => {
+    const snap = plantillaSnapshots.value[id];
+    const catalog = byId.get(id);
+    return {
+      id,
+      nombre: snap?.nombre || catalog?.nombre || 'Plantilla',
+    };
+  });
+});
+
+/** Catálogo de plantillas aún no incluidas en el PDF. */
+const plantillasParaAgregar = computed(() =>
+  plantillasDisponibles.value.filter(
+    (p) => p._id && !isPlantillaSeleccionada(p._id),
+  ),
+);
+
+function quitarPlantilla(id: string) {
+  if (!id || !isPlantillaSeleccionada(id)) return;
+  plantillasSeleccionadasIds.value = plantillasSeleccionadasIds.value.filter(
+    (x) => x !== id,
+  );
+  const next = { ...plantillaSnapshots.value };
+  delete next[id];
+  plantillaSnapshots.value = next;
 }
 
-function togglePlantillaSeleccion(p: Plantilla) {
+/** Solo agrega al final del orden del PDF (idempotente si ya está). */
+function agregarPlantilla(p: Plantilla) {
   const id = p._id;
-  if (!id) return;
-  const idx = plantillasSeleccionadasIds.value.indexOf(id);
-  if (idx >= 0) {
-    plantillasSeleccionadasIds.value = plantillasSeleccionadasIds.value.filter(
-      (x) => x !== id,
-    );
-    const next = { ...plantillaSnapshots.value };
-    delete next[id];
-    plantillaSnapshots.value = next;
-    return;
-  }
+  if (!id || isPlantillaSeleccionada(id)) return;
   plantillasSeleccionadasIds.value = [
     ...plantillasSeleccionadasIds.value,
     id,
@@ -1189,15 +1267,18 @@ function moverPlantilla(id: string, delta: number) {
   plantillasSeleccionadasIds.value = arr;
 }
 
-function abrirPersonalizar(p: Plantilla) {
-  const id = p._id;
+function abrirPersonalizarPorId(id: string) {
   if (!id) return;
-  if (!isPlantillaSeleccionada(id)) togglePlantillaSeleccion(p);
+  const catalog = plantillasDisponibles.value.find((p) => p._id === id);
+  if (!isPlantillaSeleccionada(id)) {
+    if (!catalog) return;
+    agregarPlantilla(catalog);
+  }
   const snap =
     plantillaSnapshots.value[id] ||
     ({
-      nombre: p.nombre,
-      secciones: deepCloneSecciones(p.secciones || []),
+      nombre: catalog?.nombre || 'Plantilla',
+      secciones: deepCloneSecciones(catalog?.secciones || []),
     } as const);
   personalizarId.value = id;
   personalizarNombre.value = snap.nombre;

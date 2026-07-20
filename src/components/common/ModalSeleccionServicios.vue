@@ -16,7 +16,7 @@
         <div>
           <h3 class="text-xl font-bold text-gray-900">Catálogo de Servicios</h3>
           <p class="text-xs text-gray-500 mt-0.5">
-            Selecciona servicios (cantidad 1 al agregar; ajústala en el wizard)
+            Selecciona servicios y ajusta la cantidad de cada uno
           </p>
         </div>
         <button
@@ -150,50 +150,71 @@
           <label
             v-for="servicio in catalogo"
             :key="servicio._id"
-            class="group flex items-start gap-3 border border-gray-100 bg-white rounded-2xl p-4 hover:border-medical-blue-200 hover:shadow-md transition-all duration-300 cursor-pointer"
+            class="group flex flex-col sm:flex-row sm:items-start gap-3 border border-gray-100 bg-white rounded-2xl p-4 hover:border-medical-blue-200 hover:shadow-md transition-all duration-300 cursor-pointer"
             :class="{
               'border-medical-blue-300 bg-medical-blue-50/40': isSelected(
                 servicio._id || '',
               ),
             }"
           >
-            <input
-              type="checkbox"
-              class="mt-1 h-4 w-4 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
-              :checked="isSelected(servicio._id || '')"
-              @change="toggleServicio(servicio._id || '')"
-            />
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1 flex-wrap">
-                <h4
-                  class="font-bold text-gray-800 leading-tight group-hover:text-medical-blue-700 transition-colors"
+            <div class="flex items-start gap-3 flex-1 min-w-0">
+              <input
+                type="checkbox"
+                class="mt-1 h-4 w-4 shrink-0 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
+                :checked="isSelected(servicio._id || '')"
+                @change="toggleServicio(servicio._id || '')"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1 flex-wrap">
+                  <h4
+                    class="font-bold text-gray-800 leading-tight group-hover:text-medical-blue-700 transition-colors"
+                  >
+                    {{ servicio.nombre || 'Sin nombre' }}
+                  </h4>
+                  <span
+                    v-if="servicio.categoria"
+                    class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                    :title="labelCategoriaServicio(servicio.categoria)"
+                  >
+                    {{ servicio.categoria }}
+                  </span>
+                </div>
+                <p
+                  v-if="servicio.descripcion"
+                  class="text-sm text-gray-500 line-clamp-2 sm:line-clamp-1 mb-2"
                 >
-                  {{ servicio.nombre || 'Sin nombre' }}
-                </h4>
+                  {{ servicio.descripcion }}
+                </p>
                 <span
-                  v-if="servicio.categoria"
-                  class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
-                  :title="labelCategoriaServicio(servicio.categoria)"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-medical-blue-50 text-medical-blue-700 border border-medical-blue-100"
                 >
-                  {{ servicio.categoria }}
+                  ${{
+                    Number(servicio.precioUnitario || 0).toLocaleString(
+                      'es-MX',
+                      {
+                        minimumFractionDigits: 2,
+                      },
+                    )
+                  }}
+                  {{ servicio.moneda || 'MXN' }}
                 </span>
               </div>
-              <p
-                v-if="servicio.descripcion"
-                class="text-sm text-gray-500 line-clamp-2 sm:line-clamp-1 mb-2"
-              >
-                {{ servicio.descripcion }}
-              </p>
+            </div>
+            <div
+              v-if="isSelected(servicio._id || '')"
+              class="flex items-center justify-between sm:justify-end gap-3 sm:pl-2 sm:border-l sm:border-medical-blue-100"
+              @click.prevent.stop
+            >
               <span
-                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-medical-blue-50 text-medical-blue-700 border border-medical-blue-100"
+                class="text-[10px] font-bold uppercase tracking-wide text-gray-400 sm:hidden"
+                >Cantidad</span
               >
-                ${{
-                  Number(servicio.precioUnitario || 0).toLocaleString('es-MX', {
-                    minimumFractionDigits: 2,
-                  })
-                }}
-                {{ servicio.moneda || 'MXN' }}
-              </span>
+              <QuantitySelector
+                :model-value="cantidadDe(servicio._id || '')"
+                @update:model-value="
+                  (value) => setCantidad(servicio._id || '', value)
+                "
+              />
             </div>
           </label>
         </div>
@@ -202,7 +223,7 @@
       <div
         class="px-6 py-5 border-t border-gray-100 bg-gray-50/80 backdrop-blur-sm"
       >
-        <div class="flex flex-row items-center justify-between gap-2 mb-6">
+        <div class="flex flex-row items-center justify-between gap-2 mb-4">
           <div
             class="text-[11px] sm:text-sm font-semibold text-gray-500 tracking-widest leading-tight"
           >
@@ -210,21 +231,31 @@
           </div>
         </div>
 
-        <div class="flex flex-row gap-3 justify-end">
+        <div
+          class="flex flex-col-reverse sm:flex-row sm:flex-wrap gap-2 sm:gap-3 sm:justify-end"
+        >
           <button
             type="button"
             @click="cerrar"
-            class="hidden sm:block px-6 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 active:scale-95 transition-all font-bold text-sm shadow-sm"
+            class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 active:scale-95 transition-all font-bold text-sm shadow-sm"
           >
             Cancelar
           </button>
           <button
             type="button"
-            @click="agregarServicios"
+            @click="aplicarSeleccion(false)"
             :disabled="!puedeAplicar"
-            class="w-full sm:w-auto px-8 py-3 bg-medical-green-500 text-white rounded-xl hover:bg-medical-green-600 active:scale-95 transition-all font-bold text-base shadow-lg shadow-medical-green-100 disabled:opacity-50 disabled:pointer-events-none"
+            class="px-5 py-2.5 bg-white border border-medical-blue-200 text-medical-blue-700 rounded-xl hover:bg-medical-blue-50 active:scale-95 transition-all font-bold text-sm shadow-sm disabled:opacity-50 disabled:pointer-events-none"
           >
-            Añadir Servicios
+            Aplicar
+          </button>
+          <button
+            type="button"
+            @click="aplicarSeleccion(true)"
+            :disabled="!puedeContinuar"
+            class="px-6 py-3 bg-medical-green-500 text-white rounded-xl hover:bg-medical-green-600 active:scale-95 transition-all font-bold text-sm sm:text-base shadow-lg shadow-medical-green-100 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            Aplicar y continuar
           </button>
         </div>
       </div>
@@ -235,6 +266,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
+import QuantitySelector from './QuantitySelector.vue';
 import type { Servicio } from '../../types/backend';
 import { getServicios } from '../../services/admin-api.service';
 import {
@@ -258,13 +290,14 @@ const emit = defineEmits<{
   'agregar-servicios': [
     cantidades: Record<string, number>,
     servicios: Servicio[],
+    continuar: boolean,
   ];
 }>();
 
 const busqueda = ref('');
 const categoriaActiva = ref<CategoriaServicioCode | null>(null);
-/** IDs marcados en esta sesión del modal */
-const seleccionIds = ref<Set<string>>(new Set());
+/** Cantidades editables en esta sesión del modal (solo IDs con qty > 0). */
+const cantidadesModal = ref<Record<string, number>>({});
 const catalogo = ref<Servicio[]>([]);
 const loadingCatalogo = ref(false);
 /** Cache de servicios vistos (para merge al wizard aunque salgan del filtro) */
@@ -273,15 +306,19 @@ const serviciosVistos = ref<Map<string, Servicio>>(new Map());
 let fetchSeq = 0;
 let busquedaTimer: ReturnType<typeof setTimeout> | null = null;
 
+function snapshotCantidadesIniciales(): Record<string, number> {
+  const next: Record<string, number> = {};
+  for (const [id, q] of Object.entries(props.serviciosYaSeleccionados)) {
+    if (q > 0) next[id] = q;
+  }
+  return next;
+}
+
 watch(
   () => props.isOpen,
   (isOpen) => {
     if (isOpen) {
-      seleccionIds.value = new Set(
-        Object.entries(props.serviciosYaSeleccionados)
-          .filter(([, q]) => q > 0)
-          .map(([id]) => id),
-      );
+      cantidadesModal.value = snapshotCantidadesIniciales();
       busqueda.value = '';
       categoriaActiva.value = null;
       void fetchCatalogo();
@@ -334,42 +371,63 @@ async function fetchCatalogo() {
   }
 }
 
-const seleccionadosCount = computed(() => seleccionIds.value.size);
+const seleccionadosCount = computed(
+  () => Object.values(cantidadesModal.value).filter((q) => q > 0).length,
+);
 
 const puedeAplicar = computed(() => {
   if (seleccionadosCount.value > 0) return true;
   return Object.values(props.serviciosYaSeleccionados).some((q) => q > 0);
 });
 
-const isSelected = (id: string) => seleccionIds.value.has(id);
+/** Continuar exige al menos un servicio seleccionado (desbloquea paso 3). */
+const puedeContinuar = computed(() => seleccionadosCount.value > 0);
+
+const isSelected = (id: string) => (cantidadesModal.value[id] || 0) > 0;
+
+const cantidadDe = (id: string) => cantidadesModal.value[id] || 0;
 
 const toggleServicio = (id: string) => {
   if (!id) return;
-  const next = new Set(seleccionIds.value);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  seleccionIds.value = next;
+  const next = { ...cantidadesModal.value };
+  if ((next[id] || 0) > 0) {
+    delete next[id];
+  } else {
+    const ya = props.serviciosYaSeleccionados[id];
+    next[id] = ya && ya > 0 ? ya : 1;
+  }
+  cantidadesModal.value = next;
 };
 
-const agregarServicios = () => {
-  const serviciosParaAgregar: Record<string, number> = {};
-  seleccionIds.value.forEach((id) => {
-    const ya = props.serviciosYaSeleccionados[id];
-    // qty default 1 al agregar; conserva cantidad si ya estaba en el wizard
-    serviciosParaAgregar[id] = ya && ya > 0 ? ya : 1;
-  });
+const setCantidad = (id: string, cantidad: number) => {
+  if (!id) return;
+  const q = Math.max(0, Math.floor(Number(cantidad) || 0));
+  const next = { ...cantidadesModal.value };
+  if (q <= 0) delete next[id];
+  else next[id] = q;
+  cantidadesModal.value = next;
+};
+
+const aplicarSeleccion = (continuar: boolean) => {
+  const serviciosParaAgregar: Record<string, number> = {
+    ...cantidadesModal.value,
+  };
   // Desmarcar los que ya no están seleccionados → qty 0
   Object.keys(props.serviciosYaSeleccionados).forEach((id) => {
-    if (!seleccionIds.value.has(id) && props.serviciosYaSeleccionados[id] > 0) {
+    if (
+      !(id in serviciosParaAgregar) &&
+      props.serviciosYaSeleccionados[id] > 0
+    ) {
       serviciosParaAgregar[id] = 0;
     }
   });
   const serviciosEmit: Servicio[] = [];
-  seleccionIds.value.forEach((id) => {
+  Object.keys(cantidadesModal.value).forEach((id) => {
+    if ((cantidadesModal.value[id] || 0) <= 0) return;
     const s = serviciosVistos.value.get(id);
     if (s) serviciosEmit.push(s);
   });
-  emit('agregar-servicios', serviciosParaAgregar, serviciosEmit);
+  emit('agregar-servicios', serviciosParaAgregar, serviciosEmit, continuar);
   cerrar();
 };
 

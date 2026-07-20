@@ -14,9 +14,9 @@
       </button>
     </div>
 
-    <div class="mb-4 space-y-3">
+    <div class="mb-4">
       <div
-        class="flex flex-col sm:flex-row sm:flex-wrap sm:items-end gap-3 sm:gap-4"
+        class="flex flex-col lg:flex-row lg:items-end gap-3 lg:gap-4"
       >
         <div class="flex-1 min-w-[180px]">
           <label
@@ -33,65 +33,59 @@
             @input="handleFilterChange"
           />
         </div>
-        <div class="flex items-center gap-2 pb-1 sm:pb-2">
-          <input
+
+        <div class="min-w-0 shrink">
+          <p class="block text-xs font-medium text-gray-600 mb-1">Categoría</p>
+          <div
+            class="overflow-x-auto"
+            role="tablist"
+            aria-label="Categorías de servicio"
+          >
+            <div class="inline-grid grid-flow-col auto-cols-[2.75rem] gap-1">
+              <button
+                type="button"
+                role="tab"
+                :aria-selected="!filters.categoria"
+                aria-label="Todas las categorías"
+                title="Todas las categorías"
+                class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
+                :class="
+                  !filters.categoria
+                    ? 'bg-medical-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                "
+                @click="selectCategoria('')"
+              >
+                Todas
+              </button>
+              <button
+                v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
+                :key="opt.code"
+                type="button"
+                role="tab"
+                :aria-selected="filters.categoria === opt.code"
+                :aria-label="opt.label"
+                :title="opt.label"
+                class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
+                :class="
+                  filters.categoria === opt.code
+                    ? 'bg-medical-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                "
+                @click="selectCategoria(opt.code)"
+              >
+                {{ opt.code }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center pb-1 lg:pb-2 shrink-0">
+          <ToggleSwitch
             id="ver-inactivos-servicios"
             v-model="verInactivos"
-            type="checkbox"
-            class="h-4 w-4 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
             @change="onVerInactivosChange"
           />
-          <label for="ver-inactivos-servicios" class="text-sm text-gray-700"
-            >Ver inactivos</label
-          >
-        </div>
-      </div>
-
-      <div>
-        <p class="block text-xs font-medium text-gray-600 mb-2">Categoría</p>
-        <div
-          class="overflow-x-auto"
-          role="tablist"
-          aria-label="Categorías de servicio"
-        >
-          <div
-            class="inline-grid grid-flow-col auto-cols-[2.75rem] gap-1"
-          >
-            <button
-              type="button"
-              role="tab"
-              :aria-selected="!filters.categoria"
-              aria-label="Todas las categorías"
-              title="Todas las categorías"
-              class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
-              :class="
-                !filters.categoria
-                  ? 'bg-medical-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              "
-              @click="selectCategoria('')"
-            >
-              Todas
-            </button>
-            <button
-              v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
-              :key="opt.code"
-              type="button"
-              role="tab"
-              :aria-selected="filters.categoria === opt.code"
-              :aria-label="opt.label"
-              :title="opt.label"
-              class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
-              :class="
-                filters.categoria === opt.code
-                  ? 'bg-medical-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              "
-              @click="selectCategoria(opt.code)"
-            >
-              {{ opt.code }}
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -776,6 +770,7 @@ import {
 } from '../../services/admin-api.service';
 import type { Servicio, Tenant } from '../../types/backend';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import { useAuthStore } from '../../store/auth';
 import {

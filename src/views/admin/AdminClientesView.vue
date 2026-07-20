@@ -74,17 +74,12 @@
             @input="handleFilterChange"
           />
         </div>
-        <div class="flex items-center gap-2 pb-1">
-          <input
+        <div class="flex items-center pb-1 shrink-0">
+          <ToggleSwitch
             id="ver-inactivos"
             v-model="verInactivos"
-            type="checkbox"
-            class="h-4 w-4 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
             @change="onVerInactivosChange"
           />
-          <label for="ver-inactivos" class="text-sm text-gray-700"
-            >Ver inactivos</label
-          >
         </div>
       </div>
     </div>
@@ -308,6 +303,7 @@ import {
 import type { Cliente } from '../../types/backend';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
 import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
 import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
 

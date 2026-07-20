@@ -407,7 +407,7 @@ export const getCotizacionDefinition = (
                 },
               ],
               [
-                { text: 'IVA (16%):', alignment: 'right', style: 'totalLabel' },
+                { text: 'IVA:', alignment: 'right', style: 'totalLabel' },
                 {
                   text: formatCurrency(iva),
                   alignment: 'right',

@@ -273,7 +273,8 @@
 
     <!-- PASO 2: Servicios -->
     <div
-      class="mb-10 transition-all duration-700"
+      ref="pasoServiciosEl"
+      class="mb-10 scroll-mt-6 transition-all duration-700"
       :class="[
         !identidadConfirmada
           ? 'opacity-40 grayscale pointer-events-none blur-[1px]'
@@ -294,7 +295,8 @@
 
     <!-- PASO 3: Opciones + guardar (requiere identidad + ≥1 servicio) -->
     <div
-      class="transition-all duration-700"
+      ref="pasoOpcionesEl"
+      class="scroll-mt-6 transition-all duration-700"
       :class="[
         !identidadConfirmada || serviciosSeleccionados.length === 0
           ? 'opacity-40 grayscale pointer-events-none blur-[1px]'
@@ -324,8 +326,7 @@
             Plantillas adicionales
           </h3>
           <p class="text-xs text-gray-500 mb-3">
-            Opcional. Arriba ves el orden real de páginas tras el cuerpo del PDF
-            (1, 2, 3…). Abajo agregas plantillas; con ↑ ↓ cambias ese orden.
+            Opcional. Se agregan al PDF en el orden de la lista de abajo.
           </p>
           <div
             v-if="isLoadingPlantillas"
@@ -347,19 +348,46 @@
             No hay plantillas activas. Puedes continuar sin plantillas.
           </div>
           <div v-else class="space-y-4">
+            <!-- Catálogo: agregar primero -->
+            <div v-if="plantillasParaAgregar.length > 0">
+              <h4 class="text-xs font-bold uppercase tracking-wide text-gray-600 mb-2">
+                Disponibles
+              </h4>
+              <ul class="space-y-2">
+                <li
+                  v-for="p in plantillasParaAgregar"
+                  :key="p._id"
+                  class="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-gray-200 bg-white"
+                >
+                  <span class="flex-1 min-w-[12rem] text-sm font-medium text-gray-800">{{
+                    p.nombre
+                  }}</span>
+                  <button
+                    type="button"
+                    class="px-3 py-1.5 text-xs font-bold rounded-xl bg-medical-blue-600 text-white hover:bg-medical-blue-700"
+                    :aria-label="`Agregar ${p.nombre} al PDF`"
+                    @click="agregarPlantilla(p)"
+                  >
+                    Agregar
+                  </button>
+                </li>
+              </ul>
+            </div>
+            <p
+              v-else-if="plantillasEnOrdenPdf.length > 0"
+              class="text-[11px] text-gray-500"
+            >
+              Todas las plantillas activas ya están en el PDF.
+            </p>
+
             <!-- Orden real de páginas en el PDF -->
             <div
               v-if="plantillasEnOrdenPdf.length > 0"
               class="rounded-2xl border border-medical-blue-200 bg-medical-blue-50/40 p-3"
             >
-              <div class="flex items-baseline justify-between gap-2 mb-2">
-                <h4 class="text-xs font-bold uppercase tracking-wide text-medical-blue-800">
-                  Orden en el PDF
-                </h4>
-                <span class="text-[11px] text-medical-blue-700">
-                  1 = primera página tras el cuerpo
-                </span>
-              </div>
+              <h4 class="text-xs font-bold uppercase tracking-wide text-medical-blue-800 mb-2">
+                En el PDF
+              </h4>
               <ol class="space-y-2" aria-label="Orden de plantillas en el PDF">
                 <li
                   v-for="(item, index) in plantillasEnOrdenPdf"
@@ -380,7 +408,7 @@
                       type="button"
                       class="px-2 py-1 text-xs font-bold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
                       :disabled="index <= 0"
-                      :title="`Subir (ahora página ${index + 1})`"
+                      title="Subir"
                       :aria-label="`Subir ${item.nombre} en el orden del PDF`"
                       @click="moverPlantilla(item.id, -1)"
                     >
@@ -390,7 +418,7 @@
                       type="button"
                       class="px-2 py-1 text-xs font-bold rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-40"
                       :disabled="index >= plantillasEnOrdenPdf.length - 1"
-                      :title="`Bajar (ahora página ${index + 1})`"
+                      title="Bajar"
                       :aria-label="`Bajar ${item.nombre} en el orden del PDF`"
                       @click="moverPlantilla(item.id, 1)"
                     >
@@ -420,46 +448,8 @@
               v-else
               class="text-xs text-gray-500 py-2 px-3 rounded-xl border border-dashed border-gray-200"
             >
-              Ninguna plantilla en el PDF aún. Usa «Agregar» abajo; el número 1
-              será la primera página tras el cuerpo.
+              Aún no hay plantillas agregadas al PDF.
             </div>
-
-            <!-- Catálogo: solo agregar -->
-            <div v-if="plantillasParaAgregar.length > 0">
-              <div class="flex items-baseline justify-between gap-2 mb-2">
-                <h4 class="text-xs font-bold uppercase tracking-wide text-gray-600">
-                  Agregar plantillas
-                </h4>
-                <span class="text-[11px] text-gray-400">
-                  Cada una se agrega al final del orden
-                </span>
-              </div>
-              <ul class="space-y-2">
-                <li
-                  v-for="p in plantillasParaAgregar"
-                  :key="p._id"
-                  class="flex flex-wrap items-center gap-2 p-3 rounded-xl border border-gray-200 bg-white"
-                >
-                  <span class="flex-1 min-w-[12rem] text-sm font-medium text-gray-800">{{
-                    p.nombre
-                  }}</span>
-                  <button
-                    type="button"
-                    class="px-3 py-1.5 text-xs font-bold rounded-xl bg-medical-blue-600 text-white hover:bg-medical-blue-700"
-                    :aria-label="`Agregar ${p.nombre} al final del orden del PDF`"
-                    @click="agregarPlantilla(p)"
-                  >
-                    Agregar
-                  </button>
-                </li>
-              </ul>
-            </div>
-            <p
-              v-else-if="plantillasEnOrdenPdf.length > 0"
-              class="text-[11px] text-gray-500"
-            >
-              Todas las plantillas activas ya están en el orden del PDF.
-            </p>
           </div>
         </div>
 
@@ -506,27 +496,31 @@
 
         <!-- Destinatarios Para/CC (Story 6.6 / 6.15) -->
         <div class="mb-6 space-y-4">
-          <h3 class="text-sm font-bold text-gray-800">Destinatarios del correo</h3>
-          <p class="text-xs text-gray-500">
-            Opcional. Si hay al menos un correo en Para, se envía al guardar.
-          </p>
-          <EmailChipsInput
-            v-model="emailsPara"
-            label="Para"
-            input-id="emails-para"
-            variant="para"
-            :exclude="emailsCc"
-            hint="Quienes reciben el PDF y el enlace. Enter agrega un correo."
-          />
-          <EmailChipsInput
-            v-model="emailsCc"
-            label="CC"
-            input-id="emails-cc"
-            variant="cc"
-            :disabled="!hasParaDestinatarios"
-            :exclude="emailsPara"
-            hint="Copia a otros correos (requiere al menos un Para)."
-          />
+          <div class="space-y-1">
+            <h3 class="text-sm font-bold text-gray-800">Destinatarios del correo</h3>
+            <p class="text-xs text-gray-500">
+              Se enviará la cotización por correo si hay al menos un destinatario indicado.
+            </p>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <EmailChipsInput
+              v-model="emailsPara"
+              label="Para"
+              input-id="emails-para"
+              variant="para"
+              :exclude="emailsCc"
+              hint="Quienes reciben el PDF y el enlace. Enter agrega un correo."
+            />
+            <EmailChipsInput
+              v-model="emailsCc"
+              label="CC"
+              input-id="emails-cc"
+              variant="cc"
+              :disabled="!hasParaDestinatarios"
+              :exclude="emailsPara"
+              hint="Copia a otros correos (requiere al menos un Para)."
+            />
+          </div>
           <div
             v-if="hasParaDestinatarios && contactosParaChecklist.length > 0"
             class="rounded-xl border border-gray-200 bg-white p-3 space-y-2"
@@ -576,19 +570,23 @@
               />
               días
             </label>
-            <p class="text-xs text-gray-500 ml-1">
-              Default del tenant; puedes ajustar N (1–365).
-            </p>
           </div>
-          <label
-            class="inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer ml-1"
-          >
-            <input
-              v-model="sinVigencia"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-medical-blue-600"
-            />
-            No usar vigencia para esta cotización
+          <label class="inline-flex items-center cursor-pointer group ml-1">
+            <div class="relative">
+              <input
+                v-model="sinVigencia"
+                type="checkbox"
+                class="sr-only peer"
+              />
+              <div
+                class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
+              ></div>
+            </div>
+            <span
+              class="ml-3 text-sm text-gray-700 group-hover:text-medical-blue-700 transition-colors"
+            >
+              No usar vigencia para esta cotización
+            </span>
           </label>
         </div>
       </div>
@@ -832,6 +830,13 @@ const identidadConfirmada = ref(false);
 const cotizarSinCliente = ref(false);
 const cotizarSinContacto = ref(false);
 
+const pasoServiciosEl = ref<HTMLElement | null>(null);
+const pasoOpcionesEl = ref<HTMLElement | null>(null);
+
+function scrollPasoIntoView(el: HTMLElement | null) {
+  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 const datosCliente = ref({
   empresa: '',
   nombreContacto: '',
@@ -882,7 +887,14 @@ const guardandoContacto = ref(false);
 const errorModalContacto = ref<string | null>(null);
 
 function confirmarIdentidad() {
+  const yaConfirmada = identidadConfirmada.value;
   identidadConfirmada.value = true;
+  if (!yaConfirmada) {
+    void nextTick(() => {
+      scrollPasoIntoView(pasoServiciosEl.value);
+      void abrirModal();
+    });
+  }
 }
 
 function clearDestinatariosIdentidad() {
@@ -1634,6 +1646,7 @@ function cancelarDescartarSync() {
 const agregarServiciosSeleccionados = (
   serviciosParaAgregar: Record<string, number>,
   serviciosDelModal: Servicio[] = [],
+  continuar = false,
 ) => {
   for (const s of serviciosDelModal) {
     if (!s._id) continue;
@@ -1647,6 +1660,9 @@ const agregarServiciosSeleccionados = (
     if (s) ensureItemOverride(s);
     actualizarCantidad(servicioId, cantidad);
   });
+  if (continuar) {
+    void nextTick(() => scrollPasoIntoView(pasoOpcionesEl.value));
+  }
 };
 
 const eliminarServicio = (servicioId: string) => {

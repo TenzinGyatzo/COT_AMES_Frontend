@@ -145,16 +145,12 @@
             Contactos
           </h2>
           <div class="flex flex-wrap items-center gap-3">
-            <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-              <input
-                v-model="verInactivosContactos"
-                type="checkbox"
-                class="h-4 w-4 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
-                :disabled="isLoadingContactos"
-                @change="onVerInactivosContactosChange"
-              />
-              Ver inactivos
-            </label>
+            <ToggleSwitch
+              id="ver-inactivos-contactos"
+              v-model="verInactivosContactos"
+              :disabled="isLoadingContactos"
+              @change="onVerInactivosContactosChange"
+            />
             <button
               type="button"
               class="inline-flex items-center justify-center px-3 py-1.5 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 text-sm font-medium"
@@ -521,6 +517,7 @@ import type { Contacto } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
+import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
 import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
 import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
 import ModalContactoForm from '../../components/common/ModalContactoForm.vue';

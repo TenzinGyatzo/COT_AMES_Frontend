@@ -486,20 +486,12 @@
                   {{ item.cantidad }}
                 </td>
                 <td class="px-3 py-2 text-sm text-gray-900 text-right">
-                  ${{
-                    item.precioUnitarioSnapshot.toLocaleString('es-MX', {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
+                  {{ formatMoney(item.precioUnitarioSnapshot) }}
                 </td>
                 <td
                   class="px-3 py-2 text-sm text-gray-900 text-right font-medium"
                 >
-                  ${{
-                    item.subtotal.toLocaleString('es-MX', {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
+                  {{ formatMoney(item.subtotal) }}
                 </td>
               </tr>
             </tbody>
@@ -512,11 +504,7 @@
                   Subtotal:
                 </td>
                 <td class="px-3 py-2 text-right font-semibold text-gray-900">
-                  ${{
-                    cotizacionDetalle.total.toLocaleString('es-MX', {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
+                  {{ formatMoney(cotizacionDetalle.total) }}
                 </td>
               </tr>
               <tr class="border-t border-gray-200">
@@ -529,11 +517,7 @@
                 <td
                   class="px-3 py-2 text-right font-semibold text-gray-900 text-sm"
                 >
-                  ${{
-                    iva.toLocaleString('es-MX', {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
+                  {{ formatMoney(iva) }}
                 </td>
               </tr>
               <tr class="border-t-2 border-gray-200">
@@ -546,11 +530,7 @@
                 <td
                   class="px-3 py-2 text-right font-bold text-lg text-gray-900"
                 >
-                  ${{
-                    totalConIva.toLocaleString('es-MX', {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
+                  {{ formatMoney(totalConIva) }}
                 </td>
               </tr>
             </tfoot>
@@ -782,6 +762,7 @@ import {
   downloadCotizacionPDF,
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
+import { formatMoney } from '../../utils/currency';
 import type { Servicio } from '../../types/backend';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
@@ -1177,7 +1158,12 @@ function onOmitirChange(servicioId: string) {
 
 async function loadServiciosActivos() {
   try {
-    const res = await getServicios({ activo: true, page: 1, limit: 100 });
+    const res = await getServicios({
+      activo: true,
+      page: 1,
+      limit: 100,
+      orden: 'nombre_asc',
+    });
     serviciosActivos.value = res.data || [];
   } catch (e) {
     console.error('Error al cargar servicios para sustituir:', e);

@@ -155,11 +155,7 @@
                 <td
                   class="table-cell md:hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right"
                 >
-                  ${{
-                    cotizacion.montoTotal.toLocaleString('es-MX', {
-                      minimumFractionDigits: 2,
-                    })
-                  }}
+                  {{ formatMoney(cotizacion.montoTotal) }}
                 </td>
                 <td
                   class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"
@@ -227,6 +223,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
 import type { AdminCotizacionesFilters } from '../../services/admin-api.service';
+import { formatMoney } from '../../utils/currency';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 
 const {

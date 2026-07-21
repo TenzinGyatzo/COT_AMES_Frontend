@@ -441,6 +441,7 @@ import type {
   CotizacionDetalleDto,
   PublicCotizacionResponse,
 } from '../types/backend';
+import { formatMoney as formatCurrency } from '../utils/currency';
 
 const route = useRoute();
 const token = route.params.token as string;
@@ -514,13 +515,6 @@ onMounted(() => {
 
 const iva = computed(() => (cotizacion.value?.total || 0) * 0.16);
 const grandTotal = computed(() => (cotizacion.value?.total || 0) + iva.value);
-
-const formatCurrency = (amount: number) => {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-  }).format(amount);
-};
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return '-';

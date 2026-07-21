@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto p-5 animate-in fade-in duration-700">
+  <div class="max-w-7xl mx-auto p-5 animate-in fade-in duration-700">
     <div class="text-center mb-10">
       <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">
         Cotizador

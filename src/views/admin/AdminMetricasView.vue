@@ -194,12 +194,7 @@
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium"
                   >
-                    ${{
-                      servicio.precioUnitario.toLocaleString('es-MX', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })
-                    }}
+                    {{ formatMoney(servicio.precioUnitario) }}
                   </td>
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"
@@ -334,12 +329,7 @@
             v-if="metricasTotales?.servicioMasRentable"
             class="text-xs text-gray-500"
           >
-            ${{
-              metricasTotales.servicioMasRentable.ingresosTotales.toLocaleString(
-                'es-MX',
-                { minimumFractionDigits: 2, maximumFractionDigits: 2 },
-              )
-            }}
+            {{ formatMoney(metricasTotales.servicioMasRentable.ingresosTotales) }}
           </p>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
@@ -371,10 +361,7 @@
           <p class="text-lg font-semibold text-gray-900">
             {{
               metricasTotales
-                ? `$${metricasTotales.ingresosTotales.toLocaleString('es-MX', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}`
+                ? formatMoney(metricasTotales.ingresosTotales)
                 : '-'
             }}
           </p>
@@ -388,6 +375,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
+import { formatMoney } from '../../utils/currency';
 
 // Vista de métricas admin: orquesta la carga de datos usando el composable useAdmin
 // Toda la lógica de negocio está en el composable, la vista solo maneja UI

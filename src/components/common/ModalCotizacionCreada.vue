@@ -72,11 +72,7 @@
             <span class="text-gray-500 text-sm font-medium">Subtotal</span>
             <div class="text-right">
               <span class="text-gray-900 font-semibold">
-                ${{
-                  cotizacion.total.toLocaleString('es-MX', {
-                    minimumFractionDigits: 2,
-                  })
-                }}
+                {{ formatMoney(cotizacion.total) }}
               </span>
               <p
                 class="text-[10px] text-gray-400 uppercase tracking-wider font-bold"
@@ -91,11 +87,7 @@
             <span class="text-gray-900 font-bold">Total Final</span>
             <div class="text-right">
               <span class="text-medical-blue-700 text-lg font-extrabold">
-                ${{
-                  (cotizacion.total * 1.16).toLocaleString('es-MX', {
-                    minimumFractionDigits: 2,
-                  })
-                }}
+                {{ formatMoney(cotizacion.total * 1.16) }}
               </span>
               <p
                 class="text-[10px] text-medical-blue-400 uppercase tracking-wider font-bold"
@@ -349,6 +341,7 @@ import {
   downloadCotizacionPDF,
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
+import { formatMoney } from '../../utils/currency';
 
 // Tipo mínimo requerido para mostrar el modal
 interface CotizacionModalData {

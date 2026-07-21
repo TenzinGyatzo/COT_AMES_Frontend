@@ -4,7 +4,7 @@
   >
     <!-- Encabezado de la sección -->
     <div
-      class="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4"
+      class="p-6 border-b border-gray-50 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
     >
       <div class="flex items-center gap-3">
         <div
@@ -40,7 +40,7 @@
       <button
         type="button"
         :disabled="isLoading"
-        class="w-full md:w-auto px-5 py-2.5 bg-medical-green-500 text-white rounded-xl hover:bg-medical-green-600 active:scale-95 transition-all font-bold flex items-center justify-center gap-2 shadow-lg shadow-medical-green-100 disabled:opacity-50"
+        class="w-full lg:w-auto px-5 py-2.5 bg-medical-green-500 text-white rounded-xl hover:bg-medical-green-600 active:scale-95 transition-all font-bold flex items-center justify-center gap-2 shadow-lg shadow-medical-green-100 disabled:opacity-50"
         @click="$emit('abrir-modal')"
       >
         <svg
@@ -61,8 +61,8 @@
       </button>
     </div>
 
-    <!-- VISTA MOBILE: Tarjetas (Visible solo en < md) -->
-    <div class="md:hidden">
+    <!-- VISTA MOBILE / TABLET: Tarjetas (Visible solo en < lg) -->
+    <div class="lg:hidden">
       <div v-if="serviciosSeleccionados.length === 0" class="p-10 text-center">
         <div class="flex flex-col items-center opacity-40">
           <svg
@@ -118,16 +118,11 @@
             <label class="text-xs font-bold text-gray-400 uppercase"
               >Nombre</label
             >
-            <input
-              type="text"
-              :value="displayOf(servicio).nombre"
-              class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-medical-blue-400"
-              @input="
-                emitOverride(
-                  servicio._id || '',
-                  'nombre',
-                  ($event.target as HTMLInputElement).value,
-                )
+            <VerticalCenterTextarea
+              :model-value="displayOf(servicio).nombre"
+              textarea-class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-medical-blue-400 resize-y min-h-[4.5rem] leading-snug"
+              @update:model-value="
+                emitOverride(servicio._id || '', 'nombre', $event)
               "
             />
           </div>
@@ -135,20 +130,15 @@
             <label class="text-xs font-bold text-gray-400 uppercase"
               >Descripción</label
             >
-            <textarea
-              :value="displayOf(servicio).descripcion"
-              rows="2"
-              class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:ring-2 focus:ring-medical-blue-400 resize-y"
-              @input="
-                emitOverride(
-                  servicio._id || '',
-                  'descripcion',
-                  ($event.target as HTMLTextAreaElement).value,
-                )
+            <VerticalCenterTextarea
+              :model-value="displayOf(servicio).descripcion"
+              textarea-class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 outline-none focus:ring-2 focus:ring-medical-blue-400 resize-y min-h-[4.5rem] leading-snug"
+              @update:model-value="
+                emitOverride(servicio._id || '', 'descripcion', $event)
               "
             />
           </div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,7rem)_1fr] gap-3 sm:gap-5">
             <div>
               <label class="text-xs font-bold text-gray-400 uppercase"
                 >Precio</label
@@ -158,7 +148,7 @@
                 min="0"
                 step="0.01"
                 :value="displayOf(servicio).precioUnitario"
-                class="mt-1 w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-medical-blue-400"
+                class="mt-1 w-full max-w-[7rem] px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-right outline-none focus:ring-2 focus:ring-medical-blue-400"
                 @input="onMobilePrecio(servicio._id || '', $event)"
               />
             </div>
@@ -166,7 +156,7 @@
               <label class="text-xs font-bold text-gray-400 uppercase"
                 >Unidades</label
               >
-              <div class="mt-1">
+              <div class="mt-1 flex sm:justify-start">
                 <QuantitySelector
                   :model-value="cantidadesPorServicio[servicio._id || ''] || 0"
                   @update:model-value="
@@ -191,45 +181,45 @@
       </div>
     </div>
 
-    <!-- VISTA DESKTOP: Tabla (Visible solo en >= md) -->
-    <div class="hidden md:block overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-100">
+    <!-- VISTA DESKTOP: Tabla (Visible solo en >= lg) -->
+    <div class="hidden lg:block overflow-x-auto">
+      <table class="min-w-[960px] w-full table-fixed divide-y divide-gray-100">
         <thead class="bg-gray-50/50">
           <tr>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
+              class="w-10 px-3 py-3 text-center text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
               #
             </th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
+              class="w-[14rem] px-3 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
               Servicio
             </th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest min-w-[14rem]"
+              class="px-3 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
               Descripción
             </th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
+              class="w-24 pl-3 pr-5 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
               Precio
             </th>
             <th
-              class="px-6 py-4 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
+              class="w-[8.75rem] pl-4 pr-2 py-3 text-center text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
               Unidades
             </th>
             <th
-              class="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest"
+              class="w-32 px-3 py-3 text-right text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
               Subtotal
             </th>
             <th
-              class="px-6 py-4 text-right text-xs font-bold text-gray-400 uppercase tracking-widest"
+              class="w-12 px-2 py-3 text-center text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
-              Acciones
+              <span class="sr-only">Acciones</span>
             </th>
           </tr>
         </thead>
@@ -285,7 +275,7 @@
 
     <div
       v-if="serviciosSeleccionados.length > 0"
-      class="px-6 py-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between"
+      class="px-4 lg:px-6 py-4 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between gap-4"
     >
       <span class="text-sm font-bold text-gray-600">Total (sin IVA)</span>
       <span class="text-lg font-bold text-gray-900">{{
@@ -298,8 +288,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ServiceItemRow from '../common/ServiceItemRow.vue';
+import VerticalCenterTextarea from '../common/VerticalCenterTextarea.vue';
 import QuantitySelector from '../common/QuantitySelector.vue';
 import type { Servicio } from '@/types/backend';
+import { formatMoney } from '@/utils/currency';
 
 export type ItemOverrideFields = {
   nombre: string;
@@ -361,13 +353,6 @@ const totalSinIva = computed(() =>
     0,
   ),
 );
-
-function formatMoney(n: number): string {
-  return n.toLocaleString('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-  });
-}
 
 function emitOverride(
   id: string,

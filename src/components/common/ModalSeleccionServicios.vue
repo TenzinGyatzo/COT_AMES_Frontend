@@ -43,11 +43,11 @@
 
       <!-- Tabs Todas + categorías -->
       <div
-        class="px-4 sm:px-6 pt-3 pb-2 border-b border-gray-100 overflow-x-auto"
+        class="px-4 sm:px-6 pt-3 pb-3 border-b border-gray-100"
         role="tablist"
         aria-label="Categorías de servicio"
       >
-        <div class="flex gap-1 min-w-max">
+        <div class="flex flex-wrap gap-1.5">
           <button
             type="button"
             role="tab"
@@ -83,28 +83,61 @@
       </div>
 
       <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
-        <div class="relative">
-          <input
-            v-model="busqueda"
-            type="text"
-            placeholder="Buscar por nombre…"
-            class="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-blue-500 focus:border-transparent transition-all shadow-sm"
-          />
-          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div class="relative flex-1 min-w-0">
+            <input
+              v-model="busqueda"
+              type="text"
+              placeholder="Buscar por nombre…"
+              class="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-blue-500 focus:border-transparent transition-all shadow-sm"
+            />
+            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-1 shrink-0 self-end sm:self-auto"
+            role="group"
+            aria-label="Orden del catálogo"
+          >
+            <span class="text-[11px] text-gray-400 hidden sm:inline">Orden:</span>
+            <button
+              type="button"
+              class="px-2 py-1 rounded-md text-[11px] font-semibold transition-colors"
+              :class="
+                ordenActivo === 'creacion'
+                  ? 'bg-gray-200 text-gray-800'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              "
+              @click="setOrden('creacion')"
             >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+              Creación
+            </button>
+            <button
+              type="button"
+              class="px-2 py-1 rounded-md text-[11px] font-semibold transition-colors"
+              :class="
+                ordenActivo === 'nombre_asc'
+                  ? 'bg-gray-200 text-gray-800'
+                  : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              "
+              @click="setOrden('nombre_asc')"
+            >
+              A-Z
+            </button>
           </div>
         </div>
       </div>
@@ -188,15 +221,7 @@
                 <span
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-medical-blue-50 text-medical-blue-700 border border-medical-blue-100"
                 >
-                  ${{
-                    Number(servicio.precioUnitario || 0).toLocaleString(
-                      'es-MX',
-                      {
-                        minimumFractionDigits: 2,
-                      },
-                    )
-                  }}
-                  {{ servicio.moneda || 'MXN' }}
+                  {{ formatMoney(Number(servicio.precioUnitario || 0)) }}
                 </span>
               </div>
             </div>
@@ -268,12 +293,13 @@ import { ref, computed, watch } from 'vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import QuantitySelector from './QuantitySelector.vue';
 import type { Servicio } from '../../types/backend';
-import { getServicios } from '../../services/admin-api.service';
+import { getServicios, type ServicioOrden } from '../../services/admin-api.service';
 import {
   CATEGORIA_SERVICIO_OPTIONS,
   labelCategoriaServicio,
   type CategoriaServicioCode,
 } from '../../constants/categorias-servicio';
+import { formatMoney } from '../../utils/currency';
 
 interface Props {
   isOpen: boolean;
@@ -296,6 +322,7 @@ const emit = defineEmits<{
 
 const busqueda = ref('');
 const categoriaActiva = ref<CategoriaServicioCode | null>(null);
+const ordenActivo = ref<ServicioOrden>('creacion');
 /** Cantidades editables en esta sesión del modal (solo IDs con qty > 0). */
 const cantidadesModal = ref<Record<string, number>>({});
 const catalogo = ref<Servicio[]>([]);
@@ -321,6 +348,7 @@ watch(
       cantidadesModal.value = snapshotCantidadesIniciales();
       busqueda.value = '';
       categoriaActiva.value = null;
+      ordenActivo.value = 'creacion';
       void fetchCatalogo();
     }
   },
@@ -329,6 +357,12 @@ watch(
 watch(categoriaActiva, () => {
   if (props.isOpen) void fetchCatalogo();
 });
+
+function setOrden(orden: ServicioOrden) {
+  if (ordenActivo.value === orden) return;
+  ordenActivo.value = orden;
+  if (props.isOpen) void fetchCatalogo();
+}
 
 watch(busqueda, () => {
   if (!props.isOpen) return;
@@ -350,6 +384,7 @@ async function fetchCatalogo() {
         activo: true,
         page,
         limit: 100,
+        orden: ordenActivo.value,
         categoria: categoriaActiva.value || undefined,
         nombre: busqueda.value.trim() || undefined,
       });

@@ -80,6 +80,24 @@
           </div>
         </div>
 
+        <div class="min-w-[180px] shrink-0">
+          <label
+            for="filtro-orden-servicio"
+            class="block text-xs font-medium text-gray-600 mb-1"
+            >Ordenar por</label
+          >
+          <select
+            id="filtro-orden-servicio"
+            v-model="filters.orden"
+            class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-white"
+            @change="onOrdenChange"
+          >
+            <option value="creacion">Orden de creación</option>
+            <option value="nombre_asc">Nombre (A-Z)</option>
+            <option value="nombre_desc">Nombre (Z-A)</option>
+          </select>
+        </div>
+
         <div class="flex items-center pb-1 lg:pb-2 shrink-0">
           <ToggleSwitch
             id="ver-inactivos-servicios"
@@ -133,7 +151,7 @@
                   #
                 </th>
                 <th
-                  class="w-32 px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-[200px] max-w-[200px] px-3 lg:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Servicio
                 </th>
@@ -176,8 +194,10 @@
                 >
                   {{ rowNumber(index) }}
                 </td>
-                <td class="px-3 lg:px-4 py-4 text-sm font-medium text-gray-900">
-                  <div class="truncate">{{ servicio.nombre }}</div>
+                <td
+                  class="w-[180px] max-w-[180px] px-3 lg:px-4 py-4 text-sm font-medium text-gray-900"
+                >
+                  <div class="break-words">{{ servicio.nombre }}</div>
                 </td>
                 <td
                   class="px-3 lg:px-4 py-4 text-sm text-gray-700"
@@ -216,8 +236,7 @@
                 <td
                   class="px-3 lg:px-4 py-4 whitespace-nowrap text-sm text-gray-900"
                 >
-                  $ {{ servicio.precioUnitario.toFixed(2) }}
-                  {{ servicio.moneda || 'MXN' }}
+                  {{ formatMoney(servicio.precioUnitario) }}
                 </td>
                 <td class="px-3 lg:px-4 py-4 whitespace-nowrap">
                   <span
@@ -279,7 +298,7 @@
                   #
                 </th>
                 <th
-                  class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                  class="w-[160px] max-w-[160px] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
                   Servicio
                 </th>
@@ -320,10 +339,10 @@
                 <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-500">
                   {{ rowNumber(index) }}
                 </td>
-                <td class="px-3 py-4 text-xs font-medium text-gray-900">
-                  <div class="truncate max-w-[120px]">
-                    {{ servicio.nombre }}
-                  </div>
+                <td
+                  class="w-[160px] max-w-[160px] px-3 py-4 text-xs font-medium text-gray-900"
+                >
+                  <div class="break-words">{{ servicio.nombre }}</div>
                 </td>
                 <td class="px-3 py-4 text-xs text-gray-700">
                   <div class="truncate max-w-[100px]">
@@ -356,7 +375,7 @@
                   <div class="truncate">-</div>
                 </td>
                 <td class="px-3 py-4 whitespace-nowrap text-xs text-gray-900">
-                  ${{ servicio.precioUnitario.toFixed(2) }}
+                  {{ formatMoney(servicio.precioUnitario) }}
                 </td>
                 <td class="px-3 py-4 whitespace-nowrap">
                   <span
@@ -460,8 +479,7 @@
             <div>
               <span class="font-medium text-gray-700">Precio:</span>
               <span class="ml-1 text-gray-900 font-semibold">
-                $ {{ servicio.precioUnitario.toFixed(2) }}
-                {{ servicio.moneda || 'MXN' }}
+                {{ formatMoney(servicio.precioUnitario) }}
               </span>
             </div>
           </div>
@@ -767,12 +785,14 @@ import {
   type CreateServicioPayload,
   type UpdateServicioPayload,
   type AdminServiciosFilters,
+  type ServicioOrden,
 } from '../../services/admin-api.service';
 import type { Servicio, Tenant } from '../../types/backend';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import { useAuthStore } from '../../store/auth';
+import { formatMoney } from '../../utils/currency';
 import {
   CATEGORIA_SERVICIO_OPTIONS,
   labelCategoriaServicio,
@@ -799,11 +819,13 @@ let filterTimeout: ReturnType<typeof setTimeout> | null = null;
 const filters = ref<{
   nombre: string;
   categoria: CategoriaServicioCode | '';
+  orden: ServicioOrden;
   page: number;
   limit: number;
 }>({
   nombre: '',
   categoria: '',
+  orden: 'creacion',
   page: 1,
   limit: 20,
 });
@@ -872,7 +894,11 @@ const cargarServicios = async () => {
   try {
     let page = filters.value.page ?? 1;
     const limit = filters.value.limit ?? 20;
-    const activeFilters: AdminServiciosFilters = { page, limit };
+    const activeFilters: AdminServiciosFilters = {
+      page,
+      limit,
+      orden: filters.value.orden,
+    };
     if (filters.value.nombre?.trim()) {
       activeFilters.nombre = filters.value.nombre.trim();
     }
@@ -944,6 +970,14 @@ function selectCategoria(code: CategoriaServicioCode | '') {
   if (filters.value.categoria === code) return;
   filters.value.categoria = code;
   onCategoriaChange();
+}
+
+function onOrdenChange() {
+  clearFilterDebounce();
+  filters.value.page = 1;
+  successMsg.value = null;
+  actionError.value = null;
+  void cargarServicios();
 }
 
 function onVerInactivosChange() {

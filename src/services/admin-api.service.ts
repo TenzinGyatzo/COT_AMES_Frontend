@@ -45,10 +45,13 @@ export interface AdminCotizacionesFilters {
   limit?: number;
 }
 
+export type ServicioOrden = 'creacion' | 'nombre_asc' | 'nombre_desc';
+
 export interface AdminServiciosFilters {
   nombre?: string;
   categoria?: CategoriaServicioCode;
   activo?: boolean;
+  orden?: ServicioOrden;
   page?: number;
   limit?: number;
 }
@@ -423,6 +426,7 @@ export async function getServicios(
   if (filters.nombre?.trim()) params.nombre = filters.nombre.trim();
   if (filters.categoria) params.categoria = filters.categoria;
   if (filters.activo !== undefined) params.activo = filters.activo;
+  if (filters.orden) params.orden = filters.orden;
 
   const { data } = await httpClient.get<PaginatedServiciosResponse>(
     '/servicios',

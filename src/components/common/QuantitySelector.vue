@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center space-x-2">
+  <div class="inline-flex items-center gap-1">
     <button
       type="button"
       @click="decrement"

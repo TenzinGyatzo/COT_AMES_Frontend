@@ -30,12 +30,7 @@ export async function getBase64ImageFromURL(url: string): Promise<string> {
 /**
  * Formatea moneda
  */
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('es-MX', {
-    style: 'currency',
-    currency: 'MXN',
-  }).format(amount);
-};
+export { formatCurrency, formatMoney } from './currency';
 
 /**
  * Formatea fecha

@@ -284,7 +284,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, toRaw } from 'vue';
 import {
   getPlantillas,
   createPlantilla,
@@ -299,8 +299,8 @@ import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
 import PlantillaSeccionesEditor from '../../components/plantillas/PlantillaSeccionesEditor.vue';
 import {
+  buildCuerpoPayload,
   emptyTipTapDoc,
-  tipTapContentFromCuerpo,
 } from '../../components/plantillas/richtext-cuerpo';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 
@@ -351,7 +351,7 @@ function cloneDoc(
   doc: Record<string, unknown> | undefined,
 ): Record<string, unknown> | undefined {
   if (!doc || typeof doc !== 'object' || Array.isArray(doc)) return undefined;
-  return structuredClone(doc);
+  return structuredClone(toRaw(doc));
 }
 
 function isActiva(p: Plantilla): boolean {
@@ -484,7 +484,8 @@ function abrirModalCrear() {
 }
 
 function cloneSecciones(secs: SeccionPlantilla[]): SeccionForm[] {
-  return secs.map((s) => {
+  // toRaw: structuredClone falla sobre proxies reactivos (p. ej. cuerpo.doc guardado).
+  return toRaw(secs).map((s) => {
     if (s.tipo === 'richtext') {
       const doc = cloneDoc(s.cuerpo?.doc);
       return {
@@ -536,18 +537,12 @@ const {
 function buildPayload(): CreatePlantillaPayload {
   const secciones = formulario.value.secciones.map((s) => {
     if (s.tipo === 'richtext') {
-      const text = s.cuerpo.text ?? '';
-      const doc =
-        s.cuerpo.doc &&
-        typeof s.cuerpo.doc === 'object' &&
-        !Array.isArray(s.cuerpo.doc)
-          ? s.cuerpo.doc
-          : (tipTapContentFromCuerpo({ text }) as Record<string, unknown>);
+      const cuerpo = buildCuerpoPayload(s.cuerpo ?? { text: '' });
       return {
         id: s.id,
         tipo: 'richtext' as const,
         ...(s.titulo?.trim() ? { titulo: s.titulo.trim() } : {}),
-        cuerpo: { text, doc },
+        cuerpo,
       };
     }
     return {

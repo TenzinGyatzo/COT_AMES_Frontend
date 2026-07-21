@@ -134,7 +134,7 @@
     </div>
     <editor-content
       :editor="editor"
-      class="plantilla-richtext prose prose-sm max-w-none px-3 py-2 min-h-[120px] focus-within:ring-2 focus-within:ring-inset focus-within:ring-medical-blue-500"
+      class="plantilla-richtext px-3 py-2 min-h-[120px] focus-within:ring-2 focus-within:ring-inset focus-within:ring-medical-blue-500"
     />
   </div>
 </template>
@@ -146,6 +146,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import {
+  plainTextFromTipTapDoc,
   tipTapContentFromCuerpo,
   type CuerpoRichtextForm,
 } from './richtext-cuerpo';
@@ -158,13 +159,11 @@ const emit = defineEmits<{
   'update:modelValue': [value: CuerpoRichtextForm];
 }>();
 
-function emitCuerpo(ed: {
-  getText: () => string;
-  getJSON: () => Record<string, unknown>;
-}) {
+function emitCuerpo(ed: { getJSON: () => Record<string, unknown> }) {
+  const doc = ed.getJSON() as Record<string, unknown>;
   emit('update:modelValue', {
-    text: ed.getText(),
-    doc: ed.getJSON() as Record<string, unknown>,
+    text: plainTextFromTipTapDoc(doc),
+    doc,
   });
 }
 
@@ -217,7 +216,7 @@ watch(
     if (nextDoc && typeof nextDoc === 'object' && !Array.isArray(nextDoc)) {
       editor.value.commands.setContent(nextDoc, { emitUpdate: false });
     } else if (typeof next.text === 'string') {
-      const plain = editor.value.getText();
+      const plain = plainTextFromTipTapDoc(editor.value.getJSON());
       if (plain !== next.text) {
         editor.value.commands.setContent(tipTapContentFromCuerpo(next), {
           emitUpdate: false,
@@ -242,7 +241,20 @@ onBeforeUnmount(() => {
 }
 .plantilla-richtext :deep(.ProseMirror ul),
 .plantilla-richtext :deep(.ProseMirror ol) {
-  padding-left: 1.25rem;
+  list-style-position: outside;
+  padding-left: 1.5rem;
   margin: 0.35em 0;
+}
+.plantilla-richtext :deep(.ProseMirror ul) {
+  list-style-type: disc;
+}
+.plantilla-richtext :deep(.ProseMirror ol) {
+  list-style-type: decimal;
+}
+.plantilla-richtext :deep(.ProseMirror li) {
+  display: list-item;
+}
+.plantilla-richtext :deep(.ProseMirror li p) {
+  margin: 0;
 }
 </style>

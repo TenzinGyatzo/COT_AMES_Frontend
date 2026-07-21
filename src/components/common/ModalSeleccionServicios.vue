@@ -7,14 +7,16 @@
     @pointercancel="onBackdropPointerCancel"
   >
     <div
-      class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
+      class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[96vh] sm:max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-300"
       @click.stop
     >
       <div
-        class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white"
+        class="px-4 sm:px-6 py-3 sm:py-5 border-b border-gray-100 flex justify-between items-center bg-white"
       >
         <div>
-          <h3 class="text-xl font-bold text-gray-900">Catálogo de Servicios</h3>
+          <h3 class="text-lg sm:text-xl font-bold text-gray-900">
+            Catálogo de Servicios
+          </h3>
           <p class="text-xs text-gray-500 mt-0.5">
             Selecciona servicios y ajusta la cantidad de cada uno
           </p>
@@ -43,16 +45,16 @@
 
       <!-- Tabs Todas + categorías -->
       <div
-        class="px-4 sm:px-6 pt-3 pb-3 border-b border-gray-100"
+        class="px-4 sm:px-6 pt-1.5 sm:pt-3 pb-2 sm:pb-3 border-b border-gray-100"
         role="tablist"
         aria-label="Categorías de servicio"
       >
-        <div class="flex flex-wrap gap-1.5">
+        <div class="flex flex-wrap gap-1 sm:gap-1.5">
           <button
             type="button"
             role="tab"
             :aria-selected="categoriaActiva === null"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+            class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-bold transition-colors"
             :class="
               categoriaActiva === null
                 ? 'bg-medical-blue-600 text-white'
@@ -69,7 +71,7 @@
             role="tab"
             :aria-selected="categoriaActiva === opt.code"
             :title="opt.label"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold transition-colors"
+            class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-bold transition-colors"
             :class="
               categoriaActiva === opt.code
                 ? 'bg-medical-blue-600 text-white'
@@ -82,19 +84,21 @@
         </div>
       </div>
 
-      <div class="px-6 py-4 bg-gray-50/50 border-b border-gray-100">
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+      <div class="px-4 sm:px-6 py-2 sm:py-4 bg-gray-50/50 border-b border-gray-100">
+        <div class="flex flex-row sm:items-center gap-3">
           <div class="relative flex-1 min-w-0">
             <input
               v-model="busqueda"
               type="text"
               placeholder="Buscar por nombre…"
-              class="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-blue-500 focus:border-transparent transition-all shadow-sm"
+              class="w-full pl-9 sm:pl-11 pr-3 sm:pr-4 py-2 sm:py-2.5 text-sm bg-white border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-medical-blue-500 focus:border-transparent transition-all shadow-sm"
             />
-            <div class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+            <div
+              class="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
+                class="h-4 w-4 sm:h-5 sm:w-5"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -109,7 +113,7 @@
             </div>
           </div>
           <div
-            class="flex items-center gap-1 shrink-0 self-end sm:self-auto"
+            class="hidden sm:flex items-center gap-1 shrink-0"
             role="group"
             aria-label="Orden del catálogo"
           >
@@ -142,7 +146,9 @@
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-4 custom-scrollbar">
+      <div
+        class="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 custom-scrollbar"
+      >
         <div
           v-if="loadingCatalogo"
           class="flex flex-col items-center justify-center py-12 gap-3 text-gray-400"
@@ -179,11 +185,11 @@
           </p>
         </div>
 
-        <div v-else class="space-y-3">
+        <div v-else class="space-y-2 sm:space-y-3">
           <label
             v-for="servicio in catalogo"
             :key="servicio._id"
-            class="group flex flex-col sm:flex-row sm:items-start gap-3 border border-gray-100 bg-white rounded-2xl p-4 hover:border-medical-blue-200 hover:shadow-md transition-all duration-300 cursor-pointer"
+            class="group flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 border border-gray-100 bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 hover:border-medical-blue-200 hover:shadow-md transition-all duration-300 cursor-pointer"
             :class="{
               'border-medical-blue-300 bg-medical-blue-50/40': isSelected(
                 servicio._id || '',
@@ -246,9 +252,9 @@
       </div>
 
       <div
-        class="px-6 py-5 border-t border-gray-100 bg-gray-50/80 backdrop-blur-sm"
+        class="px-4 sm:px-6 py-3 sm:py-5 border-t border-gray-100 bg-gray-50/80 backdrop-blur-sm"
       >
-        <div class="flex flex-row items-center justify-between gap-2 mb-4">
+        <div class="flex flex-row items-center justify-between gap-2 mb-2 sm:mb-4">
           <div
             class="text-[11px] sm:text-sm font-semibold text-gray-500 tracking-widest leading-tight"
           >
@@ -256,29 +262,29 @@
           </div>
         </div>
 
-        <div
-          class="flex flex-col-reverse sm:flex-row sm:flex-wrap gap-2 sm:gap-3 sm:justify-end"
-        >
-          <button
-            type="button"
-            @click="cerrar"
-            class="px-5 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 active:scale-95 transition-all font-bold text-sm shadow-sm"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            @click="aplicarSeleccion(false)"
-            :disabled="!puedeAplicar"
-            class="px-5 py-2.5 bg-white border border-medical-blue-200 text-medical-blue-700 rounded-xl hover:bg-medical-blue-50 active:scale-95 transition-all font-bold text-sm shadow-sm disabled:opacity-50 disabled:pointer-events-none"
-          >
-            Aplicar
-          </button>
+        <div class="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end sm:items-center sm:gap-3">
+          <div class="flex gap-2 sm:contents">
+            <button
+              type="button"
+              @click="cerrar"
+              class="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl hover:bg-gray-50 active:scale-95 transition-all font-bold text-sm shadow-sm sm:order-1"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              @click="aplicarSeleccion(false)"
+              :disabled="!puedeAplicar"
+              class="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 bg-white border border-medical-blue-200 text-medical-blue-700 rounded-xl hover:bg-medical-blue-50 active:scale-95 transition-all font-bold text-sm shadow-sm disabled:opacity-50 disabled:pointer-events-none sm:order-2"
+            >
+              Aplicar
+            </button>
+          </div>
           <button
             type="button"
             @click="aplicarSeleccion(true)"
             :disabled="!puedeContinuar"
-            class="px-6 py-3 bg-medical-green-500 text-white rounded-xl hover:bg-medical-green-600 active:scale-95 transition-all font-bold text-sm sm:text-base shadow-lg shadow-medical-green-100 disabled:opacity-50 disabled:pointer-events-none"
+            class="w-full sm:w-auto sm:ml-auto px-5 sm:px-6 py-2.5 sm:py-3 bg-medical-green-500 text-white rounded-xl hover:bg-medical-green-600 active:scale-95 transition-all font-bold text-sm sm:text-base shadow-lg shadow-medical-green-100 disabled:opacity-50 disabled:pointer-events-none sm:order-3"
           >
             Aplicar y continuar
           </button>

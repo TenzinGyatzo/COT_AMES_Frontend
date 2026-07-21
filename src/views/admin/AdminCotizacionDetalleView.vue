@@ -1240,10 +1240,13 @@ async function confirmarRepetirConResoluciones() {
     .filter((w) => omitirIds[w.servicioId])
     .map((w) => w.servicioId);
   const sustituciones = repetirWarnings.value
-    .filter((w) => !omitirIds[w.servicioId] && sustitucionesMap[w.servicioId])
+    .filter(
+      (w): w is typeof w & { servicioId: string } =>
+        !omitirIds[w.servicioId] && !!sustitucionesMap[w.servicioId],
+    )
     .map((w) => ({
       fromServicioId: w.servicioId,
-      toServicioId: sustitucionesMap[w.servicioId],
+      toServicioId: sustitucionesMap[w.servicioId]!,
     }));
   await ejecutarRepetir({
     modoPrecios: repetirModo.value,

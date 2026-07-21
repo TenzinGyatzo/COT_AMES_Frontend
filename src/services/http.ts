@@ -28,7 +28,7 @@ function isTenantsCatalogUrl(url?: string): boolean {
   } catch {
     /* keep path */
   }
-  path = path.split('?')[0].replace(/\/+$/, '') || '/';
+  path = (path.split('?')[0] ?? path).replace(/\/+$/, '') || '/';
   return path === '/tenants' || path.endsWith('/tenants');
 }
 
@@ -85,7 +85,7 @@ function isPublicCotizacionUrl(url?: string): boolean {
   } catch {
     /* keep path */
   }
-  path = path.split('?')[0];
+  path = path.split('?')[0] ?? path;
   return path.includes('/cotizaciones/public/');
 }
 

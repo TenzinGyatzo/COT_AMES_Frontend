@@ -41,7 +41,7 @@
       <input
         v-for="(_cell, cIdx) in fila"
         :key="`c-${fIdx}-${cIdx}`"
-        :value="modelValue.filas[fIdx][cIdx]"
+        :value="modelValue.filas[fIdx]?.[cIdx] ?? ''"
         type="text"
         :placeholder="modelValue.encabezados[cIdx] || `Celda ${cIdx + 1}`"
         class="min-w-[100px] flex-1 rounded-md border border-gray-300 text-sm px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
@@ -94,7 +94,9 @@ function setEncabezado(hIdx: number, value: string) {
 
 function setCelda(fIdx: number, cIdx: number, value: string) {
   const filas = props.modelValue.filas.map((r) => [...r]);
-  filas[fIdx][cIdx] = value;
+  const fila = filas[fIdx];
+  if (!fila) return;
+  fila[cIdx] = value;
   emitNext({ ...props.modelValue, filas });
 }
 

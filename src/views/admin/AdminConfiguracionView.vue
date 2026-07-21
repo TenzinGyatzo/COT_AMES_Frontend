@@ -823,7 +823,7 @@ async function onLogoSelected(ev: Event) {
   logoError.value = null;
   formSuccess.value = null;
 
-  const mime = (file.type || '').split(';')[0].trim().toLowerCase();
+  const mime = ((file.type || '').split(';')[0] ?? '').trim().toLowerCase();
   if (!ALLOWED_LOGO_TYPES.has(mime)) {
     logoError.value = 'Tipo de imagen no permitido (use PNG, JPEG o WebP).';
     if (logoInputRef.value) logoInputRef.value.value = '';
@@ -908,7 +908,7 @@ async function onBankLogoSelected(ev: Event) {
   bankLogoError.value = null;
   bancariosFormSuccess.value = null;
 
-  const mime = (file.type || '').split(';')[0].trim().toLowerCase();
+  const mime = ((file.type || '').split(';')[0] ?? '').trim().toLowerCase();
   if (!ALLOWED_LOGO_TYPES.has(mime)) {
     bankLogoError.value =
       'Tipo de imagen no permitido (use PNG, JPEG o WebP).';

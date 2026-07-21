@@ -283,7 +283,8 @@ function syncActiveTenantWithOptions() {
   if (!options.length) return;
   const active = authStore.activeTenantId;
   if (!active || !options.some((t) => t._id === active)) {
-    authStore.setActiveTenantId(options[0]._id!);
+    const first = options[0];
+    if (first?._id) authStore.setActiveTenantId(first._id);
   }
 }
 

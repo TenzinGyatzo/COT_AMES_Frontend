@@ -416,7 +416,7 @@ const aplicarSeleccion = (continuar: boolean) => {
   Object.keys(props.serviciosYaSeleccionados).forEach((id) => {
     if (
       !(id in serviciosParaAgregar) &&
-      props.serviciosYaSeleccionados[id] > 0
+      (props.serviciosYaSeleccionados[id] ?? 0) > 0
     ) {
       serviciosParaAgregar[id] = 0;
     }

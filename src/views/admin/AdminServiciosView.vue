@@ -779,6 +779,10 @@ import {
   type CategoriaServicioCode,
 } from '../../constants/categorias-servicio';
 
+type ServicioFormState = Omit<CreateServicioPayload, 'categoria'> & {
+  categoria: CategoriaServicioCode | '';
+};
+
 const authStore = useAuthStore();
 const isAdminSistema = computed(() => authStore.isAdminSistema);
 
@@ -838,11 +842,11 @@ const servicioEditando = ref<Servicio | null>(null);
 const isSubmitting = ref(false);
 const errorCrear = ref<string | null>(null);
 
-const formulario = ref<CreateServicioPayload>({
+const formulario = ref<ServicioFormState>({
   nombre: '',
   descripcion: '',
   precioUnitario: 0,
-  categoria: '' as CategoriaServicioCode | '',
+  categoria: '',
   moneda: 'MXN',
   activo: true,
 });
@@ -976,7 +980,7 @@ const abrirModalCrear = () => {
     nombre: '',
     descripcion: '',
     precioUnitario: 0,
-    categoria: '' as CategoriaServicioCode | '',
+    categoria: '',
     moneda: 'MXN',
     activo: true,
   };
@@ -997,7 +1001,7 @@ const abrirModalEditar = (servicio: Servicio) => {
     nombre: servicio.nombre,
     descripcion: servicio.descripcion || '',
     precioUnitario: servicio.precioUnitario,
-    categoria: (servicio.categoria || '') as CategoriaServicioCode | '',
+    categoria: (servicio.categoria || '') as ServicioFormState['categoria'],
     moneda: 'MXN',
     activo: servicio.activo !== undefined ? servicio.activo : true,
   };
@@ -1017,7 +1021,7 @@ const cerrarModal = () => {
     nombre: '',
     descripcion: '',
     precioUnitario: 0,
-    categoria: '' as CategoriaServicioCode | '',
+    categoria: '',
     moneda: 'MXN',
     activo: true,
   };

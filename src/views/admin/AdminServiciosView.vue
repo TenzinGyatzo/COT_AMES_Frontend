@@ -656,7 +656,7 @@
                 for="precioUnitario"
                 class="block text-sm font-medium text-gray-700 mb-1"
               >
-                Precio Unitario (MXN) <span class="text-red-500">*</span>
+                Precio Unitario <span class="text-red-500">*</span>
               </label>
               <div class="flex items-center space-x-2">
                 <span class="text-gray-500">$</span>
@@ -671,7 +671,6 @@
                   placeholder="0.00"
                   :disabled="isSubmitting"
                 />
-                <span class="text-sm text-gray-600 font-medium">MXN</span>
               </div>
             </div>
 

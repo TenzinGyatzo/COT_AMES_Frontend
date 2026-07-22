@@ -281,13 +281,13 @@
             </p>
           </div>
 
-          <div>
+          <div class="sm:col-span-2 lg:col-span-2">
             <label
               class="block text-xs md:text-sm font-medium text-gray-500 mb-1"
             >
-              PDF
+              Documento
             </label>
-            <div class="flex flex-wrap gap-2">
+            <div class="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 @click="handlePreviewPDF"
@@ -316,6 +316,32 @@
                   />
                 </svg>
                 Descargar PDF
+              </button>
+              <span
+                class="hidden sm:block h-6 w-px bg-gray-200 mx-0.5"
+                aria-hidden="true"
+              />
+              <button
+                type="button"
+                @click="abrirEnviarCorreo"
+                :disabled="isPdfBusy || isSendingEmail"
+                class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-medical-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <svg
+                  class="-ml-1 mr-2 h-4 w-4 text-medical-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                {{ isSendingEmail ? 'Enviando…' : 'Enviar por correo' }}
               </button>
             </div>
           </div>
@@ -604,6 +630,19 @@
       @cancel="cancelarCambioEstado"
     />
 
+    <!-- Story 6.17 — enviar / reenviar por correo desde detalle -->
+    <ModalEnviarCotizacionCorreo
+      :open="showEnviarCorreo"
+      :folio="cotizacionDetalle?.folio"
+      :initial-emails-para="enviarEmailsPara"
+      :initial-emails-cc="enviarEmailsCc"
+      :sending="isSendingEmail"
+      :success="emailSendOk"
+      :error="emailSendError"
+      @close="cerrarEnviarCorreo"
+      @send="enviarCorreoDesdeDetalle"
+    />
+
     <!-- Story 6.12 — elegir modo de precios -->
     <div
       v-if="showRepetirModo"
@@ -760,14 +799,17 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAdmin } from '../../composables/useAdmin';
 import {
   downloadCotizacionPDF,
+  generateCotizacionPdfBlob,
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
 import { formatMoney } from '../../utils/currency';
 import type { Servicio } from '../../types/backend';
+import { enviarCorreoCotizacion } from '../../services/admin-api.service';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
+import ModalEnviarCotizacionCorreo from '../../components/common/ModalEnviarCotizacionCorreo.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -780,6 +822,14 @@ const {
 } = useAdmin();
 
 const isPdfBusy = ref(false);
+
+// Story 6.17 — envío / reenvío por correo
+const showEnviarCorreo = ref(false);
+const isSendingEmail = ref(false);
+const emailSendOk = ref(false);
+const emailSendError = ref<string | null>(null);
+const enviarEmailsPara = ref<string[]>([]);
+const enviarEmailsCc = ref<string[]>([]);
 
 // Computed para calcular el IVA (16% del subtotal)
 const iva = computed(() => {
@@ -1039,6 +1089,77 @@ async function handlePreviewPDF(): Promise<void> {
     await previewCotizacionPDF(cotizacionDetalle.value);
   } finally {
     isPdfBusy.value = false;
+  }
+}
+
+function abrirEnviarCorreo(): void {
+  if (!cotizacionDetalle.value) return;
+  const c = cotizacionDetalle.value;
+  enviarEmailsPara.value = [...(c.emailsPara || [])];
+  enviarEmailsCc.value = [...(c.emailsCc || [])].filter(
+    (e) => !(c.emailsPara || []).includes(e),
+  );
+  emailSendOk.value = false;
+  emailSendError.value = null;
+  showEnviarCorreo.value = true;
+}
+
+function cerrarEnviarCorreo(): void {
+  if (isSendingEmail.value) return;
+  showEnviarCorreo.value = false;
+  emailSendOk.value = false;
+  emailSendError.value = null;
+}
+
+async function enviarCorreoDesdeDetalle(payload: {
+  emailsPara: string[];
+  emailsCc: string[];
+}): Promise<void> {
+  if (!cotizacionDetalle.value || isSendingEmail.value) return;
+  if (!payload.emailsPara.length) return;
+
+  const id =
+    (cotizacionDetalle.value as { _id?: string; id?: string })._id ||
+    (cotizacionDetalle.value as { id?: string }).id ||
+    (route.params.id as string);
+  if (!id) {
+    emailSendOk.value = false;
+    emailSendError.value =
+      'No se puede enviar: falta el identificador de la cotización.';
+    return;
+  }
+
+  isSendingEmail.value = true;
+  emailSendOk.value = false;
+  // Mantener error previo visible hasta resultado (reintento).
+  enviarEmailsPara.value = [...payload.emailsPara];
+  enviarEmailsCc.value = [...payload.emailsCc];
+
+  try {
+    const blob = await generateCotizacionPdfBlob(cotizacionDetalle.value);
+    await enviarCorreoCotizacion(String(id), blob, {
+      emailsPara: payload.emailsPara,
+      emailsCc: payload.emailsCc,
+    });
+    emailSendOk.value = true;
+    emailSendError.value = null;
+    try {
+      await obtenerCotizacionAdmin(String(id));
+    } catch {
+      /* el envío ya fue exitoso */
+    }
+  } catch (sendErr: unknown) {
+    const err = sendErr as {
+      response?: { data?: { message?: string | string[] } };
+    };
+    const msg = err.response?.data?.message;
+    emailSendOk.value = false;
+    emailSendError.value = Array.isArray(msg)
+      ? msg.join(', ')
+      : msg ||
+        'No se pudo enviar el correo. Puedes corregir destinatarios y reintentar.';
+  } finally {
+    isSendingEmail.value = false;
   }
 }
 

@@ -365,7 +365,7 @@
                 : '-'
             }}
           </p>
-          <p class="text-xs text-gray-500 mt-1">MXN - No incluye IVA</p>
+          <p class="text-xs text-gray-500 mt-1">No incluye IVA</p>
         </div>
       </div>
     </div>

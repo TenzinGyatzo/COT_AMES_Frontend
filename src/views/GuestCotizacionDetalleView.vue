@@ -1,17 +1,8 @@
 <template>
   <div class="max-w-3xl lg:max-w-7xl mx-auto py-2 sm:py-4">
-    <div
-      v-if="cotizacion?.branding?.razonSocial || cotizacion?.branding?.logoUrl"
-      class="mb-4 flex items-center gap-3"
-    >
-      <img
-        v-if="cotizacion.branding?.logoUrl"
-        :src="cotizacion.branding.logoUrl"
-        alt=""
-        class="h-10 w-10 object-contain rounded"
-      />
+    <div v-if="cotizacion?.branding?.razonSocial" class="mb-4">
       <p class="text-sm font-semibold text-gray-700">
-        {{ cotizacion.branding?.razonSocial || 'Cotización' }}
+        {{ cotizacion.branding.razonSocial }}
       </p>
     </div>
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -306,12 +297,12 @@
                       Cant.
                     </th>
                     <th
-                      class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-32"
+                      class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[7.5rem]"
                     >
                       P. Unitario
                     </th>
                     <th
-                      class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider w-20"
+                      class="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase tracking-wider whitespace-nowrap min-w-[8.5rem]"
                     >
                       Subtotal
                     </th>
@@ -339,11 +330,13 @@
                     >
                       {{ item.cantidad }}
                     </td>
-                    <td class="px-6 py-4 text-sm text-gray-600 text-right">
+                    <td
+                      class="px-6 py-4 text-sm text-gray-600 text-right whitespace-nowrap"
+                    >
                       {{ formatCurrency(item.precioUnitario) }}
                     </td>
                     <td
-                      class="px-6 py-4 text-sm text-gray-900 text-right font-bold"
+                      class="px-6 py-4 text-sm text-gray-900 text-right font-bold whitespace-nowrap"
                     >
                       {{ formatCurrency(item.subtotal) }}
                     </td>
@@ -386,9 +379,6 @@
                     formatCurrency(grandTotal)
                   }}</span>
                 </div>
-                <p class="text-right text-[10px] text-gray-400 mt-1 font-bold">
-                  MONEDA: {{ cotizacion.moneda }}
-                </p>
               </div>
             </div>
 

@@ -229,11 +229,13 @@ export const getCotizacionDefinition = (
         text: formatCurrency(item.precioUnitarioSnapshot),
         style: 'tableCell',
         alignment: 'right',
+        noWrap: true,
       },
       {
         text: formatCurrency(item.subtotal),
         style: 'tableCell',
         alignment: 'right',
+        noWrap: true,
       },
     ]);
   });
@@ -382,7 +384,8 @@ export const getCotizacionDefinition = (
     {
       table: {
         headerRows: 1,
-        widths: ['20%', '*', 'auto', 'auto', 'auto'],
+        // Cantidad / Precio / Subtotal fijos para que montos ($ 1,400.00) no se partan
+        widths: ['18%', '*', 52, 77, 77],
         body: tableBody,
       },
       layout: 'lightHorizontalLines',

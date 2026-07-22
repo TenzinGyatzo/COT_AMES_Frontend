@@ -204,7 +204,7 @@ export const getCotizacionDefinition = (
   const usuario = getUsuarioCliente();
 
   // Construir filas de la tabla
-  const tableBody = [
+  const tableBody: any[][] = [
     [
       { text: 'Servicio', style: 'tableHeader' },
       { text: 'Descripción', style: 'tableHeader' },

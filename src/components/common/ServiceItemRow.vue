@@ -10,7 +10,7 @@
         @update:model-value="$emit('update:nombre', $event)"
       />
     </td>
-    <td class="px-3 py-3 text-sm align-top">
+    <td v-if="mostrarDescripcion" class="px-3 py-3 text-sm align-top">
       <VerticalCenterTextarea
         :model-value="descripcion"
         textarea-class="w-full min-w-0 px-2.5 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 leading-snug focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none resize-y min-h-[4.5rem]"
@@ -68,18 +68,25 @@
 </template>
 
 <script setup lang="ts">
+import { withDefaults } from 'vue';
 import QuantitySelector from './QuantitySelector.vue';
 import VerticalCenterTextarea from './VerticalCenterTextarea.vue';
 import { formatMoney } from '../../utils/currency';
 
-defineProps<{
-  index: number;
-  nombre: string;
-  descripcion: string;
-  precioUnitario: number;
-  cantidad: number;
-  subtotal: number;
-}>();
+withDefaults(
+  defineProps<{
+    index: number;
+    nombre: string;
+    descripcion: string;
+    precioUnitario: number;
+    cantidad: number;
+    subtotal: number;
+    mostrarDescripcion?: boolean;
+  }>(),
+  {
+    mostrarDescripcion: true,
+  },
+);
 
 const emit = defineEmits<{
   'update:nombre': [value: string];

@@ -286,6 +286,7 @@
         :cantidades-por-servicio="cantidadesPorServicio"
         :item-overrides="itemOverrides"
         :is-loading="isLoadingServicios"
+        v-model:mostrar-descripciones="mostrarDescripciones"
         @abrir-modal="abrirModal"
         @actualizar-cantidad="actualizarCantidad"
         @eliminar-servicio="eliminarServicio"
@@ -453,7 +454,7 @@
           </div>
         </div>
 
-        <!-- Bancarios -->
+        <!-- Bancarios + descripciones PDF -->
         <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
             class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
@@ -488,6 +489,32 @@
                       ? 'Página bancaria independiente de las plantillas.'
                       : 'Configura datos bancarios del tenant (CLABE o banco+cuenta) para habilitar.'
                   }}
+                </span>
+              </div>
+            </label>
+          </div>
+          <div
+            class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
+          >
+            <label class="flex items-center group cursor-pointer">
+              <div class="relative">
+                <input
+                  v-model="mostrarDescripciones"
+                  type="checkbox"
+                  class="sr-only peer"
+                />
+                <div
+                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
+                ></div>
+              </div>
+              <div class="ml-4">
+                <span
+                  class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors"
+                >
+                  Incluir descripciones en el PDF
+                </span>
+                <span class="text-xs text-medical-blue-600/70">
+                  Descripción detallada de cada servicio en pantalla y en el PDF.
                 </span>
               </div>
             </label>
@@ -858,6 +885,8 @@ const emailSendError = ref<string | null>(null);
 const isSendingEmail = ref(false);
 const isResendingEmail = ref(false);
 const incluirDatosBancarios = ref(false);
+/** Toggle descripciones en tabla y PDF (default oculto). */
+const mostrarDescripciones = ref(false);
 /** Story 6.5 — bancarios útiles en tenant config. */
 const bancariosUtiles = ref(false);
 const plantillasDisponibles = ref<Plantilla[]>([]);
@@ -1764,6 +1793,7 @@ const crearCotizacion = async () => {
     sinVigencia: sinVigencia.value,
     enviarEmail: doEnviar,
     incluirDatosBancarios: incluirBancarios,
+    incluirDescripciones: mostrarDescripciones.value,
     emailsPara: para,
     emailsCc: cc,
   };
@@ -1954,6 +1984,7 @@ const cerrarModal = () => {
   isSendingEmail.value = false;
   isResendingEmail.value = false;
   incluirDatosBancarios.value = false;
+  mostrarDescripciones.value = false;
   plantillasSeleccionadasIds.value = [];
   plantillaSnapshots.value = {};
   showPersonalizarModal.value = false;

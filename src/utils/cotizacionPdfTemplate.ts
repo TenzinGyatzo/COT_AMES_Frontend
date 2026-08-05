@@ -22,6 +22,12 @@ export interface PdfBancariosData {
   email?: string;
 }
 
+/** Margen superior del PDF; reserva espacio bajo logo/título en saltos de página. */
+const PDF_PAGE_MARGIN_TOP = 90;
+/** Altura de inicio del cuerpo en pág. 1 (folio alineado como Story 6.16 con margin 62). */
+const PDF_FIRST_PAGE_CONTENT_TOP = 62;
+const PDF_FIRST_PAGE_TOP_PULL = PDF_PAGE_MARGIN_TOP - PDF_FIRST_PAGE_CONTENT_TOP;
+
 export interface PdfBankPageOptions {
   /** Logo del banco (`bancarios.logoUrl`). */
   logoBase64?: string;
@@ -203,23 +209,33 @@ export const getCotizacionDefinition = (
   const cliente = getCliente();
   const usuario = getUsuarioCliente();
 
+  const incluirDescripciones = detalle.incluirDescripciones === true;
+
   // Construir filas de la tabla
-  const tableBody: any[][] = [
-    [
-      { text: 'Servicio', style: 'tableHeader' },
-      { text: 'Descripción', style: 'tableHeader' },
-      { text: 'Cantidad', style: 'tableHeader', alignment: 'center' },
-      { text: 'Precio Unitario', style: 'tableHeader', alignment: 'right' },
-      { text: 'Subtotal', style: 'tableHeader', alignment: 'right' },
-    ],
+  const tableHeaderRow: any[] = [
+    { text: 'Servicio', style: 'tableHeader' },
   ];
+  if (incluirDescripciones) {
+    tableHeaderRow.push({ text: 'Descripción', style: 'tableHeader' });
+  }
+  tableHeaderRow.push(
+    { text: 'Cantidad', style: 'tableHeader', alignment: 'center' },
+    { text: 'Precio Unitario', style: 'tableHeader', alignment: 'right' },
+    { text: 'Subtotal', style: 'tableHeader', alignment: 'right' },
+  );
+
+  const tableBody = [tableHeaderRow];
 
   detalle.items.forEach((item) => {
     const nombreServicio = item.nombreServicioSnapshot || 'Servicio';
     const descripcion = item.descripcionServicioSnapshot || '';
-    tableBody.push([
+    const row: any[] = [
       { text: nombreServicio, style: 'tableCell', alignment: 'left' },
-      { text: descripcion, style: 'tableCell', alignment: 'left' },
+    ];
+    if (incluirDescripciones) {
+      row.push({ text: descripcion, style: 'tableCell', alignment: 'left' });
+    }
+    row.push(
       {
         text: item.cantidad.toString(),
         style: 'tableCell',
@@ -237,13 +253,11 @@ export const getCotizacionDefinition = (
         alignment: 'right',
         noWrap: true,
       },
-    ]);
+    );
+    tableBody.push(row);
   });
 
   const mainContent: any[] = [
-    // Espacio para header
-    { text: '', margin: [0, 0] },
-
     // Información General
     {
       columns: [
@@ -260,7 +274,7 @@ export const getCotizacionDefinition = (
           ],
         },
       ],
-      margin: [0, 0, 0, 20],
+      margin: [0, -PDF_FIRST_PAGE_TOP_PULL, 0, 10],
     },
 
     {
@@ -294,7 +308,7 @@ export const getCotizacionDefinition = (
         ],
       },
       layout: 'noBorders',
-      margin: [0, 0, 0, 20],
+      margin: [0, -4, 0, 20],
     },
 
     {
@@ -385,7 +399,9 @@ export const getCotizacionDefinition = (
       table: {
         headerRows: 1,
         // Cantidad / Precio / Subtotal fijos para que montos ($ 1,400.00) no se partan
-        widths: ['18%', '*', 52, 77, 77],
+        widths: incluirDescripciones
+          ? ['18%', '*', 52, 77, 77]
+          : ['*', 52, 77, 77],
         body: tableBody,
       },
       layout: 'lightHorizontalLines',
@@ -452,7 +468,7 @@ export const getCotizacionDefinition = (
 
   return {
     pageSize: 'LETTER',
-    pageMargins: [40, 62, 40, 60], // [left, top, right, bottom] — top 80→62 (Story 6.16)
+    pageMargins: [40, PDF_PAGE_MARGIN_TOP, 40, 60],
 
     header: (currentPage: number, pageCount: number) => {
       if (incluirDatosBancarios && currentPage === pageCount) {

@@ -351,6 +351,8 @@ export interface CotizacionDetalleDto {
   /** Story 6.16 — snapshot cargo CRM para PDF */
   cargoContacto?: string;
   incluirDatosBancarios?: boolean;
+  /** Si false, el PDF omite la columna de descripción (default true). */
+  incluirDescripciones?: boolean;
   /** Destinatarios Para (Story 6.6). */
   emailsPara?: string[];
   /** Destinatarios CC (Story 6.6). */

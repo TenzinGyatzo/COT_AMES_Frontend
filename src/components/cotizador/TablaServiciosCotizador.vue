@@ -61,6 +61,38 @@
       </button>
     </div>
 
+    <div
+      v-if="serviciosSeleccionados.length > 0"
+      class="px-6 py-3 border-b border-gray-50 bg-gray-50/40 flex flex-wrap items-center justify-between gap-3"
+    >
+      <p class="text-xs text-gray-500">
+        Las descripciones se pueden ocultar en pantalla y en el PDF.
+      </p>
+      <label class="inline-flex items-center cursor-pointer group shrink-0">
+        <div class="relative">
+          <input
+            type="checkbox"
+            class="sr-only peer"
+            :checked="mostrarDescripciones"
+            @change="
+              $emit(
+                'update:mostrarDescripciones',
+                ($event.target as HTMLInputElement).checked,
+              )
+            "
+          />
+          <div
+            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
+          ></div>
+        </div>
+        <span
+          class="ml-3 text-sm font-medium text-gray-700 group-hover:text-medical-blue-700 transition-colors"
+        >
+          Mostrar descripciones
+        </span>
+      </label>
+    </div>
+
     <!-- VISTA MOBILE / TABLET: Tarjetas (Visible solo en < lg) -->
     <div class="lg:hidden">
       <div v-if="serviciosSeleccionados.length === 0" class="p-10 text-center">
@@ -126,7 +158,7 @@
               "
             />
           </div>
-          <div>
+          <div v-if="mostrarDescripciones">
             <label class="text-xs font-bold text-gray-400 uppercase"
               >Descripción</label
             >
@@ -183,7 +215,10 @@
 
     <!-- VISTA DESKTOP: Tabla (Visible solo en >= lg) -->
     <div class="hidden lg:block overflow-x-auto">
-      <table class="min-w-[960px] w-full table-fixed divide-y divide-gray-100">
+      <table
+        class="w-full table-fixed divide-y divide-gray-100"
+        :class="mostrarDescripciones ? 'min-w-[960px]' : 'min-w-[720px]'"
+      >
         <thead class="bg-gray-50/50">
           <tr>
             <th
@@ -197,6 +232,7 @@
               Servicio
             </th>
             <th
+              v-if="mostrarDescripciones"
               class="px-3 py-3 text-left text-xs font-bold text-gray-400 uppercase tracking-widest"
             >
               Descripción
@@ -225,7 +261,7 @@
         </thead>
         <tbody class="divide-y divide-gray-50">
           <tr v-if="serviciosSeleccionados.length === 0">
-            <td colspan="7" class="px-6 py-12 text-center">
+            <td :colspan="mostrarDescripciones ? 7 : 6" class="px-6 py-12 text-center">
               <div class="flex flex-col items-center opacity-40">
                 <svg
                   class="w-16 h-16 text-gray-300 mb-3"
@@ -255,6 +291,7 @@
             :precio-unitario="displayOf(servicio).precioUnitario"
             :cantidad="cantidadesPorServicio[servicio._id || ''] || 0"
             :subtotal="subtotalOf(servicio)"
+            :mostrar-descripcion="mostrarDescripciones"
             @update:nombre="
               (v) => emitOverride(servicio._id || '', 'nombre', v)
             "
@@ -308,6 +345,7 @@ interface Props {
   subtitulo?: string;
   textoVacio?: string;
   ayudaVacia?: string;
+  mostrarDescripciones?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -316,12 +354,14 @@ const props = withDefaults(defineProps<Props>(), {
   subtitulo: 'Agrega los estudios o servicios médicos solicitados.',
   textoVacio: 'Lista de servicios vacía',
   ayudaVacia: 'Haz clic en el botón verde para comenzar a añadir items.',
+  mostrarDescripciones: false,
 });
 
 const emit = defineEmits<{
   (e: 'abrir-modal'): void;
   (e: 'actualizar-cantidad', id: string, cantidad: number): void;
   (e: 'eliminar-servicio', id: string): void;
+  (e: 'update:mostrarDescripciones', value: boolean): void;
   (
     e: 'actualizar-override',
     id: string,

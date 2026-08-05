@@ -158,8 +158,8 @@ assert.deepEqual(mapPlantillasSnapshot([]), []);
       (c as { text?: string }).text === 'SoloUtil',
   ) as { margin?: number[] };
   assert.ok(
-    Array.isArray(titulo?.margin) && (titulo.margin[1] ?? 0) >= 36,
-    'título de plantilla con offset bajo el logo',
+    Array.isArray(titulo?.margin) && (titulo.margin[1] ?? 0) === 0,
+    'título de plantilla sin offset extra (pageMargins reserva espacio bajo header)',
   );
 }
 

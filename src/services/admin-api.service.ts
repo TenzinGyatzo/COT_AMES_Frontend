@@ -305,6 +305,8 @@ export interface CreateAdminCotizacionPayload {
   /** Destinatarios CC (Story 6.6). */
   emailsCc?: string[];
   incluirDatosBancarios?: boolean;
+  /** Si false, el PDF omite la columna de descripción (default true). */
+  incluirDescripciones?: boolean;
   /** Plantillas ordenadas (Story 6.5). Omitido/vacío = ninguna. */
   plantillas?: Array<{
     plantillaId: string;

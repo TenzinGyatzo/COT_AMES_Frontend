@@ -55,11 +55,12 @@ export const useCotizadorStore = defineStore('cotizador', {
     },
 
     setCantidad(servicioId: string, cantidad: number): void {
-      if (cantidad <= 0) {
-        delete this.cantidadesPorServicio[servicioId];
-      } else {
-        this.cantidadesPorServicio[servicioId] = cantidad;
-      }
+      const q = Math.max(0, Math.floor(Number(cantidad) || 0));
+      this.cantidadesPorServicio[servicioId] = q;
+    },
+
+    removeServicio(servicioId: string): void {
+      delete this.cantidadesPorServicio[servicioId];
     },
 
     resetSelection(): void {

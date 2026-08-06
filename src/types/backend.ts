@@ -303,6 +303,16 @@ export interface PaginatedCotizacionesResponseDto {
   totalPages: number;
 }
 
+/** Nota interna de cotización (solo visible para usuarios AMES). */
+export interface NotaInternaCotizacion {
+  _id: string;
+  texto: string;
+  autorUserId: string;
+  autorNombre: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 // Tipo para el detalle completo de una cotización (con campos poblados)
 export interface CotizacionDetalleDto {
   _id: string;
@@ -364,6 +374,8 @@ export interface CotizacionDetalleDto {
     schemaVersion: number;
     secciones: SeccionPlantilla[];
   }>;
+  /** Notas internas del equipo AMES. No expuestas al cliente. */
+  notasInternas?: NotaInternaCotizacion[];
   createdAt?: Date | string;
   updatedAt?: Date | string;
 }

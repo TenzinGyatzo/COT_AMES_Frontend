@@ -9,6 +9,38 @@
       </p>
     </div>
 
+    <div
+      v-if="repetirBannerVisible"
+      class="mb-6 rounded-xl border border-medical-blue-200 bg-medical-blue-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      role="status"
+    >
+      <p class="text-sm text-medical-blue-900">
+        Basado en la cotización
+        <span class="font-semibold font-mono">{{ repetirSourceFolio }}</span>
+        ({{ repetirModoLabel }}).
+        Revise y modifique antes de confirmar.
+      </p>
+      <div class="flex items-center gap-2 shrink-0">
+        <router-link
+          v-if="repetirSourceId"
+          :to="{
+            name: 'admin-cotizacion-detalle',
+            params: { id: repetirSourceId },
+          }"
+          class="text-sm font-medium text-medical-blue-700 hover:text-medical-blue-900 underline"
+        >
+          Ver fuente
+        </router-link>
+        <button
+          type="button"
+          class="text-sm text-medical-blue-700 hover:text-medical-blue-900 px-2 py-1"
+          @click="cerrarRepetirBanner"
+        >
+          Cerrar
+        </button>
+      </div>
+    </div>
+
     <!-- PASO 1: Identidad (gated — Story 6.14) -->
     <div
       class="mb-10 bg-white rounded-2xl shadow-md border border-gray-100 p-6"
@@ -282,7 +314,7 @@
       ]"
     >
       <TablaServiciosCotizador
-        :servicios-seleccionados="serviciosSeleccionados"
+        :servicios-seleccionados="serviciosEnLista"
         :cantidades-por-servicio="cantidadesPorServicio"
         :item-overrides="itemOverrides"
         :is-loading="isLoadingServicios"
@@ -299,7 +331,7 @@
       ref="pasoOpcionesEl"
       class="scroll-mt-6 transition-all duration-700"
       :class="[
-        !identidadConfirmada || serviciosSeleccionados.length === 0
+        !identidadConfirmada || !tieneServiciosValidos
           ? 'opacity-40 grayscale pointer-events-none blur-[1px]'
           : 'opacity-100',
       ]"
@@ -545,7 +577,8 @@
               variant="cc"
               :disabled="!hasParaDestinatarios"
               :exclude="emailsPara"
-              hint="Copia a otros correos (requiere al menos un Para)."
+              :suggestions="correosNotificacion"
+              :hint="ccHint"
             />
           </div>
           <div
@@ -628,8 +661,8 @@
       <div class="flex flex-col items-center">
         <button
           type="button"
-          @click="crearCotizacion"
-          :disabled="isCreating || !!ultimaRespuesta"
+          @click="iniciarGeneracionCotizacion"
+          :disabled="isCreating || !!ultimaRespuesta || showRevisionModal"
           class="group relative px-12 py-4 bg-medical-blue-600 text-white rounded-2xl hover:bg-medical-blue-700 active:scale-95 transition-all font-extrabold text-xl shadow-2xl shadow-medical-blue-200 disabled:opacity-50 disabled:pointer-events-none"
         >
           <span v-if="isCreating" class="flex items-center gap-3">
@@ -654,6 +687,34 @@
       :servicios-ya-seleccionados="cantidadesPorServicio"
       @close="cerrarModalServicios"
       @agregar-servicios="agregarServiciosSeleccionados"
+    />
+
+    <ModalRevisionCotizacion
+      :show="showRevisionModal"
+      :sin-cliente="cotizarSinCliente"
+      :empresa="datosCliente.empresa"
+      :razon-social="revisionRazonSocial"
+      :nombre-contacto="datosCliente.nombreContacto"
+      :correo="datosCliente.correo"
+      :telefono="datosCliente.telefono"
+      :cargo="datosCliente.cargo"
+      :items="revisionItems"
+      :total-sin-iva="revisionTotalSinIva"
+      :total-con-iva="revisionTotalConIva"
+      :mostrar-descripciones="mostrarDescripciones"
+      :incluir-datos-bancarios="bancariosUtiles && incluirDatosBancarios"
+      :sin-vigencia="sinVigencia"
+      :vigencia-dias="vigenciaDias"
+      :vigencia-label="revisionVigenciaLabel"
+      :plantillas="plantillasEnOrdenPdf"
+      :emails-para="emailsPara"
+      :emails-cc="emailsCc"
+      :enviara-correo="emailsPara.length > 0"
+      :is-pdf-busy="isPreviewPdfBusy"
+      :is-confirming="isCreating"
+      @cerrar="cerrarRevisionModal"
+      @preview-pdf="previewPdfRevision"
+      @confirmar="confirmarGeneracion"
     />
 
     <ModalCotizacionCreada
@@ -785,6 +846,7 @@ import { ref, onMounted, watch, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import ModalSeleccionServicios from '../../components/common/ModalSeleccionServicios.vue';
 import ModalCotizacionCreada from '../../components/common/ModalCotizacionCreada.vue';
+import ModalRevisionCotizacion from '../../components/cotizador/ModalRevisionCotizacion.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
 import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
@@ -795,6 +857,7 @@ import type { ItemOverrideFields } from '../../components/cotizador/TablaServici
 import PlantillaSeccionesEditor from '../../components/plantillas/PlantillaSeccionesEditor.vue';
 import EmailChipsInput from '../../components/cotizador/EmailChipsInput.vue';
 import { useCotizador } from '../../composables/useCotizador';
+import { useCorreosNotificacion } from '../../composables/useCorreosNotificacion';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import type {
   Cliente,
@@ -816,11 +879,29 @@ import {
   updatePlantilla,
   updateServicio,
 } from '../../services/admin-api.service';
-import { generateCotizacionPdfBlob } from '../../utils/pdfHelper';
+import {
+  generateCotizacionPdfBlob,
+  previewCotizacionPDF,
+} from '../../utils/pdfHelper';
+import { buildCotizacionPreviewDetalle } from '../../utils/buildCotizacionPreviewDetalle';
 import { hasBancariosUtiles } from '../../utils/bancarios.util';
 import type { CotizacionDetalleDto } from '../../types/backend';
+import { useCotizadorDraftStore } from '../../store/cotizadorDraft';
+import { hydrateCotizadorFromDraft } from '../../utils/cotizadorPrefill';
 
 const router = useRouter();
+const cotizadorDraftStore = useCotizadorDraftStore();
+const { correosNotificacion, loadCorreosNotificacion } =
+  useCorreosNotificacion();
+
+const repetirBannerVisible = ref(false);
+const repetirSourceFolio = ref('');
+const repetirSourceId = ref('');
+const repetirModoLabel = ref('');
+
+function cerrarRepetirBanner() {
+  repetirBannerVisible.value = false;
+}
 
 const {
   servicios,
@@ -828,6 +909,7 @@ const {
   error,
   cargarServicios,
   actualizarCantidad,
+  quitarServicio,
   resetSelection,
 } = useCotizador();
 
@@ -907,6 +989,8 @@ const guardandoPersonalizar = ref(false);
 const mensajeValidacion = ref('');
 const isCreating = ref(false);
 const ultimaRespuesta = ref<any>(null);
+const showRevisionModal = ref(false);
+const isPreviewPdfBusy = ref(false);
 
 const mostrarModalCliente = ref(false);
 const guardandoCliente = ref(false);
@@ -1387,7 +1471,45 @@ onMounted(async () => {
     cargarClientes(),
     cargarVigenciaDefault(),
     cargarPlantillasDisponibles(),
+    loadCorreosNotificacion(),
   ]);
+
+  const repetirDraft = cotizadorDraftStore.consumeDraft();
+  if (repetirDraft) {
+    await hydrateCotizadorFromDraft({
+      draft: repetirDraft.draft,
+      clientes,
+      contactos,
+      clienteId,
+      contactoId,
+      identidadConfirmada,
+      cotizarSinCliente,
+      cotizarSinContacto,
+      datosCliente,
+      cantidadesPorServicio,
+      itemOverrides,
+      catalogBaseline,
+      serviciosDisponibles,
+      sinVigencia,
+      vigenciaDias,
+      emailsPara,
+      emailsCc,
+      incluirDatosBancarios,
+      mostrarDescripciones,
+      plantillasSeleccionadasIds,
+      plantillaSnapshots,
+      cargarContactos,
+      actualizarCantidad,
+      vigenciaDefaultDias,
+    });
+    repetirSourceFolio.value = repetirDraft.sourceFolio;
+    repetirSourceId.value = repetirDraft.sourceCotizacionId;
+    repetirModoLabel.value =
+      repetirDraft.modoPrecios === 'originales'
+        ? 'precios originales'
+        : 'precios actualizados';
+    repetirBannerVisible.value = true;
+  }
 });
 
 const isValidEmail = (email: string) =>
@@ -1396,6 +1518,12 @@ const isValidEmail = (email: string) =>
 const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
 const hasParaDestinatarios = computed(() => emailsPara.value.length > 0);
+
+const ccHint = computed(() => {
+  const base = 'Copia a otros correos (requiere al menos un Para).';
+  if (correosNotificacion.value.length === 0) return base;
+  return `${base} Escribe para sugerir correos de notificación configurados.`;
+});
 
 const contactosParaChecklist = computed(() =>
   contactos.value.filter((c) => {
@@ -1448,8 +1576,19 @@ watch(vigenciaDias, (n) => {
   if (clamped !== n) vigenciaDias.value = clamped;
 });
 
-const serviciosSeleccionados = computed(() =>
-  serviciosDisponibles.value.filter(
+const serviciosEnLista = computed(() =>
+  serviciosDisponibles.value.filter((servicio) => {
+    const id = servicio._id || '';
+    return id && id in cantidadesPorServicio.value;
+  }),
+);
+
+const tieneServiciosValidos = computed(() =>
+  Object.values(cantidadesPorServicio.value).some((cantidad) => cantidad > 0),
+);
+
+const serviciosConCantidadValida = computed(() =>
+  serviciosEnLista.value.filter(
     (servicio) => (cantidadesPorServicio.value[servicio._id || ''] || 0) > 0,
   ),
 );
@@ -1457,10 +1596,21 @@ const serviciosSeleccionados = computed(() =>
 watch(
   cantidadesPorServicio,
   () => {
-    const tieneServicios = Object.values(cantidadesPorServicio.value).some(
-      (cantidad) => cantidad > 0,
+    const haySinCantidad = serviciosEnLista.value.some(
+      (s) => (cantidadesPorServicio.value[s._id || ''] || 0) <= 0,
     );
-    if (tieneServicios && mensajeValidacion.value.includes('servicio')) {
+    if (
+      tieneServiciosValidos.value &&
+      !haySinCantidad &&
+      (mensajeValidacion.value.includes('servicio') ||
+        mensajeValidacion.value.includes('cantidad'))
+    ) {
+      mensajeValidacion.value = '';
+    } else if (
+      tieneServiciosValidos.value &&
+      mensajeValidacion.value ===
+        'Selecciona al menos un servicio para continuar'
+    ) {
       mensajeValidacion.value = '';
     }
   },
@@ -1596,6 +1746,17 @@ type DirtySync = {
   };
 };
 
+type PendingCreate = {
+  payload: Parameters<typeof createAdminCotizacion>[0];
+  doSync: boolean;
+  dirty: DirtySync[];
+  para: string[];
+  cc: string[];
+  doEnviar: boolean;
+};
+
+const pendingCreate = ref<PendingCreate | null>(null);
+
 function collectDirtySync(): DirtySync[] {
   const dirty: DirtySync[] = [];
   for (const [servicioId, cantidad] of Object.entries(
@@ -1686,6 +1847,20 @@ const agregarServiciosSeleccionados = (
   }
   Object.entries(serviciosParaAgregar).forEach(([servicioId, cantidad]) => {
     const s = serviciosDisponibles.value.find((x) => x._id === servicioId);
+    if (cantidad <= 0) {
+      if (s) {
+        quitarServicio(servicioId);
+        const nextOverrides = { ...itemOverrides.value };
+        const nextBaseline = { ...catalogBaseline.value };
+        delete nextOverrides[servicioId];
+        delete nextBaseline[servicioId];
+        itemOverrides.value = nextOverrides;
+        catalogBaseline.value = nextBaseline;
+      } else {
+        quitarServicio(servicioId);
+      }
+      return;
+    }
     if (s) ensureItemOverride(s);
     actualizarCantidad(servicioId, cantidad);
   });
@@ -1695,7 +1870,7 @@ const agregarServiciosSeleccionados = (
 };
 
 const eliminarServicio = (servicioId: string) => {
-  actualizarCantidad(servicioId, 0);
+  quitarServicio(servicioId);
   const nextOverrides = { ...itemOverrides.value };
   const nextBaseline = { ...catalogBaseline.value };
   delete nextOverrides[servicioId];
@@ -1704,43 +1879,71 @@ const eliminarServicio = (servicioId: string) => {
   catalogBaseline.value = nextBaseline;
 };
 
-const crearCotizacion = async () => {
-  if (ultimaRespuesta.value || isCreating.value || syncModalResolve) return;
-  mensajeValidacion.value = '';
-  error.value = null;
+const revisionItems = computed(() =>
+  serviciosConCantidadValida.value.map((s) => {
+    const id = s._id || '';
+    const qty = cantidadesPorServicio.value[id] || 0;
+    const o = itemOverrides.value[id];
+    const nombre = (o?.nombre || s.nombre).trim();
+    const descripcion = (o?.descripcion || s.descripcion || '').trim();
+    const precioUnitario = Number(o?.precioUnitario ?? s.precioUnitario ?? 0);
+    const subtotal = precioUnitario * qty;
+    return { nombre, descripcion, cantidad: qty, precioUnitario, subtotal };
+  }),
+);
 
-  const nombre = datosCliente.value.nombreContacto.trim();
+const revisionTotalSinIva = computed(() =>
+  revisionItems.value.reduce((acc, item) => acc + item.subtotal, 0),
+);
+
+const revisionTotalConIva = computed(
+  () => revisionTotalSinIva.value * 1.16,
+);
+
+const revisionVigenciaLabel = computed(() => {
+  if (sinVigencia.value) return '';
+  const iso = isoFromVigenciaDias(vigenciaDias.value);
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('es-MX', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+});
+
+const revisionRazonSocial = computed(() => {
+  if (cotizarSinCliente.value || !clienteId.value) return '';
+  const c = clientes.value.find((x) => x._id === clienteId.value);
+  return c?.razonSocial?.trim() || '';
+});
+
+function runValidations(): string | null {
   const correo = datosCliente.value.correo.trim();
-  const telefono = datosCliente.value.telefono.trim();
-  const cargo = datosCliente.value.cargo.trim();
-
-  // Snapshots CRM (email/tel) solo vía contacto registrado — no inputs guest.
   if (correo && !isValidEmail(correo)) {
-    mensajeValidacion.value = 'Correo del contacto inválido';
-    return;
+    return 'Correo del contacto inválido';
   }
 
-  const tieneServicios = Object.values(cantidadesPorServicio.value).some(
-    (cantidad) => cantidad > 0,
+  if (!tieneServiciosValidos.value) {
+    scrollPasoIntoView(pasoServiciosEl.value);
+    return 'Selecciona al menos un servicio para continuar';
+  }
+
+  const hayServiciosSinCantidad = serviciosEnLista.value.some(
+    (s) => (cantidadesPorServicio.value[s._id || ''] || 0) <= 0,
   );
-  if (!tieneServicios) {
-    mensajeValidacion.value =
-      'Selecciona al menos un servicio para continuar';
-    return;
+  if (hayServiciosSinCantidad) {
+    scrollPasoIntoView(pasoServiciosEl.value);
+    return 'Hay servicios sin cantidad. Revísalos antes de generar la cotización.';
   }
 
-  for (const s of serviciosSeleccionados.value) {
+  for (const s of serviciosConCantidadValida.value) {
     ensureItemOverride(s);
     if (s.activo === false) {
-      mensajeValidacion.value =
-        'Hay servicios inactivos en la cotización. Quítalos para continuar.';
-      return;
+      return 'Hay servicios inactivos en la cotización. Quítalos para continuar.';
     }
     const o = s._id ? itemOverrides.value[s._id] : undefined;
     if (o && !o.nombre.trim()) {
-      mensajeValidacion.value =
-        'Cada servicio debe tener un nombre (no puede quedar vacío).';
-      return;
+      return 'Cada servicio debe tener un nombre (no puede quedar vacío).';
     }
   }
 
@@ -1748,18 +1951,18 @@ const crearCotizacion = async () => {
     vigenciaDias.value = clampVigenciaDias(Number(vigenciaDias.value));
     const fechaIso = isoFromVigenciaDias(vigenciaDias.value);
     if (!fechaIso) {
-      mensajeValidacion.value = 'Indica una vigencia en días válida (1–365)';
-      return;
+      return 'Indica una vigencia en días válida (1–365)';
     }
   }
 
-  const dirty = collectDirtySync();
-  let doSync = false;
-  if (dirty.length > 0) {
-    const choice = await askSyncModal(dirty);
-    if (choice === 'abort') return;
-    doSync = choice === 'sync';
-  }
+  return null;
+}
+
+function buildCreatePayload(): PendingCreate {
+  const nombre = datosCliente.value.nombreContacto.trim();
+  const correo = datosCliente.value.correo.trim();
+  const telefono = datosCliente.value.telefono.trim();
+  const cargo = datosCliente.value.cargo.trim();
 
   const items = Object.entries(cantidadesPorServicio.value)
     .filter(([, cantidad]) => cantidad > 0)
@@ -1824,6 +2027,85 @@ const crearCotizacion = async () => {
     });
   }
 
+  return {
+    payload,
+    doSync: false,
+    dirty: [],
+    para,
+    cc,
+    doEnviar,
+  };
+}
+
+function buildPreviewDetalleInput() {
+  return {
+    clienteId: clienteId.value,
+    clientes: clientes.value,
+    datosCliente: datosCliente.value,
+    cantidadesPorServicio: cantidadesPorServicio.value,
+    itemOverrides: itemOverrides.value,
+    serviciosDisponibles: serviciosDisponibles.value,
+    sinVigencia: sinVigencia.value,
+    fechaVencimientoIso: sinVigencia.value
+      ? undefined
+      : isoFromVigenciaDias(vigenciaDias.value),
+    incluirDatosBancarios:
+      bancariosUtiles.value && incluirDatosBancarios.value,
+    incluirDescripciones: mostrarDescripciones.value,
+    plantillasSeleccionadasIds: plantillasSeleccionadasIds.value,
+    plantillaSnapshots: plantillaSnapshots.value,
+  };
+}
+
+function cerrarRevisionModal() {
+  showRevisionModal.value = false;
+  pendingCreate.value = null;
+}
+
+async function previewPdfRevision() {
+  if (isPreviewPdfBusy.value) return;
+  isPreviewPdfBusy.value = true;
+  try {
+    const detalle = buildCotizacionPreviewDetalle(buildPreviewDetalleInput());
+    await previewCotizacionPDF(detalle);
+  } finally {
+    isPreviewPdfBusy.value = false;
+  }
+}
+
+const iniciarGeneracionCotizacion = async () => {
+  if (ultimaRespuesta.value || isCreating.value || syncModalResolve) return;
+  mensajeValidacion.value = '';
+  error.value = null;
+
+  const validationError = runValidations();
+  if (validationError) {
+    mensajeValidacion.value = validationError;
+    return;
+  }
+
+  const dirty = collectDirtySync();
+  let doSync = false;
+  if (dirty.length > 0) {
+    const choice = await askSyncModal(dirty);
+    if (choice === 'abort') return;
+    doSync = choice === 'sync';
+  }
+
+  const pending = buildCreatePayload();
+  pending.doSync = doSync;
+  pending.dirty = dirty;
+  pendingCreate.value = pending;
+  showRevisionModal.value = true;
+};
+
+const confirmarGeneracion = async () => {
+  const pending = pendingCreate.value;
+  if (!pending || isCreating.value) return;
+
+  const { payload, doSync, dirty, para, cc, doEnviar } = pending;
+  showRevisionModal.value = false;
+
   isCreating.value = true;
   emailSendOk.value = false;
   emailSendError.value = null;
@@ -1832,6 +2114,7 @@ const crearCotizacion = async () => {
     const response = await createAdminCotizacion(payload);
     ultimaRespuesta.value = response;
     mensajeValidacion.value = '';
+    pendingCreate.value = null;
 
     if (doSync && dirty.length > 0) {
       let synced = 0;
@@ -1864,7 +2147,6 @@ const crearCotizacion = async () => {
       }
     }
 
-    // Story 6.8: create ≠ send. PDF FE → multipart enviar-correo.
     if (doEnviar) {
       const id = response._id || (response as any).id;
       if (!id) {
@@ -1894,6 +2176,8 @@ const crearCotizacion = async () => {
       }
     }
   } catch (err: any) {
+    pendingCreate.value = pending;
+    showRevisionModal.value = true;
     const msg = err.response?.data?.message;
     error.value = Array.isArray(msg)
       ? msg.join(', ')
@@ -1988,8 +2272,13 @@ const cerrarModal = () => {
   plantillasSeleccionadasIds.value = [];
   plantillaSnapshots.value = {};
   showPersonalizarModal.value = false;
+  showRevisionModal.value = false;
+  pendingCreate.value = null;
+  isPreviewPdfBusy.value = false;
   mensajeValidacion.value = '';
   serviciosDisponibles.value = [];
+  cerrarRepetirBanner();
+  repetirSourceId.value = '';
 };
 
 const verCotizaciones = () => {

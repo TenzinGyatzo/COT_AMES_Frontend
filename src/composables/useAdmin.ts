@@ -8,6 +8,7 @@ import type {
   AdminClientesFilters,
   AdminCotizacionesFilters,
 } from '../services/admin-api.service';
+import type { CotizacionDetalleDto } from '../types/backend';
 
 export function useAdmin() {
   const adminStore = useAdminStore();
@@ -47,6 +48,12 @@ export function useAdmin() {
 
   const limpiarCotizacionDetalle = (): void => {
     adminStore.clearCotizacionDetalle();
+  };
+
+  const actualizarCotizacionDetalle = (
+    cotizacion: CotizacionDetalleDto,
+  ): void => {
+    adminStore.setCotizacionDetalle(cotizacion);
   };
 
   const obtenerClientes = async (
@@ -98,6 +105,7 @@ export function useAdmin() {
     obtenerCotizacionesAdmin,
     obtenerCotizacionAdmin,
     limpiarCotizacionDetalle,
+    actualizarCotizacionDetalle,
     obtenerClientes,
     obtenerCliente,
     limpiarClienteDetalle,

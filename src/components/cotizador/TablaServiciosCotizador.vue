@@ -10,13 +10,13 @@
         <div
           class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg transition-colors shrink-0"
           :class="[
-            serviciosSeleccionados.length > 0
+            tieneServiciosValidos
               ? 'bg-green-100 text-green-600'
               : 'bg-gray-100 text-gray-500',
           ]"
         >
           <svg
-            v-if="serviciosSeleccionados.length > 0"
+            v-if="tieneServiciosValidos"
             xmlns="http://www.w3.org/2000/svg"
             class="h-6 w-6"
             fill="none"
@@ -91,6 +91,30 @@
           Mostrar descripciones
         </span>
       </label>
+    </div>
+
+    <div
+      v-if="hayServiciosSinCantidad"
+      class="mx-6 mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+      role="status"
+    >
+      <svg
+        class="mt-0.5 h-5 w-5 shrink-0 text-amber-500"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <p>
+        Hay servicios sin cantidad. Revísalos antes de generar la cotización.
+      </p>
     </div>
 
     <!-- VISTA MOBILE / TABLET: Tarjetas (Visible solo en < lg) -->
@@ -178,7 +202,7 @@
               <input
                 type="number"
                 min="0"
-                step="0.01"
+                step="10"
                 :value="displayOf(servicio).precioUnitario"
                 class="mt-1 w-full max-w-[7rem] px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm text-right outline-none focus:ring-2 focus:ring-medical-blue-400"
                 @input="onMobilePrecio(servicio._id || '', $event)"
@@ -188,14 +212,21 @@
               <label class="text-xs font-bold text-gray-400 uppercase"
                 >Unidades</label
               >
-              <div class="mt-1 flex sm:justify-start">
+              <div class="mt-1 flex sm:justify-start flex-col gap-1">
                 <QuantitySelector
                   :model-value="cantidadesPorServicio[servicio._id || ''] || 0"
+                  :invalid="cantidadInvalida(servicio)"
                   @update:model-value="
                     (value) =>
                       $emit('actualizar-cantidad', servicio._id || '', value)
                   "
                 />
+                <p
+                  v-if="cantidadInvalida(servicio)"
+                  class="text-[10px] leading-tight text-amber-700"
+                >
+                  Indica la cantidad o elimina el servicio
+                </p>
               </div>
             </div>
           </div>
@@ -393,6 +424,22 @@ const totalSinIva = computed(() =>
     0,
   ),
 );
+
+const tieneServiciosValidos = computed(() =>
+  props.serviciosSeleccionados.some(
+    (s) => (props.cantidadesPorServicio[s._id || ''] || 0) > 0,
+  ),
+);
+
+const hayServiciosSinCantidad = computed(() =>
+  props.serviciosSeleccionados.some(
+    (s) => (props.cantidadesPorServicio[s._id || ''] || 0) <= 0,
+  ),
+);
+
+function cantidadInvalida(servicio: Servicio): boolean {
+  return (props.cantidadesPorServicio[servicio._id || ''] || 0) <= 0;
+}
 
 function emitOverride(
   id: string,

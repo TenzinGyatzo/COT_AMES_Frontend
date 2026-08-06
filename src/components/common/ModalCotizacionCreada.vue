@@ -207,6 +207,8 @@
                 variant="cc"
                 placeholder="opcional@empresa.com"
                 :exclude="resendPara"
+                :suggestions="correosNotificacion"
+                :hint="ccHint"
               />
               <button
                 type="button"
@@ -333,7 +335,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { useCorreosNotificacion } from '../../composables/useCorreosNotificacion';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import { getCotizacionAdminById } from '../../services/admin-api.service';
 import EmailChipsInput from '../cotizador/EmailChipsInput.vue';
@@ -392,6 +395,22 @@ const { onBackdropPointerDown, onBackdropPointerUp, onBackdropPointerCancel } =
 const isPdfBusy = ref(false);
 const resendPara = ref<string[]>([...props.initialEmailsPara]);
 const resendCc = ref<string[]>([...props.initialEmailsCc]);
+const { correosNotificacion, loadCorreosNotificacion } =
+  useCorreosNotificacion();
+
+const ccHint = computed(() =>
+  correosNotificacion.value.length > 0
+    ? 'Escribe para sugerir correos de notificación configurados.'
+    : '',
+);
+
+watch(
+  () => props.cotizacion,
+  (cotizacion) => {
+    if (cotizacion) void loadCorreosNotificacion();
+  },
+  { immediate: true },
+);
 
 watch(
   () => [props.initialEmailsPara, props.initialEmailsCc, props.emailError] as const,

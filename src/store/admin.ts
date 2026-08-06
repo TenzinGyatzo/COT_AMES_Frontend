@@ -309,6 +309,10 @@ export const useAdminStore = defineStore('admin', {
       this.cotizacionDetalle = null;
     },
 
+    setCotizacionDetalle(cotizacion: CotizacionDetalleDto): void {
+      this.cotizacionDetalle = cotizacion;
+    },
+
     async fetchDashboardCounters(): Promise<void> {
       this.isLoadingDashboard = true;
       this.error = null;

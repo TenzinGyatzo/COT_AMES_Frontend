@@ -149,6 +149,8 @@
             placeholder="opcional@empresa.com"
             :exclude="para"
             :disabled="sending || para.length === 0"
+            :suggestions="correosNotificacion"
+            :hint="ccHint"
           />
         </template>
 
@@ -178,6 +180,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
+import { useCorreosNotificacion } from '../../composables/useCorreosNotificacion';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import EmailChipsInput from '../cotizador/EmailChipsInput.vue';
 
@@ -210,6 +213,14 @@ const emit = defineEmits<{
 
 const para = ref<string[]>([]);
 const cc = ref<string[]>([]);
+const { correosNotificacion, loadCorreosNotificacion } =
+  useCorreosNotificacion();
+
+const ccHint = computed(() =>
+  correosNotificacion.value.length > 0
+    ? 'Escribe para sugerir correos de notificación configurados.'
+    : '',
+);
 
 const { onBackdropPointerDown, onBackdropPointerUp, onBackdropPointerCancel } =
   useModalDismiss(
@@ -228,6 +239,7 @@ watch(
     ] as const,
   ([isOpen]) => {
     if (!isOpen) return;
+    void loadCorreosNotificacion();
     para.value = [...(props.initialEmailsPara || [])].slice(
       0,
       MAX_DESTINATARIOS,

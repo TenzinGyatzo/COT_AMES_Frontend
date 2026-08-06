@@ -564,6 +564,13 @@
         </div>
       </div>
 
+      <CotizacionNotasInternas
+        v-if="cotizacionId"
+        :cotizacion-id="cotizacionId"
+        :notas="cotizacionDetalle.notasInternas"
+        @updated="onNotasInternasUpdated"
+      />
+
       <!-- PDF -->
       <div
         v-if="cotizacionDetalle.pdfUrl"
@@ -665,15 +672,14 @@
           Repetir cotización
         </h3>
         <p class="mt-2 text-sm text-gray-600">
-          Elija cómo calcular los precios de la nueva cotización. Se creará con
-          folio nuevo y estado vigente; podrá editarla o enviarla después.
+          Elija cómo calcular los precios de la nueva cotización.
         </p>
         <div class="mt-5 flex flex-col gap-2">
           <button
             type="button"
             class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
             :disabled="isProcessing"
-            @click="confirmarRepetirModo('originales')"
+            @click="elegirRepetirModo('originales')"
           >
             Precios originales
           </button>
@@ -681,7 +687,7 @@
             type="button"
             class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
             :disabled="isProcessing"
-            @click="confirmarRepetirModo('actualizados')"
+            @click="elegirRepetirModo('actualizados')"
           >
             Precios actualizados
           </button>
@@ -692,6 +698,74 @@
             @click="cerrarRepetir"
           >
             Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repetir paso 2 — destino -->
+    <div
+      v-if="showRepetirDestino"
+      class="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="repetir-destino-title"
+    >
+      <div
+        class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm"
+        @click="cerrarRepetir"
+      ></div>
+      <div
+        class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <h3
+          id="repetir-destino-title"
+          class="text-lg font-semibold text-gray-900"
+        >
+          ¿Cómo desea continuar?
+        </h3>
+        <p class="mt-2 text-sm text-gray-600">
+          Modo:
+          <span class="font-medium text-gray-800">{{
+            repetirModo === 'originales'
+              ? 'Precios originales'
+              : 'Precios actualizados'
+          }}</span>
+        </p>
+        <div class="mt-5 flex flex-col gap-4">
+          <div class="space-y-1 mb-2">
+            <button
+              type="button"
+              class="w-full rounded-md border border-medical-blue-200 bg-medical-blue-50 px-4 py-2.5 text-sm font-medium text-medical-blue-800 hover:bg-medical-blue-100 disabled:opacity-50"
+              :disabled="isProcessing"
+              @click="confirmarRepetirDestino(false)"
+            >
+              Crear ahora
+            </button>
+            <p class="text-xs text-gray-500 leading-relaxed text-center">
+              Genera y envía por correo la cotización con folio nuevo.
+            </p>
+          </div>
+          <div class="space-y-1">
+            <button
+              type="button"
+              class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+              :disabled="isProcessing"
+              @click="confirmarRepetirDestino(true)"
+            >
+              Editar en cotizador
+            </button>
+            <p class="text-xs text-gray-500 leading-relaxed text-center">
+              Revisa y modifica la cotización antes de confirmar y enviar.
+            </p>
+          </div>
+          <button
+            type="button"
+            class="mt-1 w-full px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+            :disabled="isProcessing"
+            @click="volverRepetirModo"
+          >
+            Volver
           </button>
         </div>
       </div>
@@ -785,7 +859,7 @@
             :loading="isProcessing"
             @click="confirmarRepetirConResoluciones"
           >
-            Confirmar repetición
+            {{ repetirViaWizard ? 'Continuar al cotizador' : 'Confirmar repetición' }}
           </BaseButtonLoader>
         </div>
       </div>
@@ -804,12 +878,14 @@ import {
 } from '../../utils/pdfHelper';
 import { formatMoney } from '../../utils/currency';
 import type { Servicio } from '../../types/backend';
-import { enviarCorreoCotizacion } from '../../services/admin-api.service';
+import { enviarCorreoCotizacion, getCotizacionAdminById } from '../../services/admin-api.service';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ModalEnviarCotizacionCorreo from '../../components/common/ModalEnviarCotizacionCorreo.vue';
+import CotizacionNotasInternas from '../../components/cotizaciones/CotizacionNotasInternas.vue';
+import type { CotizacionDetalleDto } from '../../types/backend';
 
 const route = useRoute();
 const router = useRouter();
@@ -819,7 +895,18 @@ const {
   error,
   obtenerCotizacionAdmin,
   limpiarCotizacionDetalle,
+  actualizarCotizacionDetalle,
 } = useAdmin();
+
+const cotizacionId = computed(() => {
+  const c = cotizacionDetalle.value;
+  if (!c) return '';
+  return String((c as { _id?: string; id?: string })._id || (c as { id?: string }).id || route.params.id || '');
+});
+
+function onNotasInternasUpdated(cotizacion: CotizacionDetalleDto): void {
+  actualizarCotizacionDetalle(cotizacion);
+}
 
 const isPdfBusy = ref(false);
 
@@ -874,9 +961,29 @@ async function cargarDetallePorRuta() {
   if (!cotizacionId) return;
   try {
     await obtenerCotizacionAdmin(cotizacionId);
+    aplicarFlashRepetirEmail();
   } catch (err) {
     console.error('Error al cargar cotización:', err);
   }
+}
+
+function aplicarFlashRepetirEmail() {
+  const q = route.query.repetirEmail;
+  if (!q || typeof q !== 'string') return;
+  if (q === 'ok') {
+    flashSuccess('Cotización creada y enviada por correo.');
+  } else if (q === 'fail') {
+    flashSuccess(
+      'Cotización creada, pero no se pudo enviar el correo. Use «Enviar por correo» para reintentar.',
+    );
+  } else if (q === 'sin-destinatarios') {
+    flashSuccess(
+      'Cotización creada. No hay destinatarios Para para envío automático.',
+    );
+  }
+  const nextQuery = { ...route.query };
+  delete nextQuery.repetirEmail;
+  void router.replace({ query: nextQuery });
 }
 
 // Cargar cotización al montar; re-cargar si cambia :id (p. ej. tras Repetir)
@@ -1169,10 +1276,12 @@ import {
   rechazarCotizacionAdmin,
   cambiarEstadoCotizacion,
   repetirCotizacion,
+  previewRepetirCotizacion,
   getServicios,
   type ModoPreciosRepetir,
   type RepetirCotizacionWarning,
 } from '../../services/admin-api.service';
+import { useCotizadorDraftStore } from '../../store/cotizadorDraft';
 
 const isProcessing = ref(false);
 const showConfirmRechazo = ref(false);
@@ -1193,12 +1302,15 @@ const puedeRepetir = computed(() => {
 });
 
 const showRepetirModo = ref(false);
+const showRepetirDestino = ref(false);
 const showRepetirWarnings = ref(false);
 const repetirModo = ref<ModoPreciosRepetir | null>(null);
+const repetirViaWizard = ref(false);
 const repetirWarnings = ref<RepetirCotizacionWarning[]>([]);
 const omitirIds = reactive<Record<string, boolean>>({});
 const sustitucionesMap = reactive<Record<string, string>>({});
 const serviciosActivos = ref<Servicio[]>([]);
+const cotizadorDraftStore = useCotizadorDraftStore();
 
 const puedeConfirmarWarnings = computed(() => {
   if (!repetirWarnings.value.length) return false;
@@ -1256,19 +1368,41 @@ function abrirRepetir() {
   showMasAcciones.value = false;
   repetirWarnings.value = [];
   repetirModo.value = null;
+  repetirViaWizard.value = false;
   Object.keys(omitirIds).forEach((k) => delete omitirIds[k]);
   Object.keys(sustitucionesMap).forEach((k) => delete sustitucionesMap[k]);
+  showRepetirDestino.value = false;
   showRepetirModo.value = true;
 }
 
 function cerrarRepetir() {
   if (isProcessing.value) return;
   showRepetirModo.value = false;
+  showRepetirDestino.value = false;
   showRepetirWarnings.value = false;
   repetirModo.value = null;
+  repetirViaWizard.value = false;
   repetirWarnings.value = [];
   Object.keys(omitirIds).forEach((k) => delete omitirIds[k]);
   Object.keys(sustitucionesMap).forEach((k) => delete sustitucionesMap[k]);
+}
+
+function elegirRepetirModo(modo: ModoPreciosRepetir) {
+  repetirModo.value = modo;
+  showRepetirModo.value = false;
+  showRepetirDestino.value = true;
+}
+
+function volverRepetirModo() {
+  if (isProcessing.value) return;
+  showRepetirDestino.value = false;
+  showRepetirModo.value = true;
+}
+
+function confirmarRepetirDestino(viaWizard: boolean) {
+  if (!repetirModo.value) return;
+  repetirViaWizard.value = viaWizard;
+  void ejecutarRepetirAccion({ modoPrecios: repetirModo.value });
 }
 
 function onOmitirChange(servicioId: string) {
@@ -1292,7 +1426,40 @@ async function loadServiciosActivos() {
   }
 }
 
-async function ejecutarRepetir(payload: {
+async function enviarCorreoTrasRepetir(
+  nueva: CotizacionDetalleDto,
+): Promise<'ok' | 'fail' | 'sin-destinatarios'> {
+  const para = [...(nueva.emailsPara || [])];
+  const cc = [...(nueva.emailsCc || [])].filter((e) => !para.includes(e));
+  if (!para.length) return 'sin-destinatarios';
+
+  const id = String(
+    (nueva as { _id?: string; id?: string })._id ||
+      (nueva as { id?: string }).id ||
+      '',
+  );
+  if (!id) return 'fail';
+
+  try {
+    let detalle: CotizacionDetalleDto = nueva;
+    try {
+      detalle = await getCotizacionAdminById(id);
+    } catch {
+      /* usar respuesta de repetir como fallback para PDF */
+    }
+    const blob = await generateCotizacionPdfBlob(detalle);
+    await enviarCorreoCotizacion(id, blob, {
+      emailsPara: para,
+      emailsCc: cc,
+    });
+    return 'ok';
+  } catch (e) {
+    console.error('Error al enviar correo tras repetir:', e);
+    return 'fail';
+  }
+}
+
+async function ejecutarRepetirAccion(payload: {
   modoPrecios: ModoPreciosRepetir;
   omitirServicioIds?: string[];
   sustituciones?: Array<{ fromServicioId: string; toServicioId: string }>;
@@ -1301,18 +1468,36 @@ async function ejecutarRepetir(payload: {
   isProcessing.value = true;
   successMessage.value = null;
   const fuenteId = cotizacionDetalle.value._id;
+  const fuenteFolio = cotizacionDetalle.value.folio || '';
   try {
+    if (repetirViaWizard.value) {
+      const preview = await previewRepetirCotizacion(fuenteId, payload);
+      showRepetirModo.value = false;
+      showRepetirDestino.value = false;
+      showRepetirWarnings.value = false;
+      cotizadorDraftStore.setDraft({
+        sourceCotizacionId: String(fuenteId),
+        sourceFolio: fuenteFolio,
+        modoPrecios: payload.modoPrecios,
+        draft: preview,
+      });
+      await router.push({ name: 'admin-cotizacion-nueva' });
+      return;
+    }
+
     const nueva = await repetirCotizacion(fuenteId, payload);
+    const emailResult = await enviarCorreoTrasRepetir(nueva);
     showRepetirModo.value = false;
+    showRepetirDestino.value = false;
     showRepetirWarnings.value = false;
     await router.push({
       name: 'admin-cotizacion-detalle',
       params: { id: nueva._id },
+      query: { repetirEmail: emailResult },
     });
   } catch (error) {
     const warnings = parseRepetirWarnings(error);
     if (warnings?.length) {
-      // Liberar UI antes de cargar catálogo para que Cancelar responda.
       isProcessing.value = false;
       repetirModo.value = payload.modoPrecios;
       repetirWarnings.value = warnings;
@@ -1325,6 +1510,7 @@ async function ejecutarRepetir(payload: {
         }
       }
       showRepetirModo.value = false;
+      showRepetirDestino.value = false;
       showRepetirWarnings.value = true;
       await loadServiciosActivos();
       return;
@@ -1334,11 +1520,6 @@ async function ejecutarRepetir(payload: {
   } finally {
     isProcessing.value = false;
   }
-}
-
-async function confirmarRepetirModo(modo: ModoPreciosRepetir) {
-  repetirModo.value = modo;
-  await ejecutarRepetir({ modoPrecios: modo });
 }
 
 async function confirmarRepetirConResoluciones() {
@@ -1355,7 +1536,7 @@ async function confirmarRepetirConResoluciones() {
       fromServicioId: w.servicioId,
       toServicioId: sustitucionesMap[w.servicioId]!,
     }));
-  await ejecutarRepetir({
+  await ejecutarRepetirAccion({
     modoPrecios: repetirModo.value,
     omitirServicioIds,
     sustituciones,

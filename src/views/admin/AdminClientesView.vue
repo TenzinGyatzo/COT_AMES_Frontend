@@ -114,115 +114,106 @@
         <div
           v-for="grupo in clientesAgrupados"
           :key="grupo.clienteId"
-          class="bg-white shadow-md rounded-lg overflow-hidden"
+          class="bg-white shadow-md rounded-lg overflow-hidden min-w-0"
         >
           <div
             class="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 bg-gray-50 border-b border-gray-200"
           >
-            <div
-              class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4"
-            >
-              <div class="flex-1 min-w-0">
-                <div class="mb-2 sm:mb-3">
-                  <span
-                    class="text-sm sm:text-base md:text-lg font-semibold text-gray-900 break-words"
-                  >
-                    {{ grupo.empresa || 'Sin nombre' }}
-                  </span>
-                </div>
-                <div
-                  v-if="grupo.razonSocial"
-                  class="text-xs sm:text-sm text-gray-600 break-words mb-1"
+            <div class="min-w-0">
+              <div class="mb-2 sm:mb-3">
+                <span
+                  class="text-sm sm:text-base md:text-lg font-semibold text-gray-900 break-words"
                 >
-                  {{ grupo.razonSocial }}
-                </div>
-                <div
-                  class="mt-1 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-0"
-                >
-                  <span
-                    v-if="grupo.rfc"
-                    class="text-xs sm:text-sm text-gray-600 break-all font-mono uppercase"
-                    >{{ grupo.rfc }}</span
-                  >
-                  <span
-                    :class="grupo.rfc ? 'sm:ml-3 md:ml-4' : ''"
-                  >
-                    <span
-                      v-if="grupo.activo !== false"
-                      class="inline-block px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
-                    >
-                      Activo
-                    </span>
-                    <span
-                      v-else
-                      class="inline-block px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"
-                    >
-                      Inactivo
-                    </span>
-                  </span>
-                </div>
-                <div
-                  class="mt-2 sm:mt-3 flex flex-wrap gap-2 sm:gap-3 md:gap-4 text-xs sm:text-sm text-gray-600"
-                >
-                  <span class="whitespace-nowrap">
-                    <span class="font-medium">Cotizaciones:</span>
-                    <span class="ml-1 font-semibold text-gray-900">{{
-                      grupo.totalCotizaciones || 0
-                    }}</span>
-                  </span>
-                </div>
+                  {{ grupo.empresa || 'Sin nombre' }}
+                </span>
               </div>
               <div
-                class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:flex-shrink-0"
+                v-if="grupo.razonSocial"
+                class="text-xs sm:text-sm text-gray-600 break-words mb-1"
               >
-                <button
-                  type="button"
-                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium"
-                  @click="abrirEditar(grupo)"
-                >
-                  Editar
-                </button>
-                <button
-                  v-if="grupo.activo !== false"
-                  type="button"
-                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-red-200 text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
-                  :disabled="isMutating"
-                  @click="pedirDesactivar(grupo)"
-                >
-                  Desactivar
-                </button>
-                <button
-                  v-else
-                  type="button"
-                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-green-200 text-green-800 bg-green-50 rounded-md hover:bg-green-100 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
-                  :disabled="isMutating"
-                  @click="reactivar(grupo)"
-                >
-                  Reactivar
-                </button>
-                <router-link
-                  :to="{
-                    name: 'admin-cliente-detalle',
-                    params: { id: grupo.clienteId },
-                  }"
-                  class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
-                >
-                  Ver detalle
-                  <svg
-                    class="w-4 h-4 ml-1 sm:ml-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </router-link>
+                {{ grupo.razonSocial }}
               </div>
+              <div
+                class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-2"
+              >
+                <span
+                  v-if="grupo.rfc"
+                  class="text-xs sm:text-sm text-gray-600 break-all font-mono uppercase"
+                >
+                  {{ grupo.rfc }}
+                </span>
+                <span
+                  v-if="grupo.activo !== false"
+                  class="inline-block px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800"
+                >
+                  Activo
+                </span>
+                <span
+                  v-else
+                  class="inline-block px-2 py-0.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800"
+                >
+                  Inactivo
+                </span>
+              </div>
+              <div
+                class="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-600"
+              >
+                <span class="font-medium">Cotizaciones:</span>
+                <span class="ml-1 font-semibold text-gray-900">{{
+                  grupo.totalCotizaciones || 0
+                }}</span>
+              </div>
+            </div>
+            <div
+              class="mt-4 pt-4 border-t border-gray-200 flex flex-wrap gap-2"
+            >
+              <button
+                type="button"
+                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-gray-300 text-gray-700 bg-white rounded-md hover:bg-gray-50 transition-colors text-xs sm:text-sm font-medium"
+                @click="abrirEditar(grupo)"
+              >
+                Editar
+              </button>
+              <button
+                v-if="grupo.activo !== false"
+                type="button"
+                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-red-200 text-red-700 bg-red-50 rounded-md hover:bg-red-100 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
+                :disabled="isMutating"
+                @click="pedirDesactivar(grupo)"
+              >
+                Desactivar
+              </button>
+              <button
+                v-else
+                type="button"
+                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 border border-green-200 text-green-800 bg-green-50 rounded-md hover:bg-green-100 transition-colors text-xs sm:text-sm font-medium disabled:opacity-50"
+                :disabled="isMutating"
+                @click="reactivar(grupo)"
+              >
+                Reactivar
+              </button>
+              <router-link
+                :to="{
+                  name: 'admin-cliente-detalle',
+                  params: { id: grupo.clienteId },
+                }"
+                class="inline-flex items-center justify-center px-3 sm:px-4 py-2 bg-medical-blue-600 text-white rounded-md hover:bg-medical-blue-700 transition-colors text-xs sm:text-sm font-medium whitespace-nowrap"
+              >
+                Ver detalle
+                <svg
+                  class="w-4 h-4 ml-1 sm:ml-2 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </router-link>
             </div>
           </div>
         </div>

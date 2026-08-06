@@ -664,7 +664,7 @@
                   id="precioUnitario"
                   v-model.number="formulario.precioUnitario"
                   type="number"
-                  step="0.01"
+                  step="10"
                   min="0"
                   required
                   class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"

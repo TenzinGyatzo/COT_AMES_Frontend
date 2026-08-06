@@ -18,6 +18,10 @@ export function useCotizador() {
     cotizadorStore.setCantidad(servicioId, cantidad);
   };
 
+  const quitarServicio = (servicioId: string): void => {
+    cotizadorStore.removeServicio(servicioId);
+  };
+
   const resetSelection = (): void => {
     cotizadorStore.resetSelection();
   };
@@ -29,6 +33,7 @@ export function useCotizador() {
     error,
     cargarServicios,
     actualizarCantidad,
+    quitarServicio,
     resetSelection,
   };
 }

@@ -404,6 +404,34 @@ export type RepetirCotizacionPayload = {
   omitirServicioIds?: string[];
   sustituciones?: Array<{ fromServicioId: string; toServicioId: string }>;
   fechaVencimiento?: string;
+  sinVigencia?: boolean;
+};
+
+export type RepetirCotizacionPreviewDto = {
+  items: Array<{
+    servicioId: string;
+    cantidad: number;
+    nombre?: string;
+    descripcion?: string;
+    precioUnitario?: number;
+  }>;
+  clienteId?: string;
+  nombreEmpresa?: string;
+  nombreContacto?: string;
+  emailContacto?: string;
+  telefonoContacto?: string;
+  cargoContacto?: string;
+  emailsPara: string[];
+  emailsCc: string[];
+  sinVigencia: boolean;
+  incluirDatosBancarios: boolean;
+  incluirDescripciones: boolean;
+  plantillas: Array<{
+    plantillaId: string;
+    nombre?: string;
+    secciones?: import('../types/backend').SeccionPlantilla[];
+  }>;
+  moneda: 'MXN';
 };
 
 /** Story 6.12 — clona cotización (precios originales o actualizados). */
@@ -414,6 +442,51 @@ export async function repetirCotizacion(
   const { data } = await httpClient.post<CotizacionDetalleDto>(
     `/cotizaciones/${id}/repetir`,
     payload,
+  );
+  return data;
+}
+
+/** Preview wizard-ready sin persistir (repetir → cotizador). */
+export async function previewRepetirCotizacion(
+  id: string,
+  payload: RepetirCotizacionPayload,
+): Promise<RepetirCotizacionPreviewDto> {
+  const { data } = await httpClient.post<RepetirCotizacionPreviewDto>(
+    `/cotizaciones/${id}/repetir/preview`,
+    payload,
+  );
+  return data;
+}
+
+export async function agregarNotaInternaCotizacion(
+  id: string,
+  payload: { texto: string },
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.post<CotizacionDetalleDto>(
+    `/cotizaciones/${id}/notas-internas`,
+    payload,
+  );
+  return data;
+}
+
+export async function actualizarNotaInternaCotizacion(
+  id: string,
+  notaId: string,
+  payload: { texto: string },
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.patch<CotizacionDetalleDto>(
+    `/cotizaciones/${id}/notas-internas/${notaId}`,
+    payload,
+  );
+  return data;
+}
+
+export async function eliminarNotaInternaCotizacion(
+  id: string,
+  notaId: string,
+): Promise<CotizacionDetalleDto> {
+  const { data } = await httpClient.delete<CotizacionDetalleDto>(
+    `/cotizaciones/${id}/notas-internas/${notaId}`,
   );
   return data;
 }

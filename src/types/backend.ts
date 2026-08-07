@@ -286,6 +286,8 @@ export interface CotizacionListItemDto {
   montoTotal: number;
   empresa?: string;
   nombreSolicitante?: string;
+  /** Nombre del usuario AMES que creó/envió (o email de fallback). */
+  creadoPorNombre?: string;
   /** RFC del cliente CRM (vacío en guest). */
   rfc?: string;
   estado: string;

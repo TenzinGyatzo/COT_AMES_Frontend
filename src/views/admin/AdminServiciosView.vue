@@ -123,20 +123,23 @@
     </div>
 
     <!-- Mensaje de carga -->
-    <div v-if="isLoading" class="bg-white shadow-md rounded-lg p-8 text-center">
-      <p class="text-gray-500">Cargando servicios...</p>
-    </div>
-
-    <!-- Mensaje de error -->
     <div
-      v-else-if="error"
-      class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+      v-if="!hasLoadedOnce"
+      class="bg-white shadow-md rounded-lg p-8 text-center"
     >
-      <p class="text-red-800">{{ error }}</p>
+      <p class="text-gray-500">Cargando servicios...</p>
     </div>
 
     <!-- Contenedor de servicios (tabla y tarjetas) -->
     <template v-else>
+      <div
+        v-if="error"
+        class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+      >
+        <p class="text-red-800">{{ error }}</p>
+      </div>
+      <div class="relative">
+        <ListLoadingOverlay v-if="isLoading" />
       <!-- Vista de tabla para pantallas grandes -->
       <div
         class="bg-white shadow-md rounded-lg overflow-hidden hidden lg:block"
@@ -548,6 +551,7 @@
           </button>
         </div>
       </div>
+      </div>
     </template>
 
     <!-- Modal para crear/editar servicio -->
@@ -772,7 +776,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import {
   getServicios,
   createServicio,
@@ -789,10 +795,21 @@ import {
 import type { Servicio, Tenant } from '../../types/backend';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
+import ListLoadingOverlay from '../../components/base/ListLoadingOverlay.vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import { useAuthStore } from '../../store/auth';
 import { formatMoney } from '../../utils/currency';
+import { extractError } from '../../utils/extractError';
 import {
+  boolQuery,
+  compactQuery,
+  queryFlag,
+  queryInt,
+  queryString,
+  shouldResetListQueryForTenant,
+} from '../../utils/listQuery';
+import {
+  CATEGORIA_SERVICIO_CODES,
   CATEGORIA_SERVICIO_OPTIONS,
   labelCategoriaServicio,
   type CategoriaServicioCode,
@@ -802,11 +819,17 @@ type ServicioFormState = Omit<CreateServicioPayload, 'categoria'> & {
   categoria: CategoriaServicioCode | '';
 };
 
+const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
+const { activeTenantId } = storeToRefs(authStore);
 const isAdminSistema = computed(() => authStore.isAdminSistema);
+
+const ORDENES: ServicioOrden[] = ['creacion', 'nombre_asc', 'nombre_desc'];
 
 const servicios = ref<Servicio[]>([]);
 const isLoading = ref(false);
+const hasLoadedOnce = ref(false);
 const error = ref<string | null>(null);
 const verInactivos = ref(false);
 const successMsg = ref<string | null>(null);
@@ -879,10 +902,46 @@ const mostrarConfirmDesactivar = ref(false);
 const mensajeConfirmDesactivar = ref('');
 const servicioADesactivar = ref<Servicio | null>(null);
 
-function extractError(err: any, fallback: string): string {
-  const msg = err?.response?.data?.message;
-  if (Array.isArray(msg)) return msg.join(', ');
-  return msg || fallback;
+function applyQueryToState() {
+  filters.value.nombre = queryString(route.query, 'nombre') ?? '';
+  const cat = queryString(route.query, 'categoria');
+  filters.value.categoria =
+    cat && (CATEGORIA_SERVICIO_CODES as readonly string[]).includes(cat)
+      ? (cat as CategoriaServicioCode)
+      : '';
+  const orden = queryString(route.query, 'orden');
+  filters.value.orden =
+    orden && (ORDENES as readonly string[]).includes(orden)
+      ? (orden as ServicioOrden)
+      : 'creacion';
+  filters.value.page = queryInt(route.query, 'page', 1);
+  filters.value.limit = queryInt(route.query, 'limit', 20, { max: 100 });
+  verInactivos.value = queryFlag(route.query, 'verInactivos');
+}
+
+async function syncQuery() {
+  const next = compactQuery({
+    nombre: filters.value.nombre?.trim() || undefined,
+    categoria: filters.value.categoria || undefined,
+    orden:
+      filters.value.orden !== 'creacion' ? filters.value.orden : undefined,
+    page: (filters.value.page ?? 1) > 1 ? filters.value.page : undefined,
+    limit:
+      (filters.value.limit ?? 20) !== 20 ? filters.value.limit : undefined,
+    verInactivos: boolQuery(verInactivos.value),
+  });
+  await router.replace({ query: next });
+}
+
+function resetFilters() {
+  filters.value = {
+    nombre: '',
+    categoria: '',
+    orden: 'creacion',
+    page: 1,
+    limit: 20,
+  };
+  verInactivos.value = false;
 }
 
 const cargarServicios = async () => {
@@ -931,12 +990,16 @@ const cargarServicios = async () => {
       totalPages: res.totalPages,
     };
     filters.value.page = res.total === 0 ? 1 : res.page;
+    await syncQuery();
   } catch (err: any) {
     if (seq !== loadSeq) return;
     console.error('Error al cargar servicios:', err);
     error.value = extractError(err, 'No fue posible cargar los servicios');
   } finally {
-    if (seq === loadSeq) isLoading.value = false;
+    if (seq === loadSeq) {
+      isLoading.value = false;
+      hasLoadedOnce.value = true;
+    }
   }
 };
 
@@ -947,22 +1010,27 @@ function clearFilterDebounce() {
   }
 }
 
+function reloadFromFilters() {
+  successMsg.value = null;
+  actionError.value = null;
+  void (async () => {
+    await syncQuery();
+    await cargarServicios();
+  })();
+}
+
 function handleFilterChange() {
   clearFilterDebounce();
   filterTimeout = setTimeout(() => {
     filters.value.page = 1;
-    successMsg.value = null;
-    actionError.value = null;
-    void cargarServicios();
+    reloadFromFilters();
   }, 500);
 }
 
 function onCategoriaChange() {
   clearFilterDebounce();
   filters.value.page = 1;
-  successMsg.value = null;
-  actionError.value = null;
-  void cargarServicios();
+  reloadFromFilters();
 }
 
 function selectCategoria(code: CategoriaServicioCode | '') {
@@ -974,24 +1042,20 @@ function selectCategoria(code: CategoriaServicioCode | '') {
 function onOrdenChange() {
   clearFilterDebounce();
   filters.value.page = 1;
-  successMsg.value = null;
-  actionError.value = null;
-  void cargarServicios();
+  reloadFromFilters();
 }
 
 function onVerInactivosChange() {
   clearFilterDebounce();
   filters.value.page = 1;
-  successMsg.value = null;
-  actionError.value = null;
-  void cargarServicios();
+  reloadFromFilters();
 }
 
 function prevPage() {
   if ((filters.value.page ?? 1) > 1) {
     clearFilterDebounce();
     filters.value.page = (filters.value.page ?? 1) - 1;
-    void cargarServicios();
+    reloadFromFilters();
   }
 }
 
@@ -999,7 +1063,7 @@ function nextPage() {
   if ((filters.value.page ?? 1) < (pagination.value.totalPages ?? 1)) {
     clearFilterDebounce();
     filters.value.page = (filters.value.page ?? 1) + 1;
-    void cargarServicios();
+    reloadFromFilters();
   }
 }
 
@@ -1134,12 +1198,12 @@ const guardarServicio = async () => {
     }
     cerrarModal();
     await cargarServicios();
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error al guardar servicio:', err);
-    const msg = err.response?.data?.message;
-    errorCrear.value = Array.isArray(msg)
-      ? msg.join(', ')
-      : msg || 'No fue posible guardar el servicio';
+    errorCrear.value = extractError(
+      err,
+      'No fue posible guardar el servicio',
+    );
   } finally {
     isSubmitting.value = false;
   }
@@ -1204,8 +1268,26 @@ const reactivar = async (servicio: Servicio) => {
   }
 };
 
+watch(activeTenantId, () => {
+  if (filterTimeout) {
+    clearTimeout(filterTimeout);
+    filterTimeout = null;
+  }
+  resetFilters();
+  hasLoadedOnce.value = false;
+  void (async () => {
+    await syncQuery();
+    await cargarServicios();
+  })();
+});
+
 // Cargar datos al montar el componente
 onMounted(async () => {
+  if (shouldResetListQueryForTenant(activeTenantId.value)) {
+    resetFilters();
+  } else {
+    applyQueryToState();
+  }
   await cargarServicios();
   if (authStore.isAdminSistema) {
     try {

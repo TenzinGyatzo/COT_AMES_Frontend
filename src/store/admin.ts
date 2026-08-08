@@ -60,6 +60,8 @@ interface AdminState {
   };
   clienteDetalle: Cliente | null;
   isLoadingClientes: boolean;
+  /** Monotonic seq para descartar respuestas stale de fetchClientes. */
+  clientesFetchSeq: number;
 
   metricasClientes: ClientMetricDto[];
   metricasServicios: ServiceMetricDto[];
@@ -68,6 +70,8 @@ interface AdminState {
   metricasTenantId: string | null;
   /** Monotonic seq para descartar respuestas stale de fetchMetricas (race remount). */
   metricasFetchSeq: number;
+  /** Monotonic seq para descartar respuestas stale de fetchCotizacionesAdmin. */
+  cotizacionesFetchSeq: number;
 
   dashboardCounters: AdminDashboardCounters | null;
   isLoadingDashboard: boolean;
@@ -97,12 +101,14 @@ export const useAdminStore = defineStore('admin', {
     },
     clienteDetalle: null,
     isLoadingClientes: false,
+    clientesFetchSeq: 0,
 
     metricasClientes: [],
     metricasServicios: [],
     metricasTotales: null,
     metricasTenantId: null,
     metricasFetchSeq: 0,
+    cotizacionesFetchSeq: 0,
 
     dashboardCounters: null,
     isLoadingDashboard: false,
@@ -185,6 +191,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async fetchClientes(filters: AdminClientesFilters = {}): Promise<void> {
+      const seq = ++this.clientesFetchSeq;
       this.isLoadingClientes = true;
       this.error = null;
 
@@ -206,6 +213,8 @@ export const useAdminStore = defineStore('admin', {
           res = await getClientes(effective);
         }
 
+        if (seq !== this.clientesFetchSeq) return;
+
         this.clientes = Array.isArray(res.data) ? res.data : [];
         this.clientesPagination = {
           total: res.total ?? 0,
@@ -214,6 +223,7 @@ export const useAdminStore = defineStore('admin', {
           totalPages: res.totalPages ?? 1,
         };
       } catch (error: any) {
+        if (seq !== this.clientesFetchSeq) return;
         const raw = error.response?.data?.message;
         this.error = Array.isArray(raw)
           ? raw.join('. ')
@@ -229,7 +239,9 @@ export const useAdminStore = defineStore('admin', {
         };
         throw error;
       } finally {
-        this.isLoadingClientes = false;
+        if (seq === this.clientesFetchSeq) {
+          this.isLoadingClientes = false;
+        }
       }
     },
 
@@ -260,11 +272,13 @@ export const useAdminStore = defineStore('admin', {
     async fetchCotizacionesAdmin(
       filters: AdminCotizacionesFilters = {},
     ): Promise<void> {
+      const seq = ++this.cotizacionesFetchSeq;
       this.isLoadingCotizaciones = true;
       this.error = null;
 
       try {
         const response = await getCotizacionesAdmin(filters);
+        if (seq !== this.cotizacionesFetchSeq) return;
         this.resumenCotizaciones = response.data;
         this.cotizacionesPagination = {
           total: response.total,
@@ -273,6 +287,7 @@ export const useAdminStore = defineStore('admin', {
           totalPages: response.totalPages,
         };
       } catch (error: any) {
+        if (seq !== this.cotizacionesFetchSeq) return;
         this.error =
           error.response?.data?.message ||
           'No fue posible cargar las cotizaciones';
@@ -285,7 +300,9 @@ export const useAdminStore = defineStore('admin', {
         };
         throw error;
       } finally {
-        this.isLoadingCotizaciones = false;
+        if (seq === this.cotizacionesFetchSeq) {
+          this.isLoadingCotizaciones = false;
+        }
       }
     },
 

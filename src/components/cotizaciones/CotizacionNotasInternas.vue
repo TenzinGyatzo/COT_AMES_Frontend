@@ -183,6 +183,7 @@ import {
 import { useAuthStore } from '../../store/auth';
 import BaseButtonLoader from '../base/BaseButtonLoader.vue';
 import ConfirmationModal from '../common/ConfirmationModal.vue';
+import { extractError } from '../../utils/extractError';
 
 const props = defineProps<{
   cotizacionId: string;
@@ -249,14 +250,6 @@ function flashSuccess(message: string) {
   }, 3000);
 }
 
-function extractError(err: unknown): string {
-  const raw = (err as { response?: { data?: { message?: string | string[] } } })
-    ?.response?.data?.message;
-  if (Array.isArray(raw)) return raw.join('. ');
-  if (typeof raw === 'string' && raw.trim()) return raw;
-  return 'No se pudo completar la operación. Intente de nuevo.';
-}
-
 async function agregarNota() {
   const texto = nuevaNota.value.trim();
   if (!texto || isBusy.value) return;
@@ -270,7 +263,10 @@ async function agregarNota() {
     emit('updated', updated);
     flashSuccess('Nota agregada.');
   } catch (err) {
-    errorMessage.value = extractError(err);
+    errorMessage.value = extractError(
+      err,
+      'No se pudo completar la operación. Intente de nuevo.',
+    );
   } finally {
     isAdding.value = false;
   }
@@ -315,7 +311,10 @@ async function guardarEdicion(notaId: string) {
     emit('updated', updated);
     flashSuccess('Nota actualizada.');
   } catch (err) {
-    errorMessage.value = extractError(err);
+    errorMessage.value = extractError(
+      err,
+      'No se pudo completar la operación. Intente de nuevo.',
+    );
   } finally {
     isSavingEdit.value = false;
   }
@@ -339,7 +338,10 @@ async function confirmarEliminar() {
     emit('updated', updated);
     flashSuccess('Nota eliminada.');
   } catch (err) {
-    errorMessage.value = extractError(err);
+    errorMessage.value = extractError(
+      err,
+      'No se pudo completar la operación. Intente de nuevo.',
+    );
   } finally {
     isDeleting.value = false;
   }

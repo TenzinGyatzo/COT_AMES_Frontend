@@ -560,6 +560,7 @@ import {
 import type { Tenant, TenantConfigResponse } from '../../types/backend';
 import { useAuthStore } from '../../store/auth';
 import { API_BASE_URL } from '../../config/api';
+import { extractError as extractErrorBase } from '../../utils/extractError';
 
 const authStore = useAuthStore();
 
@@ -719,29 +720,18 @@ function onBancariosFormEdited() {
   bancariosFormSuccess.value = null;
 }
 
-function extractError(err: unknown, fallback: string): string {
-  const e = err as {
-    response?: { status?: number; data?: { message?: string | string[] } };
-  };
-  const status = e?.response?.status;
-  const raw = e?.response?.data?.message;
-  const msg = Array.isArray(raw)
-    ? raw.join('. ')
-    : typeof raw === 'string'
-      ? raw
-      : '';
-
+function mapConfigError(err: unknown, fallback: string): string {
+  const status = (err as { response?: { status?: number } })?.response?.status;
   if (status === 400) {
-    return (
-      msg ||
-      'Datos inválidos o falta seleccionar administración (X-Tenant-Id).'
+    return extractErrorBase(
+      err,
+      'Datos inválidos o falta seleccionar administración (X-Tenant-Id).',
     );
   }
   if (status === 403) {
-    return msg || 'No tiene permiso para esta operación.';
+    return extractErrorBase(err, 'No tiene permiso para esta operación.');
   }
-  if (msg.trim()) return msg;
-  return fallback;
+  return extractErrorBase(err, fallback);
 }
 
 async function cargar() {
@@ -783,7 +773,7 @@ async function cargar() {
     if (authStore.activeTenantId !== requestedTenantId) {
       return;
     }
-    error.value = extractError(e, 'No se pudo cargar la configuración');
+    error.value = mapConfigError(e, 'No se pudo cargar la configuración');
   } finally {
     if (authStore.activeTenantId === requestedTenantId) {
       isLoading.value = false;
@@ -809,7 +799,7 @@ async function guardarBranding() {
     fillBrandingFromConfig(updated);
     formSuccess.value = 'Branding guardado correctamente.';
   } catch (e) {
-    formError.value = extractError(e, 'No se pudo guardar el branding');
+    formError.value = mapConfigError(e, 'No se pudo guardar el branding');
   } finally {
     isSaving.value = false;
   }
@@ -846,7 +836,7 @@ async function onLogoSelected(ev: Event) {
     config.value = updated;
     formSuccess.value = 'Logo actualizado.';
   } catch (e) {
-    logoError.value = extractError(e, 'No se pudo subir el logo');
+    logoError.value = mapConfigError(e, 'No se pudo subir el logo');
   } finally {
     isSavingLogo.value = false;
     if (logoInputRef.value) logoInputRef.value.value = '';
@@ -863,7 +853,7 @@ async function eliminarLogo() {
     config.value = updated;
     formSuccess.value = 'Logo eliminado.';
   } catch (e) {
-    logoError.value = extractError(e, 'No se pudo eliminar el logo');
+    logoError.value = mapConfigError(e, 'No se pudo eliminar el logo');
   } finally {
     isSavingLogo.value = false;
   }
@@ -891,7 +881,7 @@ async function guardarEmail() {
     fillEmailFromConfig(updated);
     emailFormSuccess.value = 'Configuración de email guardada.';
   } catch (e) {
-    emailFormError.value = extractError(
+    emailFormError.value = mapConfigError(
       e,
       'No se pudo guardar la configuración de email',
     );
@@ -932,7 +922,7 @@ async function onBankLogoSelected(ev: Event) {
     config.value = updated;
     bancariosFormSuccess.value = 'Logo del banco actualizado.';
   } catch (e) {
-    bankLogoError.value = extractError(e, 'No se pudo subir el logo del banco');
+    bankLogoError.value = mapConfigError(e, 'No se pudo subir el logo del banco');
   } finally {
     isSavingBankLogo.value = false;
     if (bankLogoInputRef.value) bankLogoInputRef.value.value = '';
@@ -949,7 +939,7 @@ async function eliminarBankLogo() {
     config.value = updated;
     bancariosFormSuccess.value = 'Logo del banco eliminado.';
   } catch (e) {
-    bankLogoError.value = extractError(
+    bankLogoError.value = mapConfigError(
       e,
       'No se pudo eliminar el logo del banco',
     );
@@ -978,7 +968,7 @@ async function onSaveVigencia() {
     applyVigenciaFromConfig(updated);
     vigenciaFormSuccess.value = 'Vigencia guardada.';
   } catch (e) {
-    vigenciaFormError.value = extractError(e, 'No se pudo guardar la vigencia');
+    vigenciaFormError.value = mapConfigError(e, 'No se pudo guardar la vigencia');
   } finally {
     isSavingVigencia.value = false;
   }
@@ -1006,7 +996,7 @@ async function onSaveBancarios() {
     applyBancariosFromConfig(updated);
     bancariosFormSuccess.value = 'Datos bancarios guardados.';
   } catch (e) {
-    bancariosFormError.value = extractError(
+    bancariosFormError.value = mapConfigError(
       e,
       'No se pudo guardar los datos bancarios',
     );

@@ -767,6 +767,17 @@
       @cancel="cancelarDescartarSync"
     />
 
+    <ConfirmationModal
+      :show="showConfirmTemporalModal"
+      title="¿Cambiar a cliente temporal?"
+      message="Se borrarán el cliente, contacto y correos seleccionados. Esta acción no se puede deshacer desde aquí."
+      confirm-text="Sí, cambiar a Temporal"
+      cancel-text="Cancelar"
+      type="warning"
+      @confirm="confirmarCambioATemporal"
+      @cancel="cancelarCambioATemporal"
+    />
+
     <!-- Personalizar plantilla (snapshot) Story 6.5 -->
     <div
       v-if="showPersonalizarModal"
@@ -1029,10 +1040,43 @@ function clearDestinatariosIdentidad() {
   emailsCc.value = [];
 }
 
-function setClienteModo(temporal: boolean) {
-  if (cotizarSinCliente.value === temporal) return;
+const showConfirmTemporalModal = ref(false);
+
+function hasIdentidadDataToLose(): boolean {
+  return Boolean(
+    clienteId.value ||
+      contactoId.value ||
+      datosCliente.value.empresa.trim() ||
+      datosCliente.value.nombreContacto.trim() ||
+      datosCliente.value.correo.trim() ||
+      datosCliente.value.telefono.trim() ||
+      datosCliente.value.cargo.trim() ||
+      emailsPara.value.length > 0 ||
+      emailsCc.value.length > 0,
+  );
+}
+
+function applyClienteModo(temporal: boolean) {
   cotizarSinCliente.value = temporal;
   onCotizarSinClienteChange();
+}
+
+function setClienteModo(temporal: boolean) {
+  if (cotizarSinCliente.value === temporal) return;
+  if (temporal && hasIdentidadDataToLose()) {
+    showConfirmTemporalModal.value = true;
+    return;
+  }
+  applyClienteModo(temporal);
+}
+
+function confirmarCambioATemporal() {
+  showConfirmTemporalModal.value = false;
+  applyClienteModo(true);
+}
+
+function cancelarCambioATemporal() {
+  showConfirmTemporalModal.value = false;
 }
 
 function setContactoModo(temporal: boolean) {
@@ -1060,6 +1104,8 @@ function onClienteModoKeydown(event: KeyboardEvent) {
     event.key === 'ArrowDown';
   setClienteModo(goTemporal);
   void nextTick(() => {
+    // Si se abrió el modal Registrado→Temporal, no robamos el foco del diálogo.
+    if (showConfirmTemporalModal.value) return;
     const checked = (event.currentTarget as HTMLElement)?.querySelector(
       '[role="radio"][aria-checked="true"]',
     ) as HTMLElement | null;

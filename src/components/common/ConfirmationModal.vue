@@ -108,6 +108,7 @@
           <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
             <button
               type="button"
+              :disabled="loading"
               :class="[
                 'inline-flex w-full justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all sm:ml-3 sm:w-auto',
                 type === 'danger'
@@ -115,15 +116,17 @@
                   : type === 'warning'
                     ? 'bg-amber-600 hover:bg-amber-500'
                     : 'bg-medical-blue-600 hover:bg-medical-blue-500',
+                loading ? 'opacity-60 cursor-not-allowed' : '',
               ]"
-              @click="$emit('confirm')"
+              @click="onConfirm"
             >
-              {{ confirmText }}
+              {{ loading ? 'Procesando…' : confirmText }}
             </button>
             <button
               type="button"
-              class="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto transition-all"
-              @click="$emit('cancel')"
+              :disabled="loading"
+              class="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              @click="onCancel"
               ref="cancelButtonRef"
             >
               {{ cancelText }}
@@ -145,6 +148,8 @@ interface Props {
   confirmText?: string;
   cancelText?: string;
   type?: 'info' | 'warning' | 'danger';
+  /** Deshabilita confirmar/cancelar mientras hay request in-flight. */
+  loading?: boolean;
   /**
    * Si true, Esc/backdrop emiten `dismiss` (no `cancel`).
    * El botón Cancelar sigue emitiendo `cancel`.
@@ -156,6 +161,7 @@ const props = withDefaults(defineProps<Props>(), {
   confirmText: 'Confirmar',
   cancelText: 'Cancelar',
   type: 'info',
+  loading: false,
   separateDismiss: false,
 });
 
@@ -165,9 +171,20 @@ const emit = defineEmits<{
   (e: 'dismiss'): void;
 }>();
 
+function onConfirm() {
+  if (props.loading) return;
+  emit('confirm');
+}
+
+function onCancel() {
+  if (props.loading) return;
+  emit('cancel');
+}
+
 const { onBackdropPointerDown, onBackdropPointerUp, onBackdropPointerCancel } =
   useModalDismiss(
     () => {
+      if (props.loading) return;
       if (props.separateDismiss) emit('dismiss');
       else emit('cancel');
     },

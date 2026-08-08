@@ -220,38 +220,80 @@
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">Emitidas</h3>
           <p class="text-2xl font-semibold text-gray-900">
-            {{ metricasTotales?.cotizacionesEmitidas ?? metricasTotales?.cotizacionesTotales ?? '-' }}
+            <span
+              v-if="isLoading"
+              class="inline-block h-8 w-16 animate-pulse rounded bg-gray-200 align-middle"
+              aria-label="Cargando"
+            />
+            <template v-else>
+              {{ metricasTotales?.cotizacionesEmitidas ?? metricasTotales?.cotizacionesTotales ?? '-' }}
+            </template>
           </p>
           <p class="text-xs text-gray-500 mt-1">En el periodo filtrado</p>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">Aceptadas</h3>
           <p class="text-2xl font-semibold text-gray-900">
-            {{ metricasTotales?.cotizacionesAceptadas ?? '-' }}
+            <span
+              v-if="isLoading"
+              class="inline-block h-8 w-16 animate-pulse rounded bg-gray-200 align-middle"
+              aria-label="Cargando"
+            />
+            <template v-else>
+              {{ metricasTotales?.cotizacionesAceptadas ?? '-' }}
+            </template>
           </p>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">Rechazadas</h3>
           <p class="text-2xl font-semibold text-gray-900">
-            {{ metricasTotales?.cotizacionesRechazadas ?? '-' }}
+            <span
+              v-if="isLoading"
+              class="inline-block h-8 w-16 animate-pulse rounded bg-gray-200 align-middle"
+              aria-label="Cargando"
+            />
+            <template v-else>
+              {{ metricasTotales?.cotizacionesRechazadas ?? '-' }}
+            </template>
           </p>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">Hoy</h3>
           <p class="text-2xl font-semibold text-gray-900">
-            {{ metricasTotales?.cotizacionesHoy ?? '-' }}
+            <span
+              v-if="isLoading"
+              class="inline-block h-8 w-16 animate-pulse rounded bg-gray-200 align-middle"
+              aria-label="Cargando"
+            />
+            <template v-else>
+              {{ metricasTotales?.cotizacionesHoy ?? '-' }}
+            </template>
           </p>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">Este mes</h3>
           <p class="text-2xl font-semibold text-gray-900">
-            {{ metricasTotales?.cotizacionesMes ?? '-' }}
+            <span
+              v-if="isLoading"
+              class="inline-block h-8 w-16 animate-pulse rounded bg-gray-200 align-middle"
+              aria-label="Cargando"
+            />
+            <template v-else>
+              {{ metricasTotales?.cotizacionesMes ?? '-' }}
+            </template>
           </p>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">Este año</h3>
           <p class="text-2xl font-semibold text-gray-900">
-            {{ metricasTotales?.cotizacionesAnio ?? '-' }}
+            <span
+              v-if="isLoading"
+              class="inline-block h-8 w-16 animate-pulse rounded bg-gray-200 align-middle"
+              aria-label="Cargando"
+            />
+            <template v-else>
+              {{ metricasTotales?.cotizacionesAnio ?? '-' }}
+            </template>
           </p>
         </div>
       </div>
@@ -262,108 +304,164 @@
           <h3 class="text-sm font-medium text-gray-500 mb-2">
             Mayor Solicitante
           </h3>
-          <p
-            v-if="metricasTotales?.mayorSolicitante"
-            class="text-lg font-semibold text-gray-900"
-          >
-            {{
-              metricasTotales.mayorSolicitante.empresa ||
-              metricasTotales.mayorSolicitante.rfc ||
-              '-'
-            }}
-          </p>
-          <p v-else class="text-lg font-semibold text-gray-900">-</p>
-          <p
-            v-if="metricasTotales?.mayorSolicitante"
-            class="text-xs text-gray-500 mt-1"
-          >
-            {{ metricasTotales.mayorSolicitante.totalCotizaciones }}
-            cotizaciones
-          </p>
+          <template v-if="isLoading">
+            <p class="text-lg font-semibold text-gray-900">
+              <span
+                class="inline-block h-6 w-28 animate-pulse rounded bg-gray-200 align-middle"
+                aria-label="Cargando"
+              />
+            </p>
+          </template>
+          <template v-else>
+            <p
+              v-if="metricasTotales?.mayorSolicitante"
+              class="text-lg font-semibold text-gray-900"
+            >
+              {{
+                metricasTotales.mayorSolicitante.empresa ||
+                metricasTotales.mayorSolicitante.rfc ||
+                '-'
+              }}
+            </p>
+            <p v-else class="text-lg font-semibold text-gray-900">-</p>
+            <p
+              v-if="metricasTotales?.mayorSolicitante"
+              class="text-xs text-gray-500 mt-1"
+            >
+              {{ metricasTotales.mayorSolicitante.totalCotizaciones }}
+              cotizaciones
+            </p>
+          </template>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
             Cliente más activo del mes
           </h3>
-          <p
-            v-if="metricasTotales?.clienteMasActivoMes"
-            class="text-lg font-semibold text-gray-900"
-          >
-            {{
-              metricasTotales.clienteMasActivoMes.empresa ||
-              metricasTotales.clienteMasActivoMes.rfc ||
-              '-'
-            }}
-          </p>
-          <p v-else class="text-lg font-semibold text-gray-900">-</p>
-          <p
-            v-if="metricasTotales?.clienteMasActivoMes"
-            class="text-xs text-gray-500 mt-1"
-          >
-            {{ metricasTotales.clienteMasActivoMes.totalCotizaciones }}
-            cotizaciones este mes
-          </p>
+          <template v-if="isLoading">
+            <p class="text-lg font-semibold text-gray-900">
+              <span
+                class="inline-block h-6 w-28 animate-pulse rounded bg-gray-200 align-middle"
+                aria-label="Cargando"
+              />
+            </p>
+          </template>
+          <template v-else>
+            <p
+              v-if="metricasTotales?.clienteMasActivoMes"
+              class="text-lg font-semibold text-gray-900"
+            >
+              {{
+                metricasTotales.clienteMasActivoMes.empresa ||
+                metricasTotales.clienteMasActivoMes.rfc ||
+                '-'
+              }}
+            </p>
+            <p v-else class="text-lg font-semibold text-gray-900">-</p>
+            <p
+              v-if="metricasTotales?.clienteMasActivoMes"
+              class="text-xs text-gray-500 mt-1"
+            >
+              {{ metricasTotales.clienteMasActivoMes.totalCotizaciones }}
+              cotizaciones este mes
+            </p>
+          </template>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
             Servicio más contratado
           </h3>
-          <p class="text-lg font-semibold text-gray-900">
-            {{ metricasTotales?.servicioMasSolicitado?.nombreServicio || '-' }}
-          </p>
-          <p
-            v-if="metricasTotales?.servicioMasSolicitado"
-            class="text-xs text-gray-500"
-          >
-            {{ metricasTotales.servicioMasSolicitado.vecesSolicitado }} veces
-          </p>
+          <template v-if="isLoading">
+            <p class="text-lg font-semibold text-gray-900">
+              <span
+                class="inline-block h-6 w-28 animate-pulse rounded bg-gray-200 align-middle"
+                aria-label="Cargando"
+              />
+            </p>
+          </template>
+          <template v-else>
+            <p class="text-lg font-semibold text-gray-900">
+              {{ metricasTotales?.servicioMasSolicitado?.nombreServicio || '-' }}
+            </p>
+            <p
+              v-if="metricasTotales?.servicioMasSolicitado"
+              class="text-xs text-gray-500"
+            >
+              {{ metricasTotales.servicioMasSolicitado.vecesSolicitado }} veces
+            </p>
+          </template>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
             Servicio más rentable
           </h3>
-          <p class="text-lg font-semibold text-gray-900">
-            {{ metricasTotales?.servicioMasRentable?.nombreServicio || '-' }}
-          </p>
-          <p
-            v-if="metricasTotales?.servicioMasRentable"
-            class="text-xs text-gray-500"
-          >
-            {{ formatMoney(metricasTotales.servicioMasRentable.ingresosTotales) }}
-          </p>
+          <template v-if="isLoading">
+            <p class="text-lg font-semibold text-gray-900">
+              <span
+                class="inline-block h-6 w-28 animate-pulse rounded bg-gray-200 align-middle"
+                aria-label="Cargando"
+              />
+            </p>
+          </template>
+          <template v-else>
+            <p class="text-lg font-semibold text-gray-900">
+              {{ metricasTotales?.servicioMasRentable?.nombreServicio || '-' }}
+            </p>
+            <p
+              v-if="metricasTotales?.servicioMasRentable"
+              class="text-xs text-gray-500"
+            >
+              {{ formatMoney(metricasTotales.servicioMasRentable.ingresosTotales) }}
+            </p>
+          </template>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
             Tasa de conversión
           </h3>
-          <p class="text-lg font-semibold text-gray-900">
-            {{
-              metricasTotales?.tasaConversion !== undefined &&
-              metricasTotales?.cotizacionesEmitidas
-                ? (metricasTotales.tasaConversion * 100).toFixed(1) + '%'
-                : metricasTotales?.tasaConversion === 0
-                  ? '0.0%'
-                  : '-'
-            }}
-          </p>
-          <p
-            v-if="metricasTotales?.cotizacionesEmitidas !== undefined"
-            class="text-xs text-gray-500 mt-1"
-          >
-            {{ metricasTotales.cotizacionesAceptadas ?? 0 }} aceptadas de
-            {{ metricasTotales.cotizacionesEmitidas }} emitidas
-          </p>
+          <template v-if="isLoading">
+            <p class="text-lg font-semibold text-gray-900">
+              <span
+                class="inline-block h-6 w-16 animate-pulse rounded bg-gray-200 align-middle"
+                aria-label="Cargando"
+              />
+            </p>
+          </template>
+          <template v-else>
+            <p class="text-lg font-semibold text-gray-900">
+              {{
+                metricasTotales?.tasaConversion !== undefined &&
+                ofertasValidasConversion > 0
+                  ? (metricasTotales.tasaConversion * 100).toFixed(1) + '%'
+                  : metricasTotales?.tasaConversion === 0
+                    ? '0.0%'
+                    : '-'
+              }}
+            </p>
+            <p
+              v-if="metricasTotales?.cotizacionesEmitidas !== undefined"
+              class="text-xs text-gray-500 mt-1"
+            >
+              Ofertas: {{ ofertasValidasConversion }} - Aceptadas: {{ metricasTotales.cotizacionesAceptadas ?? 0 }} 
+            </p>
+          </template>
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
             Ingresos totales
           </h3>
           <p class="text-lg font-semibold text-gray-900">
-            {{
-              metricasTotales
-                ? formatMoney(metricasTotales.ingresosTotales)
-                : '-'
-            }}
+            <span
+              v-if="isLoading"
+              class="inline-block h-6 w-24 animate-pulse rounded bg-gray-200 align-middle"
+              aria-label="Cargando"
+            />
+            <template v-else>
+              {{
+                metricasTotales
+                  ? formatMoney(metricasTotales.ingresosTotales)
+                  : '-'
+              }}
+            </template>
           </p>
           <p class="text-xs text-gray-500 mt-1">No incluye IVA</p>
         </div>
@@ -373,7 +471,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
 import { formatMoney } from '../../utils/currency';
 
@@ -391,6 +489,13 @@ const {
 
 const fechaDesde = ref<string>('');
 const fechaHasta = ref<string>('');
+
+/** Denominador de conversión: emitidas menos canceladas (alineado al BE). */
+const ofertasValidasConversion = computed(() => {
+  const emitidas = metricasTotales.value?.cotizacionesEmitidas ?? 0;
+  const canceladas = metricasTotales.value?.cotizacionesCanceladas ?? 0;
+  return Math.max(0, emitidas - canceladas);
+});
 
 /**
  * Construye los filtros actuales y aplica las métricas

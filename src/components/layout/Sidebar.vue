@@ -315,9 +315,12 @@ function onTenantChange(event: Event) {
   if (!value || value === authStore.activeTenantId) return;
   authStore.setActiveTenantId(value);
   closeSidebar();
+  // Limpiar query de filtros del tenant anterior (listados persisten en route.query).
   const listPath = listPathForDetailRoute();
   if (listPath) {
-    void router.replace(listPath);
+    void router.replace({ path: listPath, query: {} });
+  } else {
+    void router.replace({ path: route.path, query: {} });
   }
 }
 

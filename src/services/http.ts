@@ -16,6 +16,13 @@ const httpClient = axios.create({
   },
 });
 
+/** Evita ciclo http ↔ router ↔ auth: se registra desde main.ts */
+let onUnauthorized: (() => void) | null = null;
+
+export function setUnauthorizedHandler(handler: () => void): void {
+  onUnauthorized = handler;
+}
+
 /** True solo para el catálogo GET /tenants (con o sin slash/query). */
 function isTenantsCatalogUrl(url?: string): boolean {
   if (!url) return false;
@@ -100,6 +107,7 @@ httpClient.interceptors.response.use(
     ) {
       const authStore = useAuthStore();
       authStore.logout();
+      onUnauthorized?.();
     }
 
     return Promise.reject(error);

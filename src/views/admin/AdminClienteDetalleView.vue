@@ -1,6 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <BaseBackButton to="/admin/clientes" class="mb-4" />
+    <BaseBackButton class="mb-4" />
 
     <div
       class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6"
@@ -551,6 +551,7 @@ import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
 import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
 import ModalContactoForm from '../../components/common/ModalContactoForm.vue';
 import type { ContactoFormFields } from '../../components/common/ModalContactoForm.vue';
+import { extractError } from '../../utils/extractError';
 
 const route = useRoute();
 const {
@@ -621,19 +622,6 @@ const emptyContactosMessage = computed(() =>
     ? 'No hay contactos inactivos'
     : 'Aún no hay contactos. Agrega el primero.',
 );
-
-function extractError(err: unknown, fallback: string): string {
-  const e = err as {
-    response?: { data?: { message?: string | string[] } };
-  };
-  const raw = e?.response?.data?.message;
-  const msg = Array.isArray(raw)
-    ? raw.join('. ')
-    : typeof raw === 'string'
-      ? raw
-      : '';
-  return msg.trim() || fallback;
-}
 
 function abrirEditar() {
   if (!clienteDetalle.value) return;

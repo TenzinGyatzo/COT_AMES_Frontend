@@ -85,11 +85,12 @@
     </div>
 
     <BaseSectionLoader
-      v-if="isLoadingClientes"
+      v-if="!hasLoadedOnce"
       message="Cargando clientes..."
     />
 
-    <div v-else>
+    <div v-else class="relative">
+      <ListLoadingOverlay v-if="isLoadingClientes" />
       <div
         v-if="clientesAgrupados.length === 0"
         class="bg-white shadow-md rounded-lg p-6 md:p-8 text-center"
@@ -282,7 +283,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { useAdmin } from '../../composables/useAdmin';
 import {
   createCliente,
@@ -293,10 +296,26 @@ import {
 } from '../../services/admin-api.service';
 import type { Cliente } from '../../types/backend';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
+import ListLoadingOverlay from '../../components/base/ListLoadingOverlay.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
 import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
 import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
+import { extractError } from '../../utils/extractError';
+import {
+  boolQuery,
+  compactQuery,
+  queryFlag,
+  queryInt,
+  queryString,
+  shouldResetListQueryForTenant,
+} from '../../utils/listQuery';
+import { useAuthStore } from '../../store/auth';
+
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+const { activeTenantId } = storeToRefs(authStore);
 
 const {
   clientes,
@@ -314,6 +333,7 @@ const filters = ref<AdminClientesFilters>({
   limit: 20,
 });
 const verInactivos = ref(false);
+const hasLoadedOnce = ref(false);
 
 const successMsg = ref<string | null>(null);
 const actionError = ref<string | null>(null);
@@ -336,17 +356,56 @@ const mensajeConfirmDesactivar = computed(() => {
 
 let filterTimeout: ReturnType<typeof setTimeout> | null = null;
 
+function applyQueryToState() {
+  filters.value.empresa = queryString(route.query, 'empresa') ?? '';
+  filters.value.razonSocial = queryString(route.query, 'razonSocial') ?? '';
+  filters.value.rfc = queryString(route.query, 'rfc') ?? '';
+  filters.value.page = queryInt(route.query, 'page', 1);
+  filters.value.limit = queryInt(route.query, 'limit', 20, { max: 100 });
+  verInactivos.value = queryFlag(route.query, 'verInactivos');
+}
+
+async function syncQuery() {
+  const next = compactQuery({
+    empresa: filters.value.empresa?.trim() || undefined,
+    razonSocial: filters.value.razonSocial?.trim() || undefined,
+    rfc: filters.value.rfc?.trim() || undefined,
+    page: (filters.value.page ?? 1) > 1 ? filters.value.page : undefined,
+    limit:
+      (filters.value.limit ?? 20) !== 20 ? filters.value.limit : undefined,
+    verInactivos: boolQuery(verInactivos.value),
+  });
+  await router.replace({ query: next });
+}
+
+function resetFilters() {
+  filters.value = {
+    empresa: '',
+    razonSocial: '',
+    rfc: '',
+    page: 1,
+    limit: 20,
+  };
+  verInactivos.value = false;
+}
+
 function handleFilterChange() {
   if (filterTimeout) clearTimeout(filterTimeout);
   filterTimeout = setTimeout(() => {
     filters.value.page = 1;
-    loadClientes();
+    void (async () => {
+      await syncQuery();
+      await loadClientes();
+    })();
   }, 500);
 }
 
 function onVerInactivosChange() {
   filters.value.page = 1;
-  loadClientes();
+  void (async () => {
+    await syncQuery();
+    await loadClientes();
+  })();
 }
 
 async function loadClientes() {
@@ -365,8 +424,11 @@ async function loadClientes() {
     await obtenerClientes(activeFilters);
     // Sync tras clamp de página en store
     filters.value.page = clientesPagination.value.page;
+    hasLoadedOnce.value = true;
+    await syncQuery();
   } catch (err) {
     console.error('Error al cargar clientes:', err);
+    hasLoadedOnce.value = true;
   }
 }
 
@@ -380,15 +442,20 @@ const tieneFiltrosBusqueda = computed(
 );
 
 const emptyStateMessage = computed(() => {
+  if (tieneFiltrosBusqueda.value) {
+    return 'No se encontraron clientes con esos filtros';
+  }
   if (verInactivos.value) return 'No hay clientes inactivos';
-  if (tieneFiltrosBusqueda.value) return 'No se encontraron clientes con esos filtros';
   return 'No se encontraron clientes';
 });
 
 function prevPage() {
   if ((filters.value.page ?? 1) > 1) {
     filters.value.page = (filters.value.page ?? 1) - 1;
-    loadClientes();
+    void (async () => {
+      await syncQuery();
+      await loadClientes();
+    })();
   }
 }
 
@@ -397,7 +464,10 @@ function nextPage() {
     (filters.value.page ?? 1) < (clientesPagination.value.totalPages ?? 1)
   ) {
     filters.value.page = (filters.value.page ?? 1) + 1;
-    loadClientes();
+    void (async () => {
+      await syncQuery();
+      await loadClientes();
+    })();
   }
 }
 
@@ -430,20 +500,6 @@ const clientesAgrupados = computed(() => {
 
   return Array.from(grupos.values());
 });
-
-function extractError(err: unknown, fallback: string): string {
-  const e = err as {
-    response?: { status?: number; data?: { message?: string | string[] } };
-  };
-  const raw = e?.response?.data?.message;
-  const msg = Array.isArray(raw)
-    ? raw.join('. ')
-    : typeof raw === 'string'
-      ? raw
-      : '';
-  if (msg.trim()) return msg;
-  return fallback;
-}
 
 function abrirNuevo() {
   modoEdicion.value = false;
@@ -562,8 +618,26 @@ async function onModalClienteSubmit(fields: ClienteFormFields) {
   }
 }
 
+watch(activeTenantId, () => {
+  if (filterTimeout) {
+    clearTimeout(filterTimeout);
+    filterTimeout = null;
+  }
+  resetFilters();
+  hasLoadedOnce.value = false;
+  void (async () => {
+    await syncQuery();
+    await loadClientes();
+  })();
+});
+
 onMounted(() => {
-  loadClientes();
+  if (shouldResetListQueryForTenant(activeTenantId.value)) {
+    resetFilters();
+  } else {
+    applyQueryToState();
+  }
+  void loadClientes();
 });
 
 onUnmounted(() => {

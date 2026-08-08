@@ -1,10 +1,6 @@
 <template>
   <div class="max-w-7xl mx-auto">
-    <BaseBackButton
-      to="/admin/cotizaciones"
-      class="mb-4"
-      default-text="Volver a Cotizaciones"
-    />
+    <BaseBackButton class="mb-4" default-text="Volver a Cotizaciones" />
 
     <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">
       Detalle de Cotización
@@ -484,6 +480,14 @@
         {{ successMessage }}
       </div>
 
+      <div
+        v-if="actionError"
+        class="mb-4 rounded-md px-4 py-3 text-sm bg-red-50 text-red-700 border border-red-200"
+        role="alert"
+      >
+        {{ actionError }}
+      </div>
+
       <!-- Items de la cotización -->
       <div class="bg-white shadow-md rounded-lg p-4 md:p-6">
         <h2
@@ -920,6 +924,7 @@ import {
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
 import { formatMoney } from '../../utils/currency';
+import { extractError } from '../../utils/extractError';
 import type { Servicio } from '../../types/backend';
 import { enviarCorreoCotizacion, getCotizacionAdminById } from '../../services/admin-api.service';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
@@ -1339,15 +1344,11 @@ async function enviarCorreoDesdeDetalle(payload: {
       /* el envío ya fue exitoso */
     }
   } catch (sendErr: unknown) {
-    const err = sendErr as {
-      response?: { data?: { message?: string | string[] } };
-    };
-    const msg = err.response?.data?.message;
     emailSendOk.value = false;
-    emailSendError.value = Array.isArray(msg)
-      ? msg.join(', ')
-      : msg ||
-        'No se pudo enviar el correo. Puedes corregir destinatarios y reintentar.';
+    emailSendError.value = extractError(
+      sendErr,
+      'No se pudo enviar el correo. Puedes corregir destinatarios y reintentar.',
+    );
   } finally {
     isSendingEmail.value = false;
   }
@@ -1372,6 +1373,7 @@ const showMasAcciones = ref(false);
 const showConfirmEstado = ref(false);
 const estadoPendiente = ref<EstadoCotizacion | null>(null);
 const successMessage = ref<string | null>(null);
+const actionError = ref<string | null>(null);
 const flashTone = ref<'success' | 'warning'>('success');
 
 const ESTADOS_REPETIBLES: EstadoCotizacion[] = [
@@ -1566,6 +1568,7 @@ async function ejecutarRepetirAccion(payload: {
   if (!cotizacionDetalle.value || isProcessing.value) return;
   isProcessing.value = true;
   successMessage.value = null;
+  actionError.value = null;
   const fuenteId = cotizacionDetalle.value._id;
   const fuenteFolio = cotizacionDetalle.value.folio || '';
   const cancelarOriginal =
@@ -1638,7 +1641,10 @@ async function ejecutarRepetirAccion(payload: {
       return;
     }
     console.error('Error al repetir cotización:', error);
-    alert('Ocurrió un error al repetir la cotización.');
+    actionError.value = extractError(
+      error,
+      'Ocurrió un error al repetir la cotización.',
+    );
   } finally {
     isProcessing.value = false;
   }
@@ -1706,6 +1712,7 @@ async function handleAceptar() {
   showMasAcciones.value = false;
   isProcessing.value = true;
   successMessage.value = null;
+  actionError.value = null;
   const id = cotizacionDetalle.value._id;
   try {
     await aceptarCotizacionAdmin(id, {});
@@ -1717,7 +1724,10 @@ async function handleAceptar() {
     );
   } catch (error) {
     console.error('Error al aceptar cotización:', error);
-    alert('Ocurrió un error al aceptar la cotización.');
+    actionError.value = extractError(
+      error,
+      'Ocurrió un error al aceptar la cotización.',
+    );
   } finally {
     isProcessing.value = false;
   }
@@ -1734,6 +1744,7 @@ async function confirmarRechazo() {
 
   isProcessing.value = true;
   successMessage.value = null;
+  actionError.value = null;
   const id = cotizacionDetalle.value._id;
   try {
     await rechazarCotizacionAdmin(id);
@@ -1745,7 +1756,10 @@ async function confirmarRechazo() {
     );
   } catch (error) {
     console.error('Error al rechazar cotización:', error);
-    alert('Ocurrió un error al rechazar la cotización.');
+    actionError.value = extractError(
+      error,
+      'Ocurrió un error al rechazar la cotización.',
+    );
   } finally {
     isProcessing.value = false;
   }
@@ -1773,6 +1787,7 @@ async function confirmarCambioEstado() {
 
   isProcessing.value = true;
   successMessage.value = null;
+  actionError.value = null;
   const id = cotizacionDetalle.value._id;
   try {
     await cambiarEstadoCotizacion(id, destino);
@@ -1785,7 +1800,10 @@ async function confirmarCambioEstado() {
     );
   } catch (error) {
     console.error('Error al cambiar estado:', error);
-    alert('Ocurrió un error al cambiar el estado.');
+    actionError.value = extractError(
+      error,
+      'Ocurrió un error al cambiar el estado.',
+    );
   } finally {
     isProcessing.value = false;
   }

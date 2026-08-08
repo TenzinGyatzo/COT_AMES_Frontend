@@ -273,7 +273,9 @@ export interface TotalsMetricDto {
   cotizacionesEmitidas: number;
   cotizacionesAceptadas: number;
   cotizacionesRechazadas: number;
-  /** aceptadas / emitidas */
+  /** Excluidas del denominador de tasaConversion. */
+  cotizacionesCanceladas?: number;
+  /** aceptadas / (emitidas − canceladas) */
   tasaConversion: number;
   ingresosTotales: number;
 }

@@ -55,17 +55,22 @@
       {{ actionError }}
     </div>
 
-    <div v-if="isLoading" class="bg-white shadow-md rounded-lg p-8 text-center">
-      <p class="text-gray-500">Cargando plantillas...</p>
-    </div>
     <div
-      v-else-if="error"
-      class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+      v-if="!hasLoadedOnce"
+      class="bg-white shadow-md rounded-lg p-8 text-center"
     >
-      <p class="text-red-800">{{ error }}</p>
+      <p class="text-gray-500">Cargando plantillas...</p>
     </div>
 
     <template v-else>
+      <div
+        v-if="error"
+        class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+      >
+        <p class="text-red-800">{{ error }}</p>
+      </div>
+      <div class="relative">
+        <ListLoadingOverlay v-if="isLoading" />
       <div class="bg-white shadow-md rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200">
@@ -200,6 +205,7 @@
           </div>
         </div>
       </div>
+      </div>
     </template>
 
     <!-- Modal create/edit -->
@@ -284,7 +290,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, toRaw } from 'vue';
+import { computed, ref, onMounted, onUnmounted, toRaw, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import {
   getPlantillas,
   createPlantilla,
@@ -297,15 +305,32 @@ import {
 import type { Plantilla, SeccionPlantilla } from '../../types/backend';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
+import ListLoadingOverlay from '../../components/base/ListLoadingOverlay.vue';
 import PlantillaSeccionesEditor from '../../components/plantillas/PlantillaSeccionesEditor.vue';
 import {
   buildCuerpoPayload,
   emptyTipTapDoc,
 } from '../../components/plantillas/richtext-cuerpo';
 import { useModalDismiss } from '../../composables/useModalDismiss';
+import { extractError } from '../../utils/extractError';
+import {
+  boolQuery,
+  compactQuery,
+  queryFlag,
+  queryInt,
+  queryString,
+  shouldResetListQueryForTenant,
+} from '../../utils/listQuery';
+import { useAuthStore } from '../../store/auth';
+
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+const { activeTenantId } = storeToRefs(authStore);
 
 const plantillas = ref<Plantilla[]>([]);
 const isLoading = ref(false);
+const hasLoadedOnce = ref(false);
 const error = ref<string | null>(null);
 const verInactivos = ref(false);
 const successMsg = ref<string | null>(null);
@@ -386,10 +411,27 @@ function resumenSecciones(p: Plantilla): string {
     .join(', ');
 }
 
-function extractError(err: any, fallback: string): string {
-  const msg = err?.response?.data?.message;
-  if (Array.isArray(msg)) return msg.join(', ');
-  return msg || fallback;
+function applyQueryToState() {
+  filters.value.nombre = queryString(route.query, 'nombre') ?? '';
+  filters.value.page = queryInt(route.query, 'page', 1);
+  filters.value.limit = queryInt(route.query, 'limit', 20, { max: 100 });
+  verInactivos.value = queryFlag(route.query, 'verInactivos');
+}
+
+async function syncQuery() {
+  const next = compactQuery({
+    nombre: filters.value.nombre?.trim() || undefined,
+    page: (filters.value.page ?? 1) > 1 ? filters.value.page : undefined,
+    limit:
+      (filters.value.limit ?? 20) !== 20 ? filters.value.limit : undefined,
+    verInactivos: boolQuery(verInactivos.value),
+  });
+  await router.replace({ query: next });
+}
+
+function resetFilters() {
+  filters.value = { nombre: '', page: 1, limit: 20 };
+  verInactivos.value = false;
 }
 
 const cargarPlantillas = async () => {
@@ -423,11 +465,15 @@ const cargarPlantillas = async () => {
       totalPages: res.totalPages,
     };
     filters.value.page = res.total === 0 ? 1 : res.page;
+    await syncQuery();
   } catch (err: any) {
     if (seq !== loadSeq) return;
     error.value = extractError(err, 'No fue posible cargar las plantillas');
   } finally {
-    if (seq === loadSeq) isLoading.value = false;
+    if (seq === loadSeq) {
+      isLoading.value = false;
+      hasLoadedOnce.value = true;
+    }
   }
 };
 
@@ -438,29 +484,34 @@ function clearFilterDebounce() {
   }
 }
 
+function reloadFromFilters() {
+  successMsg.value = null;
+  actionError.value = null;
+  void (async () => {
+    await syncQuery();
+    await cargarPlantillas();
+  })();
+}
+
 function handleFilterChange() {
   clearFilterDebounce();
   filterTimeout = setTimeout(() => {
     filters.value.page = 1;
-    successMsg.value = null;
-    actionError.value = null;
-    void cargarPlantillas();
+    reloadFromFilters();
   }, 500);
 }
 
 function onVerInactivosChange() {
   clearFilterDebounce();
   filters.value.page = 1;
-  successMsg.value = null;
-  actionError.value = null;
-  void cargarPlantillas();
+  reloadFromFilters();
 }
 
 function prevPage() {
   if ((filters.value.page ?? 1) > 1) {
     clearFilterDebounce();
     filters.value.page = (filters.value.page ?? 1) - 1;
-    void cargarPlantillas();
+    reloadFromFilters();
   }
 }
 
@@ -468,7 +519,7 @@ function nextPage() {
   if ((filters.value.page ?? 1) < (pagination.value.totalPages ?? 1)) {
     clearFilterDebounce();
     filters.value.page = (filters.value.page ?? 1) + 1;
-    void cargarPlantillas();
+    reloadFromFilters();
   }
 }
 
@@ -633,7 +684,25 @@ async function reactivar(p: Plantilla) {
   }
 }
 
+watch(activeTenantId, () => {
+  if (filterTimeout) {
+    clearTimeout(filterTimeout);
+    filterTimeout = null;
+  }
+  resetFilters();
+  hasLoadedOnce.value = false;
+  void (async () => {
+    await syncQuery();
+    await cargarPlantillas();
+  })();
+});
+
 onMounted(() => {
+  if (shouldResetListQueryForTenant(activeTenantId.value)) {
+    resetFilters();
+  } else {
+    applyQueryToState();
+  }
   void cargarPlantillas();
 });
 

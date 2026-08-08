@@ -69,11 +69,12 @@
 
     <!-- Tabla de cotizaciones -->
     <BaseSectionLoader
-      v-if="isLoadingCotizaciones"
+      v-if="!hasLoadedOnce"
       message="Cargando cotizaciones..."
     />
 
-    <div v-else>
+    <div v-else class="relative">
+      <ListLoadingOverlay v-if="isLoadingCotizaciones" />
       <div
         v-if="resumenCotizaciones.length === 0"
         class="bg-white shadow-md rounded-lg p-8 text-center"
@@ -107,12 +108,12 @@
                   Empresa
                 </th>
                 <th
-                  class="table-cell md:hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Solicitante de la Cotización
                 </th>
                 <th
-                  class="table-cell md:hidden xl:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  class="hidden lg:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
                   Enviado por
                 </th>
@@ -154,12 +155,12 @@
                   {{ cotizacion.empresa || '-' }}
                 </td>
                 <td
-                  class="table-cell md:hidden xl:table-cell px-6 py-4 text-sm text-gray-900"
+                  class="hidden lg:table-cell px-6 py-4 text-sm text-gray-900"
                 >
                   {{ cotizacion.nombreSolicitante || '-' }}
                 </td>
                 <td
-                  class="table-cell md:hidden xl:table-cell px-6 py-4 text-sm text-gray-900"
+                  class="hidden lg:table-cell px-6 py-4 text-sm text-gray-900"
                 >
                   {{ cotizacion.creadoPorNombre?.trim() || '-' }}
                 </td>
@@ -231,11 +232,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { useAdmin } from '../../composables/useAdmin';
 import type { AdminCotizacionesFilters } from '../../services/admin-api.service';
 import { formatMoney } from '../../utils/currency';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
+import ListLoadingOverlay from '../../components/base/ListLoadingOverlay.vue';
+import {
+  compactQuery,
+  queryDate,
+  queryInt,
+  queryString,
+  shouldResetListQueryForTenant,
+} from '../../utils/listQuery';
+import { useAuthStore } from '../../store/auth';
+
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
+const { activeTenantId } = storeToRefs(authStore);
 
 const {
   resumenCotizaciones,
@@ -245,6 +262,14 @@ const {
   obtenerCotizacionesAdmin,
 } = useAdmin();
 
+const ESTADOS = [
+  'vigente',
+  'vencida',
+  'aceptada',
+  'rechazada',
+  'cancelada',
+] as const;
+
 const filters = ref<AdminCotizacionesFilters>({
   estado: undefined,
   search: '',
@@ -253,8 +278,45 @@ const filters = ref<AdminCotizacionesFilters>({
   page: 1,
   limit: 10,
 });
+const hasLoadedOnce = ref(false);
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null;
+
+function applyQueryToState() {
+  const estado = queryString(route.query, 'estado');
+  filters.value.estado =
+    estado && (ESTADOS as readonly string[]).includes(estado)
+      ? (estado as AdminCotizacionesFilters['estado'])
+      : undefined;
+  filters.value.search = queryString(route.query, 'search') ?? '';
+  filters.value.fechaDesde = queryDate(route.query, 'fechaDesde') ?? '';
+  filters.value.fechaHasta = queryDate(route.query, 'fechaHasta') ?? '';
+  filters.value.page = queryInt(route.query, 'page', 1);
+  filters.value.limit = queryInt(route.query, 'limit', 10, { max: 100 });
+}
+
+async function syncQuery() {
+  const next = compactQuery({
+    estado: filters.value.estado || undefined,
+    search: filters.value.search?.trim() || undefined,
+    fechaDesde: filters.value.fechaDesde || undefined,
+    fechaHasta: filters.value.fechaHasta || undefined,
+    page: (filters.value.page ?? 1) > 1 ? filters.value.page : undefined,
+    limit: (filters.value.limit ?? 10) !== 10 ? filters.value.limit : undefined,
+  });
+  await router.replace({ query: next });
+}
+
+function resetFilters() {
+  filters.value = {
+    estado: undefined,
+    search: '',
+    fechaDesde: '',
+    fechaHasta: '',
+    page: 1,
+    limit: 10,
+  };
+}
 
 const tieneFiltrosActivos = computed(
   () =>
@@ -279,13 +341,19 @@ function handleSearchChange() {
 
   searchTimeout = setTimeout(() => {
     filters.value.page = 1;
-    loadCotizaciones();
+    void (async () => {
+      await syncQuery();
+      await loadCotizaciones();
+    })();
   }, 500);
 }
 
 function onFilterChange() {
   filters.value.page = 1;
-  loadCotizaciones();
+  void (async () => {
+    await syncQuery();
+    await loadCotizaciones();
+  })();
 }
 
 async function loadCotizaciones() {
@@ -334,16 +402,23 @@ async function loadCotizaciones() {
     }
 
     await obtenerCotizacionesAdmin(activeFilters);
+    filters.value.page = cotizacionesPagination.value.page;
+    hasLoadedOnce.value = true;
+    await syncQuery();
   } catch (err) {
     // El error ya se maneja en el store
     console.error('Error al cargar cotizaciones:', err);
+    hasLoadedOnce.value = true;
   }
 }
 
 function goToPrevPage() {
   if (cotizacionesPagination.value.page > 1) {
     filters.value.page = cotizacionesPagination.value.page - 1;
-    loadCotizaciones();
+    void (async () => {
+      await syncQuery();
+      await loadCotizaciones();
+    })();
   }
 }
 
@@ -352,7 +427,10 @@ function goToNextPage() {
     cotizacionesPagination.value.page < cotizacionesPagination.value.totalPages
   ) {
     filters.value.page = cotizacionesPagination.value.page + 1;
-    loadCotizaciones();
+    void (async () => {
+      await syncQuery();
+      await loadCotizaciones();
+    })();
   }
 }
 
@@ -387,9 +465,26 @@ function getEstadoBadgeClass(estado: string): string {
   return classes[estado] || 'bg-gray-100 text-gray-800';
 }
 
-// Cargar cotizaciones al montar el componente
+watch(activeTenantId, () => {
+  if (searchTimeout) {
+    clearTimeout(searchTimeout);
+    searchTimeout = null;
+  }
+  resetFilters();
+  hasLoadedOnce.value = false;
+  void (async () => {
+    await syncQuery();
+    await loadCotizaciones();
+  })();
+});
+
 onMounted(() => {
-  loadCotizaciones();
+  if (shouldResetListQueryForTenant(activeTenantId.value)) {
+    resetFilters();
+  } else {
+    applyQueryToState();
+  }
+  void loadCotizaciones();
 });
 
 onUnmounted(() => {

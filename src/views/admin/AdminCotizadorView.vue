@@ -10,6 +10,14 @@
     </div>
 
     <div
+      v-if="avisoCancelacionOriginal"
+      class="mb-4 rounded-md border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800"
+      role="status"
+    >
+      {{ avisoCancelacionOriginal }}
+    </div>
+
+    <div
       v-if="repetirBannerVisible"
       class="mb-6 rounded-xl border border-medical-blue-200 bg-medical-blue-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
       role="status"
@@ -19,6 +27,9 @@
         <span class="font-semibold font-mono">{{ repetirSourceFolio }}</span>
         ({{ repetirModoLabel }}).
         Revise y modifique antes de confirmar.
+        <span v-if="repetirCancelarOriginal" class="block mt-1 text-slate-700">
+          Al crear, la original se marcará como cancelada.
+        </span>
       </p>
       <div class="flex items-center gap-2 shrink-0">
         <router-link
@@ -867,6 +878,7 @@ import type {
   Servicio,
 } from '../../types/backend';
 import {
+  cambiarEstadoCotizacion,
   createAdminCotizacion,
   createCliente,
   createContacto,
@@ -898,6 +910,8 @@ const repetirBannerVisible = ref(false);
 const repetirSourceFolio = ref('');
 const repetirSourceId = ref('');
 const repetirModoLabel = ref('');
+const repetirCancelarOriginal = ref(false);
+const avisoCancelacionOriginal = ref<string | null>(null);
 
 function cerrarRepetirBanner() {
   repetirBannerVisible.value = false;
@@ -1504,6 +1518,8 @@ onMounted(async () => {
     });
     repetirSourceFolio.value = repetirDraft.sourceFolio;
     repetirSourceId.value = repetirDraft.sourceCotizacionId;
+    repetirCancelarOriginal.value = !!repetirDraft.cancelarOriginal;
+    avisoCancelacionOriginal.value = null;
     repetirModoLabel.value =
       repetirDraft.modoPrecios === 'originales'
         ? 'precios originales'
@@ -2116,6 +2132,31 @@ const confirmarGeneracion = async () => {
     mensajeValidacion.value = '';
     pendingCreate.value = null;
 
+    if (repetirCancelarOriginal.value && repetirSourceId.value) {
+      try {
+        await cambiarEstadoCotizacion(repetirSourceId.value, 'cancelada');
+        avisoCancelacionOriginal.value =
+          'La cotización original quedó marcada como cancelada.';
+      } catch (cancelErr: any) {
+        const msg = cancelErr?.response?.data?.message;
+        const detail = Array.isArray(msg)
+          ? msg.join(', ')
+          : typeof msg === 'string'
+            ? msg
+            : '';
+        // Idempotente: ya cancelada (carrera o estado previo) = éxito.
+        if (/ya está en estado ['"]?cancelada['"]?/i.test(String(detail))) {
+          avisoCancelacionOriginal.value =
+            'La cotización original quedó marcada como cancelada.';
+        } else {
+          avisoCancelacionOriginal.value = detail
+            ? `La nueva cotización se creó, pero no se pudo cancelar la original: ${detail}`
+            : 'La nueva cotización se creó, pero no se pudo cancelar la original.';
+        }
+      }
+      repetirCancelarOriginal.value = false;
+    }
+
     if (doSync && dirty.length > 0) {
       let synced = 0;
       try {
@@ -2279,6 +2320,8 @@ const cerrarModal = () => {
   serviciosDisponibles.value = [];
   cerrarRepetirBanner();
   repetirSourceId.value = '';
+  repetirCancelarOriginal.value = false;
+  avisoCancelacionOriginal.value = null;
 };
 
 const verCotizaciones = () => {
@@ -2293,8 +2336,19 @@ const verDetalles = () => {
   const cotizacionId = ultimaRespuesta.value._id || ultimaRespuesta.value.id;
   if (cotizacionId) {
     const id = String(cotizacionId);
+    const query: Record<string, string> = {};
+    const aviso = avisoCancelacionOriginal.value || '';
+    if (aviso.includes('no se pudo cancelar')) {
+      query.originalCancel = 'fail';
+    } else if (aviso.includes('quedó marcada como cancelada')) {
+      query.originalCancel = 'ok';
+    }
     cerrarModal();
-    router.push({ name: 'admin-cotizacion-detalle', params: { id } });
+    router.push({
+      name: 'admin-cotizacion-detalle',
+      params: { id },
+      ...(Object.keys(query).length ? { query } : {}),
+    });
   }
 };
 </script>

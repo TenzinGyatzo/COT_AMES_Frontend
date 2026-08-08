@@ -27,6 +27,7 @@
             <option value="vencida">Vencida</option>
             <option value="aceptada">Aceptada</option>
             <option value="rechazada">Rechazada</option>
+            <option value="cancelada">Cancelada</option>
           </select>
         </div>
         <div>
@@ -370,6 +371,7 @@ function getEstadoLabel(estado: string): string {
     vencida: 'Vencida',
     aceptada: 'Aceptada',
     rechazada: 'Rechazada',
+    cancelada: 'Cancelada',
   };
   return labels[estado] || estado;
 }
@@ -380,6 +382,7 @@ function getEstadoBadgeClass(estado: string): string {
     vencida: 'bg-gray-100 text-gray-800',
     aceptada: 'bg-blue-100 text-blue-800',
     rechazada: 'bg-red-100 text-red-800',
+    cancelada: 'bg-slate-100 text-slate-700',
   };
   return classes[estado] || 'bg-gray-100 text-gray-800';
 }

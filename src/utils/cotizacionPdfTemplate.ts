@@ -632,6 +632,8 @@ function getColorForEstado(estado: string): string {
       return '#DC2626'; // red-600
     case 'vencida':
       return '#4B5563'; // gray-600
+    case 'cancelada':
+      return '#334155'; // slate-700
     default:
       return '#000000';
   }

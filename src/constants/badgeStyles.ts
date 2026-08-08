@@ -8,6 +8,7 @@ export type EstadoCotizacion =
   | 'vencida'
   | 'aceptada'
   | 'rechazada'
+  | 'cancelada'
   | 'en_proceso'
   | 'completada';
 
@@ -28,16 +29,17 @@ export const ESTADO_LABELS: Record<EstadoBadge, string> = {
   vencida: 'Vencida',
   aceptada: 'Aceptada',
   rechazada: 'Rechazada',
-  en_proceso: 'En proceso',
+  cancelada: 'Cancelada',
+  en_proceso: 'En Proceso',
   completada: 'Completada',
   // Estados de orden
   pendiente: 'Pendiente',
-  cancelada: 'Cancelada',
 };
 
 /**
  * Mapeo de estados a clases de Tailwind para badges
  * Formato: bg-{color}-100 text-{color}-800
+ * cancelada: neutro (slate), no rojo (rechazada) ni gray de vencida.
  */
 export const ESTADO_BADGE_CLASSES: Record<EstadoBadge, string> = {
   // Estados de cotización
@@ -45,11 +47,11 @@ export const ESTADO_BADGE_CLASSES: Record<EstadoBadge, string> = {
   vencida: 'bg-gray-100 text-gray-800',
   aceptada: 'bg-blue-100 text-blue-800',
   rechazada: 'bg-red-100 text-red-800',
+  cancelada: 'bg-slate-100 text-slate-700',
   en_proceso: 'bg-yellow-100 text-yellow-800',
   completada: 'bg-green-100 text-green-800',
   // Estados de orden
   pendiente: 'bg-yellow-100 text-yellow-800',
-  cancelada: 'bg-red-100 text-red-800',
 };
 
 /**

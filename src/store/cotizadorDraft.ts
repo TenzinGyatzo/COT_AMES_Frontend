@@ -12,6 +12,8 @@ export type CotizadorRepetirDraft = {
   sourceCotizacionId: string;
   sourceFolio: string;
   modoPrecios: ModoPreciosRepetir;
+  /** Si true, tras crear desde el cotizador se cancela la fuente. */
+  cancelarOriginal?: boolean;
   draft: RepetirCotizacionPreviewDto;
 };
 

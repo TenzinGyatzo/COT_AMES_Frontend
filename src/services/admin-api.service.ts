@@ -35,7 +35,7 @@ export interface PaginatedClientesResponse {
 }
 
 export interface AdminCotizacionesFilters {
-  estado?: 'vigente' | 'vencida' | 'aceptada' | 'rechazada';
+  estado?: 'vigente' | 'vencida' | 'aceptada' | 'rechazada' | 'cancelada';
   /** Scope CRM — Story 3.7 (ficha cliente) */
   clienteId?: string;
   search?: string;
@@ -382,7 +382,7 @@ export async function rechazarCotizacionAdmin(
 /** Story 6.10 — cambio manual a cualquiera de los otros estados. */
 export async function cambiarEstadoCotizacion(
   id: string,
-  estado: 'vigente' | 'vencida' | 'aceptada' | 'rechazada',
+  estado: 'vigente' | 'vencida' | 'aceptada' | 'rechazada' | 'cancelada',
 ): Promise<CotizacionDetalleDto> {
   const { data } = await httpClient.patch<CotizacionDetalleDto>(
     `/cotizaciones/${id}/estado`,
@@ -405,6 +405,14 @@ export type RepetirCotizacionPayload = {
   sustituciones?: Array<{ fromServicioId: string; toServicioId: string }>;
   fechaVencimiento?: string;
   sinVigencia?: boolean;
+  /** Si true, cancela la fuente tras crear (default false en API). */
+  cancelarOriginal?: boolean;
+};
+
+export type RepetirCotizacionResponseDto = {
+  cotizacion: CotizacionDetalleDto;
+  originalCancelada: boolean;
+  originalCancelacionError?: string;
 };
 
 export type RepetirCotizacionPreviewDto = {
@@ -438,8 +446,8 @@ export type RepetirCotizacionPreviewDto = {
 export async function repetirCotizacion(
   id: string,
   payload: RepetirCotizacionPayload,
-): Promise<CotizacionDetalleDto> {
-  const { data } = await httpClient.post<CotizacionDetalleDto>(
+): Promise<RepetirCotizacionResponseDto> {
+  const { data } = await httpClient.post<RepetirCotizacionResponseDto>(
     `/cotizaciones/${id}/repetir`,
     payload,
   );

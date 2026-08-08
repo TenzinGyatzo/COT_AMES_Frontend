@@ -149,6 +149,20 @@
                   d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
+              <svg
+                v-else-if="cotizacion.estado === 'cancelada'"
+                class="w-8 h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                />
+              </svg>
             </div>
             <div>
               <p class="text-sm font-medium opacity-80 mb-0.5">Estado actual</p>
@@ -602,6 +616,7 @@ const getEstadoLabel = (estado: string) => {
     aceptada: 'Aceptada',
     vencida: 'Vencida',
     rechazada: 'Rechazada',
+    cancelada: 'Cancelada',
   };
   return labels[estado] || estado;
 };
@@ -618,6 +633,7 @@ const getEstadoSublabel = (cot: PublicCotizacionResponse | null) => {
     return `Rechazada el: ${formatDate(cot.fechaRechazo)}`;
   if (cot.estado === 'vencida')
     return `Expiró el: ${formatDate(cot.fechaVencimiento)}`;
+  if (cot.estado === 'cancelada') return 'Oferta retirada';
   return '';
 };
 
@@ -627,6 +643,7 @@ const getEstadoBannerClass = (estado: string) => {
     aceptada: 'bg-green-50 border-green-200 text-green-800',
     vencida: 'bg-orange-50 border-orange-200 text-orange-800',
     rechazada: 'bg-red-50 border-red-200 text-red-800',
+    cancelada: 'bg-slate-50 border-slate-200 text-slate-800',
   };
   return classes[estado] || 'bg-gray-50 border-gray-200';
 };
@@ -637,6 +654,7 @@ const getEstadoIconClass = (estado: string) => {
     aceptada: 'bg-green-100 text-green-600',
     vencida: 'bg-orange-100 text-orange-600',
     rechazada: 'bg-red-100 text-red-600',
+    cancelada: 'bg-slate-100 text-slate-700',
   };
   return classes[estado] || 'bg-gray-100 text-gray-600';
 };
@@ -647,6 +665,7 @@ const getEstadoTextClass = (estado: string) => {
     aceptada: 'text-green-700',
     vencida: 'text-orange-700',
     rechazada: 'text-red-700',
+    cancelada: 'text-slate-700',
   };
   return classes[estado] || 'text-gray-700';
 };

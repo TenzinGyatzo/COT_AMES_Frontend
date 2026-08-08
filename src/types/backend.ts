@@ -179,7 +179,7 @@ export interface PublicCotizacionBranding {
 
 export interface PublicCotizacionResponse {
   folio: string;
-  estado: 'vigente' | 'vencida' | 'aceptada' | 'rechazada' | string;
+  estado: 'vigente' | 'vencida' | 'aceptada' | 'rechazada' | 'cancelada' | string;
   total: number;
   moneda: string;
   fechaCreacion: string;
@@ -341,6 +341,7 @@ export interface CotizacionDetalleDto {
     | 'vencida'
     | 'aceptada'
     | 'rechazada'
+    | 'cancelada'
     | 'en_proceso'
     | 'completada';
   fechaAceptacion?: Date | string;
@@ -349,6 +350,7 @@ export interface CotizacionDetalleDto {
   fechaEstadoVencida?: Date | string;
   fechaEstadoAceptada?: Date | string;
   fechaEstadoRechazada?: Date | string;
+  fechaEstadoCancelada?: Date | string;
   /** Story 6.9/6.10 — origen del último cambio de estado */
   estadoOrigen?: 'magic_link' | 'usuario' | 'cron' | string;
   estadoOrigenAt?: Date | string;

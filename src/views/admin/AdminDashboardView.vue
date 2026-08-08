@@ -63,7 +63,7 @@
       <!-- Contadores de Cotizaciones -->
       <div>
         <h2 class="text-lg font-semibold text-gray-800 mb-4">Cotizaciones</h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <!-- Cotizaciones Vigentes -->
           <div
             class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
@@ -88,36 +88,6 @@
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <!-- Cotizaciones Rechazadas -->
-          <div
-            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
-                <p class="text-3xl font-bold text-red-600">
-                  {{ dashboardCounters.cotizaciones.rechazadas }}
-                </p>
-              </div>
-              <div class="p-3 bg-red-100 rounded-full">
-                <svg
-                  class="w-6 h-6 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
               </div>
@@ -154,6 +124,36 @@
             </div>
           </div>
 
+          <!-- Cotizaciones Rechazadas -->
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
+                <p class="text-3xl font-bold text-red-600">
+                  {{ dashboardCounters.cotizaciones.rechazadas }}
+                </p>
+              </div>
+              <div class="p-3 bg-red-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
           <!-- Cotizaciones Vencidas -->
           <div
             class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
@@ -178,6 +178,36 @@
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cotizaciones Canceladas -->
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Canceladas</p>
+                <p class="text-3xl font-bold text-slate-700">
+                  {{ dashboardCounters.cotizaciones.canceladas }}
+                </p>
+              </div>
+              <div class="p-3 bg-slate-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-slate-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                   />
                 </svg>
               </div>

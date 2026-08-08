@@ -30,6 +30,7 @@ interface AdminDashboardCounters {
     vencidas: number;
     aceptadas: number;
     rechazadas: number;
+    canceladas: number;
   };
   totales: {
     clientesActivos: number;
@@ -323,12 +324,14 @@ export const useAdminStore = defineStore('admin', {
           cotizacionesVencidas,
           cotizacionesAceptadas,
           cotizacionesRechazadas,
+          cotizacionesCanceladas,
           entityTotals,
         ] = await Promise.all([
           getCotizacionesAdmin({ estado: 'vigente', limit: 1, page: 1 }),
           getCotizacionesAdmin({ estado: 'vencida', limit: 1, page: 1 }),
           getCotizacionesAdmin({ estado: 'aceptada', limit: 1, page: 1 }),
           getCotizacionesAdmin({ estado: 'rechazada', limit: 1, page: 1 }),
+          getCotizacionesAdmin({ estado: 'cancelada', limit: 1, page: 1 }),
           getDashboardEntityTotals(),
         ]);
 
@@ -338,6 +341,7 @@ export const useAdminStore = defineStore('admin', {
             vencidas: cotizacionesVencidas.total,
             aceptadas: cotizacionesAceptadas.total,
             rechazadas: cotizacionesRechazadas.total,
+            canceladas: cotizacionesCanceladas.total,
           },
           totales: {
             clientesActivos: entityTotals.clientes,

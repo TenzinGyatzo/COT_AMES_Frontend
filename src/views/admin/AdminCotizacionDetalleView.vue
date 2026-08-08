@@ -93,6 +93,20 @@
                   d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
+              <svg
+                v-else-if="cotizacionDetalle.estado === 'cancelada'"
+                class="w-7 h-7 md:w-8 md:h-8"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                />
+              </svg>
             </div>
             <div>
               <p class="text-xs md:text-sm font-medium opacity-75 mb-1">
@@ -457,10 +471,15 @@
         </div>
       </div>
 
-      <!-- Mensaje de éxito -->
+      <!-- Mensaje flash (éxito o aviso parcial) -->
       <div
         v-if="successMessage"
-        class="mb-4 rounded-md bg-green-50 px-4 py-3 text-sm text-green-700"
+        class="mb-4 rounded-md px-4 py-3 text-sm"
+        :class="
+          flashTone === 'warning'
+            ? 'bg-amber-50 text-amber-900 border border-amber-200'
+            : 'bg-green-50 text-green-700'
+        "
       >
         {{ successMessage }}
       </div>
@@ -732,6 +751,30 @@
               : 'Precios actualizados'
           }}</span>
         </p>
+        <div
+          v-if="mostrarOpcionCancelarOriginal"
+          class="mt-4 rounded-md border border-gray-200 bg-gray-50 px-3 py-3"
+        >
+          <label
+            class="flex items-start gap-2 cursor-pointer"
+            :class="{ 'opacity-60 cursor-not-allowed': fuenteYaCancelada }"
+          >
+            <input
+              v-model="repetirCancelarOriginal"
+              type="checkbox"
+              class="mt-0.5 rounded border-gray-300 text-medical-blue-600 focus:ring-medical-blue-500"
+              :disabled="isProcessing || fuenteYaCancelada"
+            />
+            <span>
+              <span class="block text-sm font-medium text-gray-800">
+                Marcar original como cancelada
+              </span>
+              <span class="block text-xs text-gray-500 mt-0.5 leading-relaxed">
+                La cotización actual dejará de estar vigente como oferta.
+              </span>
+            </span>
+          </label>
+        </div>
         <div class="mt-5 flex flex-col gap-4">
           <div class="space-y-1 mb-2">
             <button
@@ -930,7 +973,13 @@ const totalConIva = computed(() => {
   return cotizacionDetalle.value.total + iva.value;
 });
 
-const ESTADOS = ['vigente', 'vencida', 'aceptada', 'rechazada'] as const;
+const ESTADOS = [
+  'vigente',
+  'vencida',
+  'aceptada',
+  'rechazada',
+  'cancelada',
+] as const;
 type EstadoCotizacion = (typeof ESTADOS)[number];
 let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -969,21 +1018,48 @@ async function cargarDetallePorRuta() {
 
 function aplicarFlashRepetirEmail() {
   const q = route.query.repetirEmail;
-  if (!q || typeof q !== 'string') return;
-  if (q === 'ok') {
-    flashSuccess('Cotización creada y enviada por correo.');
-  } else if (q === 'fail') {
-    flashSuccess(
-      'Cotización creada, pero no se pudo enviar el correo. Use «Enviar por correo» para reintentar.',
-    );
-  } else if (q === 'sin-destinatarios') {
-    flashSuccess(
-      'Cotización creada. No hay destinatarios Para para envío automático.',
-    );
+  const cancelQ = route.query.originalCancel;
+  const parts: string[] = [];
+  if (typeof q === 'string') {
+    if (q === 'ok') {
+      parts.push('Cotización creada y enviada por correo.');
+    } else if (q === 'fail') {
+      parts.push(
+        'Cotización creada, pero no se pudo enviar el correo. Use «Enviar por correo» para reintentar.',
+      );
+    } else if (q === 'sin-destinatarios') {
+      parts.push(
+        'Cotización creada. No hay destinatarios Para para envío automático.',
+      );
+    }
   }
-  const nextQuery = { ...route.query };
-  delete nextQuery.repetirEmail;
-  void router.replace({ query: nextQuery });
+  let cancelFail = false;
+  if (typeof cancelQ === 'string') {
+    if (cancelQ === 'ok') {
+      parts.push('La cotización original quedó marcada como cancelada.');
+    } else if (cancelQ === 'fail') {
+      cancelFail = true;
+      const detalle =
+        typeof route.query.originalCancelError === 'string'
+          ? route.query.originalCancelError
+          : '';
+      parts.push(
+        detalle
+          ? `La nueva cotización se creó, pero no se pudo cancelar la original: ${detalle}`
+          : 'La nueva cotización se creó, pero no se pudo cancelar la original.',
+      );
+    }
+  }
+  if (parts.length) {
+    flashSuccess(parts.join(' '), cancelFail ? 'warning' : 'success');
+  }
+  if (typeof q === 'string' || typeof cancelQ === 'string') {
+    const nextQuery = { ...route.query };
+    delete nextQuery.repetirEmail;
+    delete nextQuery.originalCancel;
+    delete nextQuery.originalCancelError;
+    void router.replace({ query: nextQuery });
+  }
 }
 
 // Cargar cotización al montar; re-cargar si cambia :id (p. ej. tras Repetir)
@@ -1084,6 +1160,7 @@ function getEstadoLabel(estado: string): string {
     vencida: 'Vencida',
     aceptada: 'Aceptada',
     rechazada: 'Rechazada',
+    cancelada: 'Cancelada',
   };
   return labels[estado] || estado;
 }
@@ -1094,6 +1171,7 @@ function getEstadoBannerClass(estado: string): string {
     vencida: 'bg-gray-50 border-gray-300',
     aceptada: 'bg-blue-50 border-blue-300',
     rechazada: 'bg-red-50 border-red-300',
+    cancelada: 'bg-slate-50 border-slate-300',
   };
   return classes[estado] || 'bg-gray-50 border-gray-300';
 }
@@ -1104,6 +1182,7 @@ function getEstadoIconClass(estado: string): string {
     vencida: 'bg-gray-100 text-gray-600',
     aceptada: 'bg-blue-100 text-blue-600',
     rechazada: 'bg-red-100 text-red-600',
+    cancelada: 'bg-slate-100 text-slate-700',
   };
   return classes[estado] || 'bg-gray-100 text-gray-600';
 }
@@ -1114,6 +1193,7 @@ function getEstadoTextClass(estado: string): string {
     vencida: 'text-gray-700',
     aceptada: 'text-blue-700',
     rechazada: 'text-red-700',
+    cancelada: 'text-slate-700',
   };
   return classes[estado] || 'text-gray-700';
 }
@@ -1124,6 +1204,7 @@ function getEstadoBadgeClass(estado: string): string {
     vencida: 'bg-gray-100 text-gray-800',
     aceptada: 'bg-blue-100 text-blue-800',
     rechazada: 'bg-red-100 text-red-800',
+    cancelada: 'bg-slate-100 text-slate-700',
   };
   return classes[estado] || 'bg-gray-100 text-gray-800';
 }
@@ -1149,6 +1230,8 @@ function getEstadoTimestamp(estado: string): Date | string | undefined {
         cotizacionDetalle.value.fechaEstadoRechazada ||
         cotizacionDetalle.value.fechaRechazo
       );
+    case 'cancelada':
+      return cotizacionDetalle.value.fechaEstadoCancelada;
     default:
       return cotizacionDetalle.value.fechaCreacion;
   }
@@ -1289,12 +1372,14 @@ const showMasAcciones = ref(false);
 const showConfirmEstado = ref(false);
 const estadoPendiente = ref<EstadoCotizacion | null>(null);
 const successMessage = ref<string | null>(null);
+const flashTone = ref<'success' | 'warning'>('success');
 
 const ESTADOS_REPETIBLES: EstadoCotizacion[] = [
   'vigente',
   'vencida',
   'aceptada',
   'rechazada',
+  'cancelada',
 ];
 const puedeRepetir = computed(() => {
   const e = cotizacionDetalle.value?.estado;
@@ -1306,6 +1391,16 @@ const showRepetirDestino = ref(false);
 const showRepetirWarnings = ref(false);
 const repetirModo = ref<ModoPreciosRepetir | null>(null);
 const repetirViaWizard = ref(false);
+const repetirCancelarOriginal = ref(false);
+const fuenteYaCancelada = computed(
+  () => cotizacionDetalle.value?.estado === 'cancelada',
+);
+/** Ocultar si ya cancelada (no-op); si se prefiere disabled, el template ya lo cubre. */
+const mostrarOpcionCancelarOriginal = computed(() => !fuenteYaCancelada.value);
+
+function defaultCancelarOriginal(estado: string | undefined): boolean {
+  return estado === 'vigente' || estado === 'vencida';
+}
 const repetirWarnings = ref<RepetirCotizacionWarning[]>([]);
 const omitirIds = reactive<Record<string, boolean>>({});
 const sustitucionesMap = reactive<Record<string, string>>({});
@@ -1369,6 +1464,9 @@ function abrirRepetir() {
   repetirWarnings.value = [];
   repetirModo.value = null;
   repetirViaWizard.value = false;
+  repetirCancelarOriginal.value = defaultCancelarOriginal(
+    cotizacionDetalle.value?.estado,
+  );
   Object.keys(omitirIds).forEach((k) => delete omitirIds[k]);
   Object.keys(sustitucionesMap).forEach((k) => delete sustitucionesMap[k]);
   showRepetirDestino.value = false;
@@ -1463,43 +1561,67 @@ async function ejecutarRepetirAccion(payload: {
   modoPrecios: ModoPreciosRepetir;
   omitirServicioIds?: string[];
   sustituciones?: Array<{ fromServicioId: string; toServicioId: string }>;
+  cancelarOriginal?: boolean;
 }) {
   if (!cotizacionDetalle.value || isProcessing.value) return;
   isProcessing.value = true;
   successMessage.value = null;
   const fuenteId = cotizacionDetalle.value._id;
   const fuenteFolio = cotizacionDetalle.value.folio || '';
+  const cancelarOriginal =
+    payload.cancelarOriginal ??
+    (mostrarOpcionCancelarOriginal.value && repetirCancelarOriginal.value);
+  const requestPayload = {
+    ...payload,
+    ...(cancelarOriginal ? { cancelarOriginal: true } : {}),
+  };
   try {
     if (repetirViaWizard.value) {
-      const preview = await previewRepetirCotizacion(fuenteId, payload);
+      const preview = await previewRepetirCotizacion(fuenteId, requestPayload);
       showRepetirModo.value = false;
       showRepetirDestino.value = false;
       showRepetirWarnings.value = false;
       cotizadorDraftStore.setDraft({
         sourceCotizacionId: String(fuenteId),
         sourceFolio: fuenteFolio,
-        modoPrecios: payload.modoPrecios,
+        modoPrecios: requestPayload.modoPrecios,
+        cancelarOriginal,
         draft: preview,
       });
       await router.push({ name: 'admin-cotizacion-nueva' });
       return;
     }
 
-    const nueva = await repetirCotizacion(fuenteId, payload);
+    const result = await repetirCotizacion(fuenteId, requestPayload);
+    const nueva = result.cotizacion;
     const emailResult = await enviarCorreoTrasRepetir(nueva);
     showRepetirModo.value = false;
     showRepetirDestino.value = false;
     showRepetirWarnings.value = false;
+    const query: Record<string, string> = { repetirEmail: emailResult };
+    if (cancelarOriginal) {
+      if (result.originalCancelada) {
+        query.originalCancel = 'ok';
+      } else {
+        query.originalCancel = 'fail';
+        if (result.originalCancelacionError) {
+          query.originalCancelError = result.originalCancelacionError.slice(
+            0,
+            180,
+          );
+        }
+      }
+    }
     await router.push({
       name: 'admin-cotizacion-detalle',
       params: { id: nueva._id },
-      query: { repetirEmail: emailResult },
+      query,
     });
   } catch (error) {
     const warnings = parseRepetirWarnings(error);
     if (warnings?.length) {
       isProcessing.value = false;
-      repetirModo.value = payload.modoPrecios;
+      repetirModo.value = requestPayload.modoPrecios;
       repetirWarnings.value = warnings;
       for (const w of warnings) {
         if (omitirIds[w.servicioId] === undefined) {
@@ -1555,7 +1677,11 @@ const confirmEstadoMessage = computed(() => {
   return 'Se actualizará el estado de la cotización. No se enviará notificación por correo.';
 });
 
-function flashSuccess(msg: string) {
+function flashSuccess(
+  msg: string,
+  tone: 'success' | 'warning' = 'success',
+) {
+  flashTone.value = tone;
   successMessage.value = msg;
   if (flashTimer != null) clearTimeout(flashTimer);
   flashTimer = setTimeout(() => {

@@ -325,7 +325,7 @@
         </div>
         <div
           v-else
-          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
           <div
             class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
@@ -350,35 +350,6 @@
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
-                <p class="text-3xl font-bold text-red-600">
-                  {{ cotCounters.rechazadas }}
-                </p>
-              </div>
-              <div class="p-3 bg-red-100 rounded-full">
-                <svg
-                  class="w-6 h-6 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
                   />
                 </svg>
               </div>
@@ -419,6 +390,35 @@
           >
             <div class="flex items-center justify-between">
               <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Rechazadas</p>
+                <p class="text-3xl font-bold text-red-600">
+                  {{ cotCounters.rechazadas }}
+                </p>
+              </div>
+              <div class="p-3 bg-red-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
                 <p class="text-sm font-medium text-gray-600 mb-1">Vencidas</p>
                 <p class="text-3xl font-bold text-gray-600">
                   {{ cotCounters.vencidas }}
@@ -437,6 +437,35 @@
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-600 mb-1">Canceladas</p>
+                <p class="text-3xl font-bold text-slate-700">
+                  {{ cotCounters.canceladas }}
+                </p>
+              </div>
+              <div class="p-3 bg-slate-100 rounded-full">
+                <svg
+                  class="w-6 h-6 text-slate-700"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
                   />
                 </svg>
               </div>
@@ -579,9 +608,10 @@ const mensajeConfirmDesactivarContacto = computed(() => {
 /* ——— Cotizaciones por estado (Story 3.7) ——— */
 const cotCounters = ref({
   vigentes: 0,
-  rechazadas: 0,
   aceptadas: 0,
+  rechazadas: 0,
   vencidas: 0,
+  canceladas: 0,
 });
 const isLoadingCotCounters = ref(false);
 const cotCountersError = ref<string | null>(null);
@@ -712,9 +742,10 @@ function limpiarContactosLocal() {
 function limpiarCotCountersLocal() {
   cotCounters.value = {
     vigentes: 0,
-    rechazadas: 0,
     aceptadas: 0,
+    rechazadas: 0,
     vencidas: 0,
+    canceladas: 0,
   };
   cotCountersError.value = null;
   cotCountersReqSeq += 1;
@@ -726,38 +757,46 @@ async function loadCotizacionCounters(clienteId: string) {
   isLoadingCotCounters.value = true;
   cotCountersError.value = null;
   try {
-    const [vigentes, vencidas, aceptadas, rechazadas] = await Promise.all([
-      getCotizacionesAdmin({
-        clienteId,
-        estado: 'vigente',
-        limit: 1,
-        page: 1,
-      }),
-      getCotizacionesAdmin({
-        clienteId,
-        estado: 'vencida',
-        limit: 1,
-        page: 1,
-      }),
-      getCotizacionesAdmin({
-        clienteId,
-        estado: 'aceptada',
-        limit: 1,
-        page: 1,
-      }),
-      getCotizacionesAdmin({
-        clienteId,
-        estado: 'rechazada',
-        limit: 1,
-        page: 1,
-      }),
-    ]);
+    const [vigentes, vencidas, aceptadas, rechazadas, canceladas] =
+      await Promise.all([
+        getCotizacionesAdmin({
+          clienteId,
+          estado: 'vigente',
+          limit: 1,
+          page: 1,
+        }),
+        getCotizacionesAdmin({
+          clienteId,
+          estado: 'vencida',
+          limit: 1,
+          page: 1,
+        }),
+        getCotizacionesAdmin({
+          clienteId,
+          estado: 'aceptada',
+          limit: 1,
+          page: 1,
+        }),
+        getCotizacionesAdmin({
+          clienteId,
+          estado: 'rechazada',
+          limit: 1,
+          page: 1,
+        }),
+        getCotizacionesAdmin({
+          clienteId,
+          estado: 'cancelada',
+          limit: 1,
+          page: 1,
+        }),
+      ]);
     if (seq !== cotCountersReqSeq) return;
     cotCounters.value = {
       vigentes: vigentes.total ?? 0,
       vencidas: vencidas.total ?? 0,
       aceptadas: aceptadas.total ?? 0,
       rechazadas: rechazadas.total ?? 0,
+      canceladas: canceladas.total ?? 0,
     };
   } catch (e) {
     if (seq !== cotCountersReqSeq) return;

@@ -728,11 +728,26 @@ const effectiveTenantId = computed(() => {
 });
 
 const tenantLabel = computed(() => {
-  const tid = config.value?.tenantId || effectiveTenantId.value;
+  const tid = effectiveTenantId.value || config.value?.tenantId || '';
   if (!tid) return 'Sin administración seleccionada';
   const match = tenants.value.find((t) => t._id === tid);
-  if (match) return `${match.nombre} (${match.clave})`;
-  // Sin catálogo (admin_tenant): mostrar id / sufijo legible
+  const matchNombre = match?.nombre?.trim();
+  const matchClave = match?.clave?.trim();
+  if (matchNombre && matchClave) return `${matchNombre} (${matchClave})`;
+  if (matchNombre) return matchNombre;
+  if (matchClave) return matchClave;
+  // Sin catálogo usable (admin_tenant / AD-16): identidad desde tenant-config
+  // Solo si coincide con el tenant efectivo (evita label stale al cambiar selector).
+  if (
+    config.value?.tenantId != null &&
+    String(config.value.tenantId) === String(tid)
+  ) {
+    const nombre = config.value.tenantNombre?.trim();
+    const clave = config.value.tenantClave?.trim();
+    if (nombre && clave) return `${nombre} (${clave})`;
+    if (nombre) return nombre;
+    if (clave) return clave;
+  }
   return tid.length > 6 ? `…${tid.slice(-6)}` : tid;
 });
 

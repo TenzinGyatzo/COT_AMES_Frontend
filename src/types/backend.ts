@@ -51,6 +51,10 @@ export interface TenantBancarios {
 export interface TenantConfigResponse {
   _id: string;
   tenantId: string;
+  /** Nombre del tenant efectivo (para label sin GET /tenants). */
+  tenantNombre?: string;
+  /** Clave del tenant efectivo (para label sin GET /tenants). */
+  tenantClave?: string;
   branding?: TenantBranding;
   emailRemitente?: string;
   correosNotificacion?: string[];

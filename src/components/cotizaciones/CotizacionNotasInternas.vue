@@ -5,7 +5,7 @@
         Notas internas
       </h2>
       <p class="mt-1 text-xs md:text-sm text-gray-500">
-        Solo visible para el equipo AMES. No aparece en PDF ni en la vista del
+        Solo visible para el equipo interno. No aparece en PDF ni en la vista del
         cliente.
       </p>
     </div>

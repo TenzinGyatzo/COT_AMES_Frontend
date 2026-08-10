@@ -4,8 +4,8 @@
       Configuración
     </h1>
     <p class="text-gray-600 mb-6">
-      Parámetros del tenant activo. Solo el administrador de sistema puede
-      editar branding, remitente, notificaciones, vigencia y datos bancarios.
+      Parámetros de la administración activa. Puede editar branding, remitente,
+      notificaciones, vigencia y datos bancarios.
     </p>
 
     <div
@@ -182,11 +182,12 @@
       >
         <div>
           <h2 class="text-lg font-semibold text-gray-900">
-            Remitente y notificaciones
+            Remitente, notificaciones y correo outbound
           </h2>
           <p class="text-sm text-gray-500 mt-1">
-            Remitente From de cotizaciones y correos adicionales para avisos de
-            aceptación/rechazo (Epic 6). La lista puede quedar vacía.
+            Cuenta Gmail + contraseña de aplicación para envío, remitente From
+            de cotizaciones y correos adicionales de aviso (Epic 6). La lista
+            de notificaciones puede quedar vacía.
           </p>
         </div>
 
@@ -203,6 +204,84 @@
           role="status"
         >
           <p class="text-sm text-green-800">{{ emailFormSuccess }}</p>
+        </div>
+
+        <div class="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <span class="text-sm font-medium text-gray-800"
+              >Credenciales de envío (Gmail)</span
+            >
+            <span
+              v-if="emailCredentialsConfigured"
+              class="inline-flex items-center rounded-md bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800"
+            >
+              Configurado
+            </span>
+            <span
+              v-else
+              class="inline-flex items-center rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900"
+            >
+              Sin configurar
+            </span>
+          </div>
+          <label class="block">
+            <span class="text-sm font-medium text-gray-700"
+              >Cuenta Gmail</span
+            >
+            <input
+              v-model="emailForm.emailUser"
+              type="email"
+              maxlength="120"
+              autocomplete="username"
+              placeholder="cotizaciones@tudominio.com"
+              class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              :disabled="isBusy"
+              @input="onEmailFormEdited"
+            />
+          </label>
+          <div v-if="!emailCredentialsConfigured || showRotatePass">
+            <label class="block">
+              <span class="text-sm font-medium text-gray-700"
+                >Contraseña de aplicación</span
+              >
+              <input
+                v-model="emailForm.emailPass"
+                type="password"
+                maxlength="200"
+                autocomplete="new-password"
+                placeholder="xxxx xxxx xxxx xxxx"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                :disabled="isBusy"
+                @input="onEmailFormEdited"
+              />
+              <span class="mt-1 block text-xs text-gray-500"
+                >Use una contraseña de aplicación de Google, no la contraseña
+                normal de la cuenta. Tras guardar no se vuelve a mostrar.</span
+              >
+            </label>
+            <button
+              v-if="emailCredentialsConfigured && showRotatePass"
+              type="button"
+              class="mt-2 text-sm text-gray-600 underline hover:text-gray-900 disabled:opacity-50"
+              :disabled="isBusy"
+              @click="cancelarRotarPass"
+            >
+              Cancelar rotación
+            </button>
+          </div>
+          <div v-else class="flex flex-wrap items-center gap-3">
+            <p class="text-sm text-gray-600">
+              Contraseña de aplicación guardada (oculta).
+            </p>
+            <button
+              type="button"
+              class="rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-white disabled:opacity-50"
+              :disabled="isBusy"
+              @click="iniciarRotarPass"
+            >
+              Rotar contraseña
+            </button>
+          </div>
         </div>
 
         <label class="block">
@@ -545,7 +624,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import {
   deleteTenantBankLogo,
   deleteTenantLogo,
@@ -581,7 +660,11 @@ const form = reactive({
 const emailForm = reactive({
   emailRemitente: '',
   correosNotificacion: [] as string[],
+  emailUser: '',
+  emailPass: '',
 });
+const emailCredentialsConfigured = ref(false);
+const showRotatePass = ref(false);
 const notifDraft = ref('');
 const notifDraftError = ref<string | null>(null);
 
@@ -633,26 +716,28 @@ const ALLOWED_LOGO_TYPES = new Set([
   'image/webp',
 ]);
 
+/** Tenant efectivo: selector (admin_sistema) o JWT (admin_tenant). */
+const effectiveTenantId = computed(() => {
+  if (authStore.isAdminSistema) {
+    return authStore.activeTenantId || '';
+  }
+  if (authStore.isAdminTenant) {
+    return authStore.user?.tenantId || '';
+  }
+  return '';
+});
+
 const tenantLabel = computed(() => {
-  const tid = config.value?.tenantId || authStore.activeTenantId;
+  const tid = config.value?.tenantId || effectiveTenantId.value;
   if (!tid) return 'Sin administración seleccionada';
   const match = tenants.value.find((t) => t._id === tid);
   if (match) return `${match.nombre} (${match.clave})`;
-  return tid;
+  // Sin catálogo (admin_tenant): mostrar id / sufijo legible
+  return tid.length > 6 ? `…${tid.slice(-6)}` : tid;
 });
 
-/** Resuelve URL pública del logo (proxy /uploads en dev). */
-const logoPreviewUrl = computed(() => {
-  const path = config.value?.branding?.logoUrl;
-  if (!path) return null;
-  if (path.startsWith('http')) return path;
-  const apiBase = API_BASE_URL.replace(/\/api\/?$/, '');
-  if (apiBase.startsWith('http')) return `${apiBase}${path}`;
-  return path;
-});
-
-const bankLogoPreviewUrl = computed(() => {
-  const path = config.value?.bancarios?.logoUrl;
+/** URL pública de asset en /uploads con cache-bust por updatedAt. */
+function publicAssetPreviewUrl(path: string | undefined | null): string | null {
   if (!path) return null;
   const bust = config.value?.updatedAt
     ? `?v=${encodeURIComponent(config.value.updatedAt)}`
@@ -663,7 +748,16 @@ const bankLogoPreviewUrl = computed(() => {
   const apiBase = API_BASE_URL.replace(/\/api\/?$/, '');
   if (apiBase.startsWith('http')) return `${apiBase}${path}${bust}`;
   return `${path}${bust}`;
-});
+}
+
+/** Resuelve URL pública del logo de branding (proxy /uploads en dev). */
+const logoPreviewUrl = computed(() =>
+  publicAssetPreviewUrl(config.value?.branding?.logoUrl),
+);
+
+const bankLogoPreviewUrl = computed(() =>
+  publicAssetPreviewUrl(config.value?.bancarios?.logoUrl),
+);
 
 function fillBrandingFromConfig(cfg: TenantConfigResponse) {
   const b = cfg.branding || {};
@@ -678,6 +772,22 @@ function fillBrandingFromConfig(cfg: TenantConfigResponse) {
 function fillEmailFromConfig(cfg: TenantConfigResponse) {
   emailForm.emailRemitente = cfg.emailRemitente || '';
   emailForm.correosNotificacion = [...(cfg.correosNotificacion || [])];
+  emailForm.emailUser = cfg.emailUser || '';
+  emailForm.emailPass = '';
+  emailCredentialsConfigured.value = Boolean(cfg.emailCredentialsConfigured);
+  showRotatePass.value = false;
+}
+
+function iniciarRotarPass() {
+  showRotatePass.value = true;
+  emailForm.emailPass = '';
+  emailFormSuccess.value = null;
+}
+
+function cancelarRotarPass() {
+  showRotatePass.value = false;
+  emailForm.emailPass = '';
+  notifDraftError.value = null;
 }
 
 function fillVbFromConfig(cfg: TenantConfigResponse) {
@@ -750,34 +860,36 @@ async function cargar() {
   bankLogoError.value = null;
   notifDraftError.value = null;
 
-  const requestedTenantId = authStore.activeTenantId;
+  const requestedTenantId = effectiveTenantId.value;
   if (!requestedTenantId) {
-    error.value =
-      'Seleccione una administración en el pie del menú para ver su configuración.';
+    error.value = authStore.isAdminSistema
+      ? 'Seleccione una administración en el pie del menú para ver su configuración.'
+      : 'No hay administración asignada a su usuario.';
     isLoading.value = false;
     return;
   }
 
   try {
-    const [cfg, t] = await Promise.all([
-      getTenantConfig(),
-      getTenants().catch(() => [] as Tenant[]),
-    ]);
-    if (authStore.activeTenantId !== requestedTenantId) {
+    // GET /tenants solo admin_sistema (AD-16). admin_tenant: nunca.
+    const tenantsPromise = authStore.isAdminSistema
+      ? getTenants().catch(() => [] as Tenant[])
+      : Promise.resolve([] as Tenant[]);
+
+    const [cfg, t] = await Promise.all([getTenantConfig(), tenantsPromise]);
+    if (effectiveTenantId.value !== requestedTenantId) {
       return;
     }
     config.value = cfg;
     tenants.value = t;
     fillFormFromConfig(cfg);
   } catch (e) {
-    if (authStore.activeTenantId !== requestedTenantId) {
+    if (effectiveTenantId.value !== requestedTenantId) {
       return;
     }
     error.value = mapConfigError(e, 'No se pudo cargar la configuración');
   } finally {
-    if (authStore.activeTenantId === requestedTenantId) {
-      isLoading.value = false;
-    }
+    // Siempre liberar spinner (también si el tenant cambió mid-await y salimos early).
+    isLoading.value = false;
   }
 }
 
@@ -871,12 +983,61 @@ async function guardarEmail() {
     if (notifDraftError.value) return;
   }
 
+  const emailUser = emailForm.emailUser.trim().toLowerCase();
+  const emailPass = emailForm.emailPass;
+  const previousUser = (config.value?.emailUser || '').trim().toLowerCase();
+  const userChanged = Boolean(emailUser) && emailUser !== previousUser;
+  const wantsPass =
+    Boolean(emailPass.trim()) &&
+    (!emailCredentialsConfigured.value ||
+      showRotatePass.value ||
+      userChanged);
+
+  if (wantsPass && !emailUser && !emailCredentialsConfigured.value) {
+    emailFormError.value =
+      'Indique la cuenta Gmail junto con la contraseña de aplicación.';
+    return;
+  }
+  if (
+    emailCredentialsConfigured.value &&
+    userChanged &&
+    !emailPass.trim()
+  ) {
+    showRotatePass.value = true;
+    emailFormError.value =
+      'Para cambiar la cuenta Gmail indique también la contraseña de aplicación.';
+    return;
+  }
+  if (
+    emailCredentialsConfigured.value &&
+    showRotatePass.value &&
+    !emailPass.trim()
+  ) {
+    emailFormError.value =
+      'Ingrese la nueva contraseña de aplicación o cancele la rotación.';
+    return;
+  }
+  if (!emailCredentialsConfigured.value && emailUser && !emailPass.trim()) {
+    emailFormError.value =
+      'Para configurar el envío indique también la contraseña de aplicación.';
+    return;
+  }
+
   isSavingEmail.value = true;
   try {
-    const updated = await updateTenantEmailConfig({
+    const payload: {
+      emailRemitente: string;
+      correosNotificacion: string[];
+      emailUser?: string;
+      emailPass?: string;
+    } = {
       emailRemitente: emailForm.emailRemitente.trim().toLowerCase(),
       correosNotificacion: [...emailForm.correosNotificacion],
-    });
+    };
+    if (emailUser) payload.emailUser = emailUser;
+    if (wantsPass && emailPass.trim()) payload.emailPass = emailPass;
+
+    const updated = await updateTenantEmailConfig(payload);
     config.value = updated;
     fillEmailFromConfig(updated);
     emailFormSuccess.value = 'Configuración de email guardada.';
@@ -1035,6 +1196,16 @@ function quitarNotificacion(idx: number) {
   onEmailFormEdited();
   emailForm.correosNotificacion.splice(idx, 1);
 }
+
+// admin_sistema: al cambiar selector, recargar config del tenant activo.
+// (AdminLayout remonta por viewKey; el watch cubre el caso sin remount.)
+watch(
+  () => authStore.activeTenantId,
+  () => {
+    if (!authStore.isAdminSistema) return;
+    void cargar();
+  },
+);
 
 onMounted(() => {
   void cargar();

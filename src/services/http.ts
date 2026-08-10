@@ -23,8 +23,11 @@ export function setUnauthorizedHandler(handler: () => void): void {
   onUnauthorized = handler;
 }
 
-/** True solo para el catálogo GET /tenants (con o sin slash/query). */
-function isTenantsCatalogUrl(url?: string): boolean {
+/**
+ * APIs de plataforma bajo /tenants (sin X-Tenant-Id).
+ * Incluye GET /tenants, POST /tenants/onboard (4.1) y PATCH /tenants/:id/activo (4.3).
+ */
+function isPlatformTenantsUrl(url?: string): boolean {
   if (!url) return false;
   let path = url;
   try {
@@ -36,7 +39,13 @@ function isTenantsCatalogUrl(url?: string): boolean {
     /* keep path */
   }
   path = (path.split('?')[0] ?? path).replace(/\/+$/, '') || '/';
-  return path === '/tenants' || path.endsWith('/tenants');
+  return (
+    path === '/tenants' ||
+    path.endsWith('/tenants') ||
+    path === '/tenants/onboard' ||
+    path.endsWith('/tenants/onboard') ||
+    /\/tenants\/[^/]+\/activo$/.test(path)
+  );
 }
 
 httpClient.interceptors.request.use(
@@ -57,12 +66,12 @@ httpClient.interceptors.request.use(
       }
     }
 
-    // Solo admin_sistema envía X-Tenant-Id; operativo nunca (AD-2).
-    // GET /tenants no necesita header (chicken-egg).
+    // Solo admin_sistema envía X-Tenant-Id; operativo/admin_tenant nunca (AD-2/AD-11).
+    // GET /tenants y POST /tenants/onboard no necesitan header (plataforma / chicken-egg).
     if (
       authStore.user?.rol === 'admin_sistema' &&
       authStore.activeTenantId &&
-      !isTenantsCatalogUrl(config.url)
+      !isPlatformTenantsUrl(config.url)
     ) {
       config.headers['X-Tenant-Id'] = authStore.activeTenantId;
     }

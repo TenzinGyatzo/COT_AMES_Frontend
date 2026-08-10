@@ -187,10 +187,17 @@
                   {{ emailError }}
                 </p>
                 <p class="text-xs text-red-600/80 mt-1">
-                  La cotización quedó guardada. Corrige destinatarios y
-                  reintenta.
+                  {{ emailErrorHint }}
                 </p>
               </div>
+            </div>
+            <div
+              v-if="emailCredentialsConfigured === false"
+              class="p-3 bg-amber-50 rounded-lg border border-amber-100 text-amber-900 text-xs"
+            >
+              El correo del tenant no está configurado. Un administrador puede
+              configurarlo en Configuración; el reintento quedará disponible
+              después.
             </div>
             <div class="space-y-2">
               <EmailChipsInput
@@ -199,6 +206,7 @@
                 input-id="modal-resend-para"
                 variant="para"
                 placeholder="correo@empresa.com"
+                :disabled="isResendBusy || emailCredentialsConfigured === false"
               />
               <EmailChipsInput
                 v-model="resendCc"
@@ -209,11 +217,20 @@
                 :exclude="resendPara"
                 :suggestions="correosNotificacion"
                 :hint="ccHint"
+                :disabled="
+                  isResendBusy ||
+                  resendPara.length === 0 ||
+                  emailCredentialsConfigured === false
+                "
               />
               <button
                 type="button"
                 class="w-full py-2.5 rounded-xl bg-medical-blue-600 text-white text-sm font-bold disabled:opacity-50"
-                :disabled="resendPara.length === 0 || isResendBusy"
+                :disabled="
+                  resendPara.length === 0 ||
+                  isResendBusy ||
+                  emailCredentialsConfigured === false
+                "
                 @click="emitReintentar"
               >
                 {{ isResendBusy ? 'Reenviando…' : 'Reintentar envío' }}
@@ -367,6 +384,8 @@ interface Props {
   initialEmailsPara?: string[];
   initialEmailsCc?: string[];
   isResendBusy?: boolean;
+  /** null/undefined = desconocido (no bloquear); false = disable reintento */
+  emailCredentialsConfigured?: boolean | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -377,6 +396,7 @@ const props = withDefaults(defineProps<Props>(), {
   initialEmailsPara: () => [],
   initialEmailsCc: () => [],
   isResendBusy: false,
+  emailCredentialsConfigured: null,
 });
 
 const emit = defineEmits<{
@@ -404,6 +424,17 @@ const ccHint = computed(() =>
     : '',
 );
 
+const emailErrorHint = computed(() => {
+  const msg = (props.emailError || '').toLowerCase();
+  if (msg.includes('inactivo')) {
+    return 'La cotización quedó guardada. El tenant está inactivo; el envío no está disponible.';
+  }
+  if (msg.includes('no está configurado')) {
+    return 'La cotización quedó guardada. Configura el correo del tenant o reintenta más tarde.';
+  }
+  return 'La cotización quedó guardada. Corrige destinatarios y reintenta.';
+});
+
 watch(
   () => props.cotizacion,
   (cotizacion) => {
@@ -421,7 +452,13 @@ watch(
 );
 
 function emitReintentar() {
-  if (!resendPara.value.length || props.isResendBusy) return;
+  if (
+    !resendPara.value.length ||
+    props.isResendBusy ||
+    props.emailCredentialsConfigured === false
+  ) {
+    return;
+  }
   emit('reintentar', {
     emailsPara: [...resendPara.value],
     emailsCc: resendCc.value.filter((e) => !resendPara.value.includes(e)),

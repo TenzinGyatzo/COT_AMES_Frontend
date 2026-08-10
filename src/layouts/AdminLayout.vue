@@ -4,6 +4,17 @@
 
     <main class="flex-1 overflow-auto md:ml-0">
       <div class="p-4 md:p-8">
+        <!-- AC3 / Story 2.2: admin_sistema sin administración activa -->
+        <div
+          v-if="needsTenantSelection"
+          role="status"
+          class="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        >
+          <p>
+            Seleccione una administración en el pie del menú para operar en esa
+            administración.
+          </p>
+        </div>
         <!-- Remount al cambiar tenant admin → refresca listados (UX EXPERIENCE) -->
         <router-view :key="viewKey" />
       </div>
@@ -17,6 +28,10 @@ import Sidebar from '../components/layout/Sidebar.vue';
 import { useAuthStore } from '../store/auth';
 
 const authStore = useAuthStore();
+
+const needsTenantSelection = computed(
+  () => authStore.isAdminSistema && !authStore.activeTenantId,
+);
 
 const viewKey = computed(() =>
   authStore.isAdminSistema

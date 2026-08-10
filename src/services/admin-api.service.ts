@@ -651,9 +651,49 @@ export async function deletePlantilla(id: string): Promise<Plantilla> {
   return data;
 }
 
-/** Listado de tenants activos (sin X-Tenant-Id; chicken-egg AD-2 / 1.7). */
+/**
+ * Inventario de tenants de plataforma (Story 4.2 / AD-16).
+ * Incluye activos e inactivos. Sin X-Tenant-Id.
+ * El selector Sidebar filtra activos; soporte inactivo vía Usar contexto (4.3).
+ */
 export async function getTenants(): Promise<Tenant[]> {
   const { data } = await httpClient.get<Tenant[]>('/tenants');
+  return data;
+}
+
+/**
+ * Suspender / reactivar tenant (Story 4.3 / AD-14). Idempotente.
+ * Solo admin_sistema; sin X-Tenant-Id (plataforma).
+ */
+export async function setTenantActivo(
+  id: string,
+  activo: boolean,
+): Promise<Tenant> {
+  const { data } = await httpClient.patch<Tenant>(`/tenants/${id}/activo`, {
+    activo,
+  });
+  return data;
+}
+
+export type OnboardTenantPayload = {
+  tenant: { nombre: string; clave: string };
+  admin: { nombre: string; email: string; password: string };
+};
+
+export type OnboardTenantResponse = {
+  tenant: { _id: string; nombre: string; clave: string; activo: boolean };
+  admin: { _id: string; email: string; nombre: string; rol: string };
+  plantillasSeedCount: number;
+};
+
+/** Onboarding atómico (Story 4.1 / AD-13). Solo admin_sistema; sin X-Tenant-Id. */
+export async function onboardTenant(
+  payload: OnboardTenantPayload,
+): Promise<OnboardTenantResponse> {
+  const { data } = await httpClient.post<OnboardTenantResponse>(
+    '/tenants/onboard',
+    payload,
+  );
   return data;
 }
 
@@ -665,7 +705,11 @@ export async function getDashboardEntityTotals(): Promise<DashboardEntityTotals>
   return data;
 }
 
-/** Configuración del tenant activo (admin + X-Tenant-Id). Story 2.1+. */
+/**
+ * Configuración del tenant activo (lectura AMES; escritura admin_tenant | admin_sistema).
+ * admin_sistema: interceptor envía X-Tenant-Id. admin_tenant/operativo: tenant del JWT.
+ * Story 2.4 / FR42.
+ */
 export async function getTenantConfig(): Promise<TenantConfigResponse> {
   const { data } = await httpClient.get<TenantConfigResponse>('/tenant-config');
   return data;
@@ -680,7 +724,7 @@ export type UpdateTenantBrandingPayload = {
   sitioWeb?: string;
 };
 
-/** PATCH branding / datos legales (Story 2.2). */
+/** PATCH branding / datos legales (admin_tenant | admin_sistema). Story 2.4. */
 export async function updateTenantBranding(
   payload: UpdateTenantBrandingPayload,
 ): Promise<TenantConfigResponse> {
@@ -737,9 +781,13 @@ export async function deleteTenantBankLogo(): Promise<TenantConfigResponse> {
 export type UpdateTenantEmailPayload = {
   emailRemitente?: string;
   correosNotificacion?: string[];
+  /** Cuenta Gmail SMTP (FR-55). */
+  emailUser?: string;
+  /** App password write-only; nunca vuelve en GET (Story 3.2). */
+  emailPass?: string;
 };
 
-/** PATCH remitente + correos de notificación (Story 2.3). */
+/** PATCH remitente + notificaciones + credenciales SMTP (Stories 2.3 / 3.2). */
 export async function updateTenantEmailConfig(
   payload: UpdateTenantEmailPayload,
 ): Promise<TenantConfigResponse> {
@@ -778,7 +826,7 @@ export interface AdminUser {
   _id: string;
   email: string;
   nombre: string;
-  rol: 'operativo' | 'admin_sistema';
+  rol: 'operativo' | 'admin_tenant' | 'admin_sistema';
   tenantId?: string;
   activo: boolean;
   createdAt?: string;
@@ -787,15 +835,16 @@ export interface AdminUser {
 
 export interface AdminUsersFilters {
   activo?: boolean;
-  rol?: 'operativo' | 'admin_sistema';
+  rol?: 'operativo' | 'admin_tenant' | 'admin_sistema';
   search?: string;
 }
 
+/** UI create/edit: admin_sistema puede asignar operativo | admin_tenant | admin_sistema. */
 export interface CreateUserPayload {
   email: string;
   password: string;
   nombre: string;
-  rol: 'operativo' | 'admin_sistema';
+  rol: 'operativo' | 'admin_tenant' | 'admin_sistema';
   tenantId?: string;
 }
 
@@ -803,7 +852,7 @@ export interface UpdateUserPayload {
   email?: string;
   password?: string;
   nombre?: string;
-  rol?: 'operativo' | 'admin_sistema';
+  rol?: 'operativo' | 'admin_tenant' | 'admin_sistema';
   tenantId?: string | null;
   activo?: boolean;
 }

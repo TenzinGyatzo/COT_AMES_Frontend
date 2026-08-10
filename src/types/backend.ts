@@ -11,6 +11,8 @@ export interface Tenant {
   nombre: string;
   clave: string;
   activo?: boolean;
+  /** ISO — inventario plataforma (Story 4.2) */
+  createdAt?: string;
 }
 
 /** Totales CRM del dashboard home (Story 7.3) */
@@ -45,13 +47,17 @@ export interface TenantBancarios {
   email?: string;
 }
 
-/** Configuración por tenant (Stories 2.1–2.5) */
+/** Configuración por tenant (Stories 2.1–2.5 + 3.2). Nunca incluye emailSecretEnc. */
 export interface TenantConfigResponse {
   _id: string;
   tenantId: string;
   branding?: TenantBranding;
   emailRemitente?: string;
   correosNotificacion?: string[];
+  /** Cuenta Gmail SMTP (FR-55). */
+  emailUser?: string;
+  /** true si hay app password cifrada en servidor. */
+  emailCredentialsConfigured?: boolean;
   vigenciaDefaultDias?: number;
   bancarios?: TenantBancarios;
   createdAt?: string;
@@ -200,7 +206,7 @@ export interface PublicCotizacionResponse {
 }
 
 // Tipo para un usuario del sistema
-export type AmesRole = 'operativo' | 'admin_sistema';
+export type AmesRole = 'operativo' | 'admin_tenant' | 'admin_sistema';
 
 export interface User {
   _id: string;
@@ -209,7 +215,7 @@ export interface User {
   rol: AmesRole;
   /** Alineado al rol (compat); preferir `rol`. */
   tipoUsuario: AmesRole;
-  /** Opcional hasta roles tenant en 1.3/1.6 */
+  /** Fijo para operativo y admin_tenant; ausente en admin_sistema (AD-11). */
   tenantId?: string;
   activo?: boolean;
 }

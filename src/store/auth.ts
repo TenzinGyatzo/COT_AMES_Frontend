@@ -1,5 +1,5 @@
 /**
- * Store de Pinia para autenticación AMES (operativo | admin_sistema)
+ * Store de Pinia para autenticación (operativo | admin_tenant | admin_sistema)
  */
 
 import { defineStore } from 'pinia';
@@ -20,7 +20,11 @@ const STORAGE_KEY_TOKEN = 'auth_token';
 const STORAGE_KEY_USER = 'auth_user';
 const STORAGE_KEY_TENANT = 'auth_active_tenant_id';
 
-const AMES_ROLES: AmesRole[] = ['operativo', 'admin_sistema'];
+const AMES_ROLES: AmesRole[] = [
+  'operativo',
+  'admin_tenant',
+  'admin_sistema',
+];
 
 function isAmesRole(rol: unknown): rol is AmesRole {
   return typeof rol === 'string' && (AMES_ROLES as string[]).includes(rol);
@@ -65,7 +69,7 @@ export const useAuthStore = defineStore('auth', {
       return this.user;
     },
 
-    /** Usuario AMES autenticado (cualquier rol v1). */
+    /** Usuario autenticado con rol de producto (cualquier rol AD-11). */
     isAmesUser(): boolean {
       return isAmesRole(this.user?.rol);
     },
@@ -74,7 +78,11 @@ export const useAuthStore = defineStore('auth', {
       return this.user?.rol === 'admin_sistema';
     },
 
-    /** @deprecated Prefer isAmesUser / isAdminSistema. Alias: cualquier usuario AMES. */
+    isAdminTenant(): boolean {
+      return this.user?.rol === 'admin_tenant';
+    },
+
+    /** @deprecated Prefer isAmesUser / isAdminSistema. Alias: cualquier usuario autenticado de producto. */
     isAdmin(): boolean {
       return this.isAmesUser;
     },
@@ -92,8 +100,9 @@ export const useAuthStore = defineStore('auth', {
 
     /**
      * Tras login / restore admin: asegura activeTenantId válido.
-     * Revalida el persistido contra GET /tenants (existe + activo);
-     * si no hay match, toma el primer tenant activo.
+     * Revalida el persistido contra GET /tenants (existe).
+     * Story 4.3 / AD-14: conserva tenant inactivo (soporte); si no hay match,
+     * toma el primer tenant activo.
      * GET /tenants no exige X-Tenant-Id.
      */
     async ensureAdminTenantContext(): Promise<void> {
@@ -106,13 +115,14 @@ export const useAuthStore = defineStore('auth', {
 
       try {
         const tenants = await getTenants();
-        const active = tenants.filter((t) => t.activo !== false && t._id);
+        const known = tenants.filter((t) => t._id);
 
-        if (stored && active.some((t) => t._id === stored)) {
+        if (stored && known.some((t) => t._id === stored)) {
           this.setActiveTenantId(stored);
           return;
         }
 
+        const active = known.filter((t) => t.activo !== false);
         const first = active[0];
         if (first?._id) {
           this.setActiveTenantId(first._id);
@@ -121,12 +131,8 @@ export const useAuthStore = defineStore('auth', {
         }
       } catch {
         // Smoke: listados fallarán sin header; no tumbar el login.
-        // Si el stored ya no es usable en memoria, no forzar header muerto.
-        if (!stored) {
-          this.setActiveTenantId(null);
-        } else {
-          this.activeTenantId = stored;
-        }
+        // Mantener stored vía setActiveTenantId (memoria + localStorage alineados).
+        this.setActiveTenantId(stored);
       }
     },
 
@@ -138,7 +144,7 @@ export const useAuthStore = defineStore('auth', {
         err.response = {
           data: {
             message:
-              'Solo usuarios AMES (operativo o admin de sistema) pueden iniciar sesión',
+              'Solo personal autorizado puede iniciar sesión',
           },
         };
         throw err;

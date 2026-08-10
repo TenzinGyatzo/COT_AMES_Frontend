@@ -63,7 +63,7 @@
                 <th
                   class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                 >
-                  Tenant
+                  Administración
                 </th>
                 <th
                   class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -201,24 +201,21 @@
               class="w-full border border-gray-300 rounded-md px-3 py-2"
             >
               <option value="operativo">Operativo</option>
-              <option value="admin_sistema">Administrador de sistema</option>
-            </select>
-          </div>
-          <div v-if="form.rol === 'operativo'">
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Tenant</label
-            >
-            <select
-              v-model="form.tenantId"
-              required
-              class="w-full border border-gray-300 rounded-md px-3 py-2"
-            >
-              <option disabled value="">Seleccione tenant</option>
-              <option v-for="t in tenants" :key="t._id" :value="t._id">
-                {{ t.nombre }}
+              <option value="admin_tenant">Admin administración</option>
+              <option
+                v-if="authStore.isAdminSistema"
+                value="admin_sistema"
+              >
+                Administrador de sistema
               </option>
             </select>
           </div>
+          <p
+            v-if="rolRequiereTenant(form.rol) && fixedTenantHint"
+            class="text-sm text-gray-600"
+          >
+            Administración: {{ fixedTenantHint }}
+          </p>
 
           <p v-if="formError" class="text-sm text-red-600">{{ formError }}</p>
 
@@ -300,6 +297,23 @@ const guardando = ref(false);
 const formError = ref<string | null>(null);
 const confirmLoading = ref(false);
 
+/** Tenant anclado: JWT (admin_tenant) o selector activo (admin_sistema). */
+const fixedTenantId = computed(() => {
+  if (authStore.isAdminTenant) {
+    return authStore.user?.tenantId || '';
+  }
+  if (authStore.isAdminSistema) {
+    return activeTenantId.value || '';
+  }
+  return '';
+});
+
+const fixedTenantHint = computed(() => {
+  const tid = fixedTenantId.value;
+  if (!tid) return '';
+  return tenantById.value.get(tid) || tid.slice(-6);
+});
+
 type ConfirmAction = {
   tipo: 'desactivar' | 'reactivar';
   user: AdminUser;
@@ -310,7 +324,7 @@ const form = reactive({
   nombre: '',
   email: '',
   password: '',
-  rol: 'operativo' as 'operativo' | 'admin_sistema',
+  rol: 'operativo' as 'operativo' | 'admin_tenant' | 'admin_sistema',
   tenantId: '',
 });
 
@@ -339,12 +353,23 @@ const confirmText = computed(() =>
 );
 
 function labelRol(rol: string) {
-  return rol === 'admin_sistema' ? 'Admin sistema' : 'Operativo';
+  if (rol === 'admin_sistema') return 'Admin sistema';
+  if (rol === 'admin_tenant') return 'Admin administración';
+  return 'Operativo';
+}
+
+function rolRequiereTenant(rol: string) {
+  return rol === 'operativo' || rol === 'admin_tenant';
 }
 
 function tenantLabel(id?: string) {
   if (!id) return '—';
   return tenantById.value.get(id) || id.slice(-6);
+}
+
+function resolveFormTenantId(): string {
+  if (fixedTenantId.value) return fixedTenantId.value;
+  return form.tenantId;
 }
 
 function applyQueryToState() {
@@ -370,16 +395,27 @@ async function cargar() {
   error.value = null;
   actionError.value = null;
   try {
+    // admin_sistema sin administración activa: BE devuelve []; banner shell 2.2 guía.
     const usersResult = await getUsers({
       activo: verInactivos.value ? false : true,
     }).then(
       (users) => ({ ok: true as const, users }),
       (e: unknown) => ({ ok: false as const, error: e }),
     );
-    const tenantsResult = await getTenants().then(
-      (t) => ({ ok: true as const, t }),
-      (e: unknown) => ({ ok: false as const, error: e }),
-    );
+
+    // GET /tenants solo admin_sistema (AD-16). admin_tenant: nunca.
+    let tenantsResult:
+      | { ok: true; t: Tenant[] }
+      | { ok: false; error: unknown }
+      | null = null;
+    if (authStore.isAdminSistema) {
+      tenantsResult = await getTenants().then(
+        (t) => ({ ok: true as const, t }),
+        (e: unknown) => ({ ok: false as const, error: e }),
+      );
+    } else {
+      tenants.value = [];
+    }
 
     if (seq !== loadSeq) return;
 
@@ -389,12 +425,12 @@ async function cargar() {
       error.value = extractError(usersResult.error);
     }
 
-    if (tenantsResult.ok) {
+    if (tenantsResult?.ok) {
       tenants.value = tenantsResult.t;
-    } else if (usersResult.ok) {
+    } else if (tenantsResult && usersResult.ok) {
       actionError.value =
         extractError(tenantsResult.error) ||
-        'No se pudieron cargar los tenants';
+        'No se pudieron cargar las administraciones';
     }
   } finally {
     if (seq === loadSeq) {
@@ -416,7 +452,7 @@ function resetForm() {
   form.email = '';
   form.password = '';
   form.rol = 'operativo';
-  form.tenantId = '';
+  form.tenantId = fixedTenantId.value || '';
   formError.value = null;
 }
 
@@ -433,8 +469,16 @@ function abrirModalEditar(u: AdminUser) {
   form.nombre = u.nombre;
   form.email = u.email;
   form.password = '';
-  form.rol = u.rol;
-  form.tenantId = u.tenantId || '';
+  // admin_tenant no puede editar/asignar admin_sistema
+  if (
+    !authStore.isAdminSistema &&
+    u.rol === 'admin_sistema'
+  ) {
+    form.rol = 'operativo';
+  } else {
+    form.rol = u.rol;
+  }
+  form.tenantId = fixedTenantId.value || u.tenantId || '';
   formError.value = null;
   modalAbierto.value = true;
 }
@@ -447,8 +491,22 @@ async function guardar() {
   formError.value = null;
   guardando.value = true;
   try {
-    if (form.rol === 'operativo' && !form.tenantId) {
-      formError.value = 'Seleccione un tenant para el operativo';
+    if (
+      authStore.isAdminSistema &&
+      form.rol !== 'admin_sistema' &&
+      !fixedTenantId.value
+    ) {
+      formError.value =
+        'Seleccione una administración en el pie del menú antes de crear usuarios del tenant';
+      return;
+    }
+
+    const tenantForPayload = resolveFormTenantId();
+    if (rolRequiereTenant(form.rol) && !tenantForPayload) {
+      formError.value =
+        form.rol === 'admin_tenant'
+          ? 'Seleccione una administración para el admin'
+          : 'Seleccione una administración para el operativo';
       return;
     }
 
@@ -459,8 +517,8 @@ async function guardar() {
         rol: form.rol,
       };
       if (form.password) payload.password = form.password;
-      if (form.rol === 'operativo') {
-        payload.tenantId = form.tenantId;
+      if (rolRequiereTenant(form.rol)) {
+        payload.tenantId = tenantForPayload;
       } else {
         payload.tenantId = null;
       }
@@ -471,7 +529,9 @@ async function guardar() {
         email: form.email,
         password: form.password,
         rol: form.rol,
-        ...(form.rol === 'operativo' ? { tenantId: form.tenantId } : {}),
+        ...(rolRequiereTenant(form.rol)
+          ? { tenantId: tenantForPayload }
+          : {}),
       });
     }
     cerrarModal();

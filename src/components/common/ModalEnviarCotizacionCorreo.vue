@@ -126,7 +126,20 @@
             <p class="text-sm font-bold">No se pudo enviar el correo</p>
             <p class="text-xs text-red-700/90">{{ error }}</p>
             <p class="text-xs text-red-600/80 mt-1">
-              Corrige destinatarios y reintenta.
+              {{ errorHint }}
+            </p>
+          </div>
+        </div>
+
+        <div
+          v-else-if="emailCredentialsConfigured === false"
+          class="flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100 text-amber-900"
+        >
+          <div>
+            <p class="text-sm font-bold">Correo del tenant no configurado</p>
+            <p class="text-xs text-amber-800/90 mt-0.5">
+              Puedes cotizar y generar PDF. Para enviar, un administrador debe
+              configurar el correo en Configuración.
             </p>
           </div>
         </div>
@@ -138,7 +151,7 @@
             input-id="detalle-enviar-para"
             variant="para"
             placeholder="correo@empresa.com"
-            :disabled="sending"
+            :disabled="sending || emailCredentialsConfigured === false"
             hint="Al menos un destinatario Para (máx. 20)."
           />
           <EmailChipsInput
@@ -148,7 +161,11 @@
             variant="cc"
             placeholder="opcional@empresa.com"
             :exclude="para"
-            :disabled="sending || para.length === 0"
+            :disabled="
+              sending ||
+              para.length === 0 ||
+              emailCredentialsConfigured === false
+            "
             :suggestions="correosNotificacion"
             :hint="ccHint"
           />
@@ -195,6 +212,8 @@ const props = withDefaults(
     sending?: boolean;
     success?: boolean;
     error?: string | null;
+    /** undefined = desconocido (no bloquear); false = aviso + disable send */
+    emailCredentialsConfigured?: boolean | null;
   }>(),
   {
     folio: '',
@@ -203,6 +222,7 @@ const props = withDefaults(
     sending: false,
     success: false,
     error: null,
+    emailCredentialsConfigured: null,
   },
 );
 
@@ -251,9 +271,21 @@ watch(
   { immediate: true },
 );
 
+const errorHint = computed(() => {
+  const msg = (props.error || '').toLowerCase();
+  if (msg.includes('inactivo')) {
+    return 'La cotización no se envió. El tenant está inactivo; el envío no está disponible.';
+  }
+  if (msg.includes('no está configurado')) {
+    return 'La cotización no se envió. Configura el correo del tenant en Configuración o reintenta cuando esté listo.';
+  }
+  return 'Corrige destinatarios y reintenta.';
+});
+
 const canSend = computed(
   () =>
     !props.sending &&
+    props.emailCredentialsConfigured !== false &&
     para.value.length > 0 &&
     para.value.length <= MAX_DESTINATARIOS,
 );

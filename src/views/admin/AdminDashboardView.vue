@@ -372,11 +372,15 @@ const authStore = useAuthStore();
 const pageTitle = ref('Administración');
 
 async function resolveAdministracionTitle() {
+  // GET /tenants = solo admin_sistema (AD-16 / Story 2.1).
+  // Operativo y admin_tenant: sin catálogo → título genérico.
+  if (!authStore.isAdminSistema) {
+    pageTitle.value = 'Administración';
+    return;
+  }
   try {
     const tenants = await getTenants();
-    const tid = authStore.isAdminSistema
-      ? authStore.activeTenantId
-      : authStore.user?.tenantId || null;
+    const tid = authStore.activeTenantId;
     const match = tid ? tenants.find((t) => t._id === tid) : undefined;
     pageTitle.value = match?.nombre
       ? `Administración ${match.nombre}`

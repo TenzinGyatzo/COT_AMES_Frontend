@@ -31,7 +31,7 @@ const PDF_FIRST_PAGE_TOP_PULL = PDF_PAGE_MARGIN_TOP - PDF_FIRST_PAGE_CONTENT_TOP
 export interface PdfBankPageOptions {
   /** Logo del banco (`bancarios.logoUrl`). */
   logoBase64?: string;
-  /** Logo branding tenant / fallback AMES (mismo que header PDF). */
+  /** Logo branding tenant / fallback Aestimare (mismo que header PDF). */
   brandingLogoBase64?: string;
   bancarios: PdfBancariosData;
 }
@@ -151,7 +151,7 @@ export const getCotizacionDefinition = (
     detalle.incluirDatosBancarios && bankPage,
   );
 
-  const footerLine1 = emisor?.razonSocial?.trim() || 'AMES';
+  const footerLine1 = emisor?.razonSocial?.trim() || 'Aestimare';
   const footerLine2 = emisor?.domicilio?.trim() || '';
   const contactBits: string[] = [];
   if (emisor?.telefono?.trim()) contactBits.push(`Tel: ${emisor.telefono.trim()}`);

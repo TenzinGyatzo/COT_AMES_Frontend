@@ -45,7 +45,7 @@
       <div
         class="p-6 border-b border-gray-700 flex items-center justify-between"
       >
-        <span class="text-2xl font-bold text-white tracking-tight">AMES</span>
+        <span class="text-2xl font-bold text-white tracking-tight">Aestimare</span>
         <button
           @click="closeSidebar"
           class="md:hidden text-gray-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-medical-blue-500 rounded"
@@ -149,7 +149,7 @@
           Plantillas
         </router-link>
         <router-link
-          v-if="authStore.isAdminSistema"
+          v-if="authStore.isAdminSistema || authStore.isAdminTenant"
           to="/admin/configuracion"
           class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
           :class="
@@ -161,7 +161,7 @@
           Configuración
         </router-link>
         <router-link
-          v-if="authStore.isAdminSistema"
+          v-if="authStore.isAdminSistema || authStore.isAdminTenant"
           to="/admin/usuarios"
           class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
           :class="
@@ -171,6 +171,30 @@
           "
         >
           Usuarios
+        </router-link>
+        <router-link
+          v-if="authStore.isAdminSistema"
+          to="/admin/tenants"
+          class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          :class="
+            $route.name === 'admin-tenants'
+              ? 'bg-medical-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+          "
+        >
+          Tenants
+        </router-link>
+        <router-link
+          v-if="authStore.isAdminSistema"
+          to="/admin/onboard"
+          class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          :class="
+            $route.name === 'admin-onboard-tenant'
+              ? 'bg-medical-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+          "
+        >
+          Onboard tenant
         </router-link>
       </nav>
 
@@ -187,7 +211,10 @@
             id="sidebar-tenant-select"
             class="w-full px-2 py-2 text-sm rounded-md bg-gray-900 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-medical-blue-500 focus:border-medical-blue-500 disabled:opacity-60"
             :value="authStore.activeTenantId || ''"
-            :disabled="tenantsLoading || tenantOptions.length === 0"
+            :disabled="
+              tenantsLoading ||
+              (tenantOptions.length === 0 && !inactiveContextTenant)
+            "
             @change="onTenantChange"
           >
             <option v-if="tenantsLoading" value="" disabled>
@@ -196,8 +223,25 @@
             <option v-else-if="tenantsError" value="" disabled>
               Error al cargar tenants
             </option>
-            <option v-else-if="tenantOptions.length === 0" value="" disabled>
+            <option
+              v-else-if="tenantOptions.length === 0 && !inactiveContextTenant"
+              value=""
+              disabled
+            >
               Sin tenants activos
+            </option>
+            <option
+              v-else-if="!authStore.activeTenantId"
+              value=""
+              disabled
+            >
+              Seleccione…
+            </option>
+            <option
+              v-if="inactiveContextTenant"
+              :value="inactiveContextTenant._id"
+            >
+              {{ inactiveContextTenant.nombre }} (inactivo)
             </option>
             <option
               v-for="t in tenantOptions"
@@ -267,6 +311,15 @@ const tenantOptions = computed(() =>
   tenants.value.filter((t) => t.activo !== false && t._id),
 );
 
+/** Story 4.3: contexto de soporte sobre tenant inactivo (fuera de opciones activas). */
+const inactiveContextTenant = computed(() => {
+  const id = authStore.activeTenantId;
+  if (!id) return null;
+  const match = tenants.value.find((t) => t._id === id);
+  if (!match || match.activo !== false) return null;
+  return match;
+});
+
 const operativoTenantLabel = computed(() => {
   const tid = authStore.user?.tenantId;
   if (!tid) return 'Sin administración asignada';
@@ -279,9 +332,16 @@ const operativoTenantLabel = computed(() => {
 
 function syncActiveTenantWithOptions() {
   if (!authStore.isAdminSistema) return;
+  const active = authStore.activeTenantId;
+  // AD-14 / 4.3: no expulsar contexto inactivo intencional.
+  if (
+    active &&
+    tenants.value.some((t) => t._id === active && t.activo === false)
+  ) {
+    return;
+  }
   const options = tenantOptions.value;
   if (!options.length) return;
-  const active = authStore.activeTenantId;
   if (!active || !options.some((t) => t._id === active)) {
     const first = options[0];
     if (first?._id) authStore.setActiveTenantId(first._id);
@@ -289,6 +349,14 @@ function syncActiveTenantWithOptions() {
 }
 
 async function loadTenants() {
+  // GET /tenants = solo admin_sistema (AD-16 / Story 2.1).
+  // Operativo y admin_tenant: label por tenantId del JWT (sin catálogo).
+  if (!authStore.isAdminSistema) {
+    tenants.value = [];
+    tenantsLoading.value = false;
+    tenantsError.value = false;
+    return;
+  }
   tenantsLoading.value = true;
   tenantsError.value = false;
   try {
@@ -333,19 +401,42 @@ watch(
   },
 );
 
+/** Tras onboard (4.1): activeTenantId nuevo aún no está en el catálogo local → recargar. */
+watch(
+  () => authStore.activeTenantId,
+  (id) => {
+    if (
+      authStore.isAdminSistema &&
+      id &&
+      !tenants.value.some((t) => t._id === id)
+    ) {
+      void loadTenants();
+    }
+  },
+);
+
 const handleResize = () => {
   if (window.innerWidth >= 768) {
     isSidebarOpen.value = false;
   }
 };
 
+const onTenantsCatalogChanged = () => {
+  void loadTenants();
+};
+
 onMounted(() => {
   window.addEventListener('resize', handleResize);
+  window.addEventListener('ames:tenants-catalog-changed', onTenantsCatalogChanged);
   void loadTenants();
 });
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize);
+  window.removeEventListener(
+    'ames:tenants-catalog-changed',
+    onTenantsCatalogChanged,
+  );
 });
 
 const toggleSidebar = () => {

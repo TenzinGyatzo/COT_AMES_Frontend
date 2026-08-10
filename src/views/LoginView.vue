@@ -1,16 +1,13 @@
 <template>
   <div class="max-w-md mx-auto mt-8">
     <div class="bg-white shadow-lg rounded-lg p-8">
-      <div class="flex justify-center -mb-1">
+      <div class="flex justify-center mb-3">
         <img
-          src="../assets/logos/ames-logo-cuadrado.png"
-          alt="AMES"
-          class="w-28 h-28 object-contain"
+          src="/Aestimare/Aestimare-logo-horizontal.png"
+          alt="Aestimare"
+          class="h-28 w-auto max-w-[370px] object-contain"
         />
       </div>
-      <h2 class="text-2xl font-bold text-gray-900 mb-1 text-center">
-        Cotizador AMES
-      </h2>
       <p class="text-sm text-gray-600 mb-4 text-center">
         Solo para personal autorizado
       </p>

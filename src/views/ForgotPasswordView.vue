@@ -1,6 +1,13 @@
 <template>
   <div class="max-w-md mx-auto mt-16">
     <div class="bg-white shadow-lg rounded-lg p-8">
+      <div class="flex justify-center mb-3">
+        <img
+          src="/Aestimare/Aestimare-logo-horizontal.png"
+          alt="Aestimare"
+          class="h-12 w-auto max-w-[240px] object-contain"
+        />
+      </div>
       <h2 class="text-2xl font-bold text-gray-900 mb-2 text-center">
         Recuperar contraseña
       </h2>

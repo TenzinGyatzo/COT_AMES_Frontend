@@ -669,6 +669,7 @@
       :sending="isSendingEmail"
       :success="emailSendOk"
       :error="emailSendError"
+      :email-credentials-configured="emailCredentialsConfigured"
       @close="cerrarEnviarCorreo"
       @send="enviarCorreoDesdeDetalle"
     />
@@ -926,7 +927,11 @@ import {
 import { formatMoney } from '../../utils/currency';
 import { extractError } from '../../utils/extractError';
 import type { Servicio } from '../../types/backend';
-import { enviarCorreoCotizacion, getCotizacionAdminById } from '../../services/admin-api.service';
+import {
+  enviarCorreoCotizacion,
+  getCotizacionAdminById,
+  getTenantConfig,
+} from '../../services/admin-api.service';
 import BaseBackButton from '../../components/base/BaseBackButton.vue';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
@@ -965,6 +970,20 @@ const emailSendOk = ref(false);
 const emailSendError = ref<string | null>(null);
 const enviarEmailsPara = ref<string[]>([]);
 const enviarEmailsCc = ref<string[]>([]);
+/** Story 3.4 — null = desconocido; false deshabilita envío en modal. */
+const emailCredentialsConfigured = ref<boolean | null>(null);
+
+async function refreshEmailCredentialsFlag(): Promise<void> {
+  try {
+    const cfg = await getTenantConfig();
+    emailCredentialsConfigured.value =
+      typeof cfg.emailCredentialsConfigured === 'boolean'
+        ? cfg.emailCredentialsConfigured
+        : false;
+  } catch {
+    emailCredentialsConfigured.value = null;
+  }
+}
 
 // Computed para calcular el IVA (16% del subtotal)
 const iva = computed(() => {
@@ -1001,7 +1020,7 @@ const provenanceLine = computed(() => {
     return `Respondido por el cliente · enlace público · ${formatDateTime(whenAt)}`;
   }
   if (c.estadoOrigen === 'usuario') {
-    const nombre = c.estadoCambiadoPorNombre?.trim() || 'Usuario AMES';
+    const nombre = c.estadoCambiadoPorNombre?.trim() || 'Usuario';
     return `Marcado por ${nombre} · ${formatDateTime(whenAt)}`;
   }
   if (c.estadoOrigen === 'cron') {
@@ -1070,6 +1089,7 @@ function aplicarFlashRepetirEmail() {
 // Cargar cotización al montar; re-cargar si cambia :id (p. ej. tras Repetir)
 onMounted(() => {
   void cargarDetallePorRuta();
+  void refreshEmailCredentialsFlag();
 });
 
 watch(
@@ -1287,7 +1307,7 @@ async function handlePreviewPDF(): Promise<void> {
   }
 }
 
-function abrirEnviarCorreo(): void {
+async function abrirEnviarCorreo(): Promise<void> {
   if (!cotizacionDetalle.value) return;
   const c = cotizacionDetalle.value;
   enviarEmailsPara.value = [...(c.emailsPara || [])];
@@ -1296,6 +1316,8 @@ function abrirEnviarCorreo(): void {
   );
   emailSendOk.value = false;
   emailSendError.value = null;
+  // Story 3.4 — resolver flag antes de abrir para no habilitar Enviar con null.
+  await refreshEmailCredentialsFlag();
   showEnviarCorreo.value = true;
 }
 
@@ -1347,7 +1369,7 @@ async function enviarCorreoDesdeDetalle(payload: {
     emailSendOk.value = false;
     emailSendError.value = extractError(
       sendErr,
-      'No se pudo enviar el correo. Puedes corregir destinatarios y reintentar.',
+      'No se pudo enviar el correo.',
     );
   } finally {
     isSendingEmail.value = false;

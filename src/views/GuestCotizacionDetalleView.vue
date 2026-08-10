@@ -8,9 +8,11 @@
     <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
       <div class="flex items-center gap-3">
         <img
-          src="../assets/logos/ames-logo-cuadrado.png"
-          alt="AMES"
-          class="w-16"
+          v-if="cotizacion"
+          :src="displayLogoSrc"
+          :alt="displayLogoAlt"
+          class="w-16 object-contain"
+          @error="onLogoError"
         />
         <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
           Detalle de Cotización
@@ -434,11 +436,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { publicApiService } from '../services/public-api.service';
 import ConfirmationModal from '../components/common/ConfirmationModal.vue';
-import { downloadCotizacionPDF } from '../utils/pdfHelper';
+import {
+  downloadCotizacionPDF,
+  resolvePublicUrl,
+} from '../utils/pdfHelper';
+import logoFallback from '../assets/logos/aestimare-logo-fallback.png';
 import BaseSectionLoader from '../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../components/base/BaseButtonLoader.vue';
 import type {
@@ -455,8 +461,31 @@ const isLoading = ref(true);
 const isProcessing = ref(false);
 const error = ref<string | null>(null);
 const successMessage = ref<string | null>(null);
+const logoLoadFailed = ref(false);
 
 const showRechazarConfirm = ref(false);
+
+watch(
+  () => cotizacion.value?.branding?.logoUrl,
+  () => {
+    logoLoadFailed.value = false;
+  },
+);
+
+const displayLogoSrc = computed(() => {
+  if (logoLoadFailed.value) return logoFallback;
+  const url = cotizacion.value?.branding?.logoUrl?.trim();
+  if (url) return resolvePublicUrl(url);
+  return logoFallback;
+});
+
+const displayLogoAlt = computed(
+  () => cotizacion.value?.branding?.razonSocial?.trim() || 'Aestimare',
+);
+
+function onLogoError() {
+  if (!logoLoadFailed.value) logoLoadFailed.value = true;
+}
 
 function publicErrorMessage(err: unknown, fallback: string): string {
   const e = err as {
@@ -603,7 +632,9 @@ function toPdfShape(c: PublicCotizacionResponse): CotizacionDetalleDto {
 const handleDownloadPDF = async () => {
   if (!cotizacion.value) return;
   try {
-    await downloadCotizacionPDF(toPdfShape(cotizacion.value));
+    await downloadCotizacionPDF(toPdfShape(cotizacion.value), {
+      branding: cotizacion.value.branding,
+    });
   } catch (err) {
     console.error('Error al descargar PDF:', err);
     alert('No se pudo generar el PDF en este momento.');

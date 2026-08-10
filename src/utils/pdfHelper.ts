@@ -2,6 +2,7 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type {
   CotizacionDetalleDto,
+  PublicCotizacionBranding,
   TenantBranding,
   TenantConfigResponse,
 } from '../types/backend';
@@ -11,11 +12,18 @@ import {
   type PdfEmisorBranding,
 } from './cotizacionPdfTemplate';
 import { getBase64ImageFromURL } from './pdfUtils';
-import logoImg from '../assets/logos/ames-logo-cuadrado.png';
+import logoImg from '../assets/logos/aestimare-logo-fallback.png';
 import { API_BASE_URL } from '../config/api';
 import { getTenantConfig } from '../services/admin-api.service';
 import { useAuthStore } from '../store/auth';
 import { hasBancariosUtiles } from './bancarios.util';
+
+/** Branding opcional (guest magic link) cuando no hay sesión AMES / getTenantConfig. */
+export type PdfBrandingOverride = TenantBranding | PublicCotizacionBranding;
+
+export interface PdfBuildOptions {
+  branding?: PdfBrandingOverride;
+}
 
 // Inicializar vfs para fuentes (necesario para pdfmake en cliente)
 if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
@@ -30,7 +38,7 @@ if (pdfFonts && pdfFonts.pdfMake && pdfFonts.pdfMake.vfs) {
 }
 
 /** Misma resolución que preview en Configuración (proxy /uploads). */
-function resolvePublicUrl(pathOrUrl: string): string {
+export function resolvePublicUrl(pathOrUrl: string): string {
   if (pathOrUrl.startsWith('http') || pathOrUrl.startsWith('data:')) {
     return pathOrUrl;
   }
@@ -44,7 +52,7 @@ async function resolveTenantConfigForPdf(): Promise<
 > {
   try {
     const auth = useAuthStore();
-    // Roles AMES: operativo (tenant JWT) o admin_sistema (X-Tenant-Id).
+    // Operativo/admin_tenant: tenant JWT; admin_sistema: X-Tenant-Id (AD-11).
     if (!auth.isAmesUser) return undefined;
     if (auth.isAdminSistema && !auth.activeTenantId) return undefined;
     return await getTenantConfig();
@@ -56,18 +64,21 @@ async function resolveTenantConfigForPdf(): Promise<
 /**
  * Arma el docDefinition pdfmake (cuerpo → plantillas → bancarios).
  * Solo FE — no llama render PDF del BE (Story 6.7 / AD-5 UI path).
+ * Fallback logo: Aestimare (AD-15). Override branding para guest (sin JWT).
  */
 async function buildCotizacionDocDefinition(
   cotizacion: CotizacionDetalleDto,
+  opts?: PdfBuildOptions,
 ): Promise<ReturnType<typeof getCotizacionDefinition>> {
   const cfg = await resolveTenantConfigForPdf();
-  const branding: TenantBranding | undefined = cfg?.branding;
+  const branding: PdfBrandingOverride | undefined =
+    opts?.branding ?? cfg?.branding;
+
   let logoBase64: string;
-  if (branding?.logoUrl) {
+  const logoUrl = branding?.logoUrl?.trim();
+  if (logoUrl) {
     try {
-      logoBase64 = await getBase64ImageFromURL(
-        resolvePublicUrl(branding.logoUrl),
-      );
+      logoBase64 = await getBase64ImageFromURL(resolvePublicUrl(logoUrl));
     } catch {
       logoBase64 = await getBase64ImageFromURL(logoImg);
     }
@@ -75,6 +86,7 @@ async function buildCotizacionDocDefinition(
     logoBase64 = await getBase64ImageFromURL(logoImg);
   }
 
+  const cfgBranding = cfg?.branding;
   let bankPage: PdfBankPageOptions | undefined;
   if (cotizacion.incluirDatosBancarios && hasBancariosUtiles(cfg?.bancarios)) {
     const raw = cfg!.bancarios || {};
@@ -94,13 +106,13 @@ async function buildCotizacionDocDefinition(
     bankPage = {
       logoBase64: bankLogoBase64,
       bancarios: {
-        titular: raw.titular || branding?.razonSocial,
+        titular: raw.titular || cfgBranding?.razonSocial || branding?.razonSocial,
         banco: raw.banco,
         cuenta: raw.cuenta,
         clabe: raw.clabe,
-        domicilio: raw.domicilio || branding?.domicilio,
-        rfc: raw.rfc || branding?.rfc,
-        email: raw.email || branding?.emailContacto,
+        domicilio: raw.domicilio || cfgBranding?.domicilio,
+        rfc: raw.rfc || cfgBranding?.rfc,
+        email: raw.email || cfgBranding?.emailContacto,
       },
     };
   }
@@ -108,10 +120,10 @@ async function buildCotizacionDocDefinition(
   const emisor: PdfEmisorBranding | undefined = branding
     ? {
         razonSocial: branding.razonSocial,
-        domicilio: branding.domicilio,
-        telefono: branding.telefono,
-        emailContacto: branding.emailContacto,
-        sitioWeb: branding.sitioWeb,
+        domicilio: branding.domicilio ?? cfgBranding?.domicilio,
+        telefono: branding.telefono ?? cfgBranding?.telefono,
+        emailContacto: branding.emailContacto ?? cfgBranding?.emailContacto,
+        sitioWeb: branding.sitioWeb ?? cfgBranding?.sitioWeb,
       }
     : undefined;
 
@@ -124,8 +136,9 @@ async function buildCotizacionDocDefinition(
  */
 export async function generateCotizacionPdfBlob(
   cotizacion: CotizacionDetalleDto,
+  opts?: PdfBuildOptions,
 ): Promise<Blob> {
-  const docDefinition = await buildCotizacionDocDefinition(cotizacion);
+  const docDefinition = await buildCotizacionDocDefinition(cotizacion, opts);
   return new Promise((resolve, reject) => {
     try {
       pdfMake.createPdf(docDefinition).getBlob((b: Blob) => {
@@ -141,13 +154,14 @@ export async function generateCotizacionPdfBlob(
 /**
  * Genera y descarga el PDF de una cotización.
  * Usuarios AMES: branding + bancarios del tenant (Stories 2.2 / 2.4).
- * Fallback logo: AMES. Sin literales Exin/MOC.
+ * Fallback logo: Aestimare (AD-15). Guest: pasar opts.branding público.
  */
 export async function downloadCotizacionPDF(
   cotizacion: CotizacionDetalleDto,
+  opts?: PdfBuildOptions,
 ): Promise<void> {
   try {
-    const docDefinition = await buildCotizacionDocDefinition(cotizacion);
+    const docDefinition = await buildCotizacionDocDefinition(cotizacion, opts);
     const filename = `${cotizacion.folio}.pdf`;
     pdfMake.createPdf(docDefinition).download(filename);
   } catch (error) {
@@ -162,9 +176,10 @@ export async function downloadCotizacionPDF(
  */
 export async function previewCotizacionPDF(
   cotizacion: CotizacionDetalleDto,
+  opts?: PdfBuildOptions,
 ): Promise<void> {
   try {
-    const blob = await generateCotizacionPdfBlob(cotizacion);
+    const blob = await generateCotizacionPdfBlob(cotizacion, opts);
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank');
     if (!win) {

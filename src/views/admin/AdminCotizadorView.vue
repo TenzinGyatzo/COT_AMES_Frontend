@@ -737,6 +737,7 @@
       :initial-emails-para="emailsPara"
       :initial-emails-cc="emailsCc"
       :is-resend-busy="isResendingEmail"
+      :email-credentials-configured="emailCredentialsConfigured"
       @close="cerrarModal"
       @ver-cotizaciones="verCotizaciones"
       @ver-detalles="verDetalles"
@@ -988,6 +989,8 @@ const emailsCc = ref<string[]>([]);
 /** Story 6.8 — resultado real del envío (envío implícito por Para en 6.15). */
 const emailSendOk = ref(false);
 const emailSendError = ref<string | null>(null);
+/** Story 3.4 — precheck degradación sin SMTP tenant. null = aún no cargado. */
+const emailCredentialsConfigured = ref<boolean | null>(null);
 /** Create→send en curso (evita «Sin notificación» mid-flight). */
 const isSendingEmail = ref(false);
 const isResendingEmail = ref(false);
@@ -1331,6 +1334,18 @@ function isoFromVigenciaDias(n: number): string | undefined {
   );
 }
 
+async function refreshEmailCredentialsFlag(): Promise<void> {
+  try {
+    const cfg = await getTenantConfig();
+    emailCredentialsConfigured.value =
+      typeof cfg.emailCredentialsConfigured === 'boolean'
+        ? cfg.emailCredentialsConfigured
+        : false;
+  } catch {
+    emailCredentialsConfigured.value = null;
+  }
+}
+
 const cargarVigenciaDefault = async () => {
   try {
     const cfg = await getTenantConfig();
@@ -1343,10 +1358,15 @@ const cargarVigenciaDefault = async () => {
     if (!bancariosUtiles.value) {
       incluirDatosBancarios.value = false;
     }
+    emailCredentialsConfigured.value =
+      typeof cfg.emailCredentialsConfigured === 'boolean'
+        ? cfg.emailCredentialsConfigured
+        : false;
   } catch {
     vigenciaDefaultDias = 30;
     bancariosUtiles.value = false;
     incluirDatosBancarios.value = false;
+    emailCredentialsConfigured.value = null;
   }
   vigenciaDias.value = vigenciaDefaultDias;
 };
@@ -2240,25 +2260,31 @@ const confirmarGeneracion = async () => {
         emailSendError.value =
           'Cotización creada, pero falta el id para enviar el correo.';
       } else {
-        isSendingEmail.value = true;
-        try {
-          const detalle = await loadDetalleForSend(String(id), response);
-          const blob = await generateCotizacionPdfBlob(detalle);
-          await enviarCorreoCotizacion(String(id), blob, {
-            emailsPara: para,
-            emailsCc: cc,
-          });
-          emailSendOk.value = true;
-          emailSendError.value = null;
-        } catch (sendErr: any) {
-          const msg = sendErr.response?.data?.message;
+        await refreshEmailCredentialsFlag();
+        if (emailCredentialsConfigured.value === false) {
           emailSendOk.value = false;
-          emailSendError.value = Array.isArray(msg)
-            ? msg.join(', ')
-            : msg ||
-              'No se pudo enviar el correo. Puedes corregir destinatarios y reintentar.';
-        } finally {
-          isSendingEmail.value = false;
+          emailSendError.value =
+            'No se puede enviar: el correo del tenant no está configurado. Un administrador puede configurarlo en Configuración.';
+        } else {
+          isSendingEmail.value = true;
+          try {
+            const detalle = await loadDetalleForSend(String(id), response);
+            const blob = await generateCotizacionPdfBlob(detalle);
+            await enviarCorreoCotizacion(String(id), blob, {
+              emailsPara: para,
+              emailsCc: cc,
+            });
+            emailSendOk.value = true;
+            emailSendError.value = null;
+          } catch (sendErr: any) {
+            const msg = sendErr.response?.data?.message;
+            emailSendOk.value = false;
+            emailSendError.value = Array.isArray(msg)
+              ? msg.join(', ')
+              : msg || 'No se pudo enviar el correo.';
+          } finally {
+            isSendingEmail.value = false;
+          }
         }
       }
     }
@@ -2300,6 +2326,14 @@ async function reintentarEnvioCorreo(payload: {
   }
   if (!payload.emailsPara.length) return;
 
+  await refreshEmailCredentialsFlag();
+  if (emailCredentialsConfigured.value === false) {
+    emailSendOk.value = false;
+    emailSendError.value =
+      'No se puede enviar: el correo del tenant no está configurado. Un administrador puede configurarlo en Configuración.';
+    return;
+  }
+
   isResendingEmail.value = true;
   // Mantener emailSendError para no desmontar chips / UI de reintento.
   emailsPara.value = [...payload.emailsPara];
@@ -2321,8 +2355,7 @@ async function reintentarEnvioCorreo(payload: {
     emailSendOk.value = false;
     emailSendError.value = Array.isArray(msg)
       ? msg.join(', ')
-      : msg ||
-        'No se pudo enviar el correo. Puedes corregir destinatarios y reintentar.';
+      : msg || 'No se pudo enviar el correo.';
   } finally {
     isResendingEmail.value = false;
   }

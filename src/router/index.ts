@@ -29,6 +29,8 @@ import AdminMetricasView from '../views/admin/AdminMetricasView.vue';
 import AdminUsuariosView from '../views/admin/AdminUsuariosView.vue';
 import AdminPlantillasView from '../views/admin/AdminPlantillasView.vue';
 import AdminConfiguracionView from '../views/admin/AdminConfiguracionView.vue';
+import AdminOnboardTenantView from '../views/admin/AdminOnboardTenantView.vue';
+import AdminTenantsView from '../views/admin/AdminTenantsView.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -64,73 +66,97 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/admin',
     component: AdminLayout,
-    meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+    meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
     children: [
       {
         path: '',
         name: 'admin-dashboard',
         component: AdminDashboardView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'clientes',
         name: 'admin-clientes',
         component: AdminClientesView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'clientes/:id',
         name: 'admin-cliente-detalle',
         component: AdminClienteDetalleView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'cotizaciones',
         name: 'admin-cotizaciones',
         component: AdminCotizacionesView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'cotizaciones/nueva',
         name: 'admin-cotizacion-nueva',
         component: AdminCotizadorView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'cotizaciones/:id',
         name: 'admin-cotizacion-detalle',
         component: AdminCotizacionDetalleView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'servicios',
         name: 'admin-servicios',
         component: AdminServiciosView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'metricas',
         name: 'admin-metricas',
         component: AdminMetricasView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'plantillas',
         name: 'admin-plantillas',
         component: AdminPlantillasView,
-        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_sistema'] },
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {
         path: 'configuracion',
         name: 'admin-configuracion',
         component: AdminConfiguracionView,
-        meta: { requiresAuth: true, allowedRoles: ['admin_sistema'] },
+        meta: {
+          requiresAuth: true,
+          allowedRoles: ['admin_sistema', 'admin_tenant'],
+        },
       },
       {
         path: 'usuarios',
         name: 'admin-usuarios',
         component: AdminUsuariosView,
-        meta: { requiresAuth: true, allowedRoles: ['admin_sistema'] },
+        meta: {
+          requiresAuth: true,
+          allowedRoles: ['admin_sistema', 'admin_tenant'],
+        },
+      },
+      {
+        path: 'onboard',
+        name: 'admin-onboard-tenant',
+        component: AdminOnboardTenantView,
+        meta: {
+          requiresAuth: true,
+          allowedRoles: ['admin_sistema'],
+        },
+      },
+      {
+        path: 'tenants',
+        name: 'admin-tenants',
+        component: AdminTenantsView,
+        meta: {
+          requiresAuth: true,
+          allowedRoles: ['admin_sistema'],
+        },
       },
     ],
   },

@@ -1,15 +1,15 @@
 <template>
   <div class="max-w-md mx-auto mt-8">
     <div class="bg-white shadow-lg rounded-lg p-8">
-      <div class="flex justify-center mb-3">
+      <div class="flex justify-center">
         <img
-          src="/Aestimare/Aestimare-logo-horizontal.png"
+          src="/Aestimare/Aestimare-horizontal-sin-descriptor.png"
           alt="Aestimare"
           class="h-28 w-auto max-w-[370px] object-contain"
         />
       </div>
-      <p class="text-sm text-gray-600 mb-4 text-center">
-        Solo para personal autorizado
+      <p class="text-md text-amber-600 mb-6 text-center">
+        Gestión de propuestas comerciales
       </p>
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <div>

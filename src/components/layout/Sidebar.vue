@@ -209,8 +209,9 @@
           </label>
           <select
             id="sidebar-tenant-select"
-            class="w-full px-2 py-2 text-sm rounded-md bg-gray-900 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-medical-blue-500 focus:border-medical-blue-500 disabled:opacity-60"
+            class="w-full max-w-full px-2 py-2 text-sm rounded-md bg-gray-900 text-white border border-gray-600 truncate focus:outline-none focus:ring-2 focus:ring-medical-blue-500 focus:border-medical-blue-500 disabled:opacity-60"
             :value="authStore.activeTenantId || ''"
+            :title="selectedTenantOptionTitle"
             :disabled="
               tenantsLoading ||
               (tenantOptions.length === 0 && !inactiveContextTenant)
@@ -240,15 +241,17 @@
             <option
               v-if="inactiveContextTenant"
               :value="inactiveContextTenant._id"
+              :title="formatTenantOptionLabel(inactiveContextTenant, true)"
             >
-              {{ inactiveContextTenant.nombre }} (inactivo)
+              {{ formatTenantOptionLabel(inactiveContextTenant, true) }}
             </option>
             <option
               v-for="t in tenantOptions"
               :key="t._id"
               :value="t._id"
+              :title="formatTenantOptionLabel(t)"
             >
-              {{ t.nombre }}
+              {{ formatTenantOptionLabel(t) }}
             </option>
           </select>
           <button
@@ -329,6 +332,27 @@ const inactiveContextTenant = computed(() => {
   const match = tenants.value.find((t) => t._id === id);
   if (!match || match.activo !== false) return null;
   return match;
+});
+
+/** Etiqueta del selector: nombre + clave (truncate nativo del <select>). */
+function formatTenantOptionLabel(
+  t: Pick<Tenant, 'nombre' | 'clave'>,
+  inactive = false,
+): string {
+  const nombre = t.nombre?.trim() || 'Sin nombre';
+  const clave = t.clave?.trim();
+  const base = clave ? `${nombre} (${clave})` : nombre;
+  return inactive ? `${base} (inactivo)` : base;
+}
+
+const selectedTenantOptionTitle = computed(() => {
+  const id = authStore.activeTenantId;
+  if (!id) return '';
+  if (inactiveContextTenant.value?._id === id) {
+    return formatTenantOptionLabel(inactiveContextTenant.value, true);
+  }
+  const match = tenantOptions.value.find((t) => t._id === id);
+  return match ? formatTenantOptionLabel(match) : '';
 });
 
 const fixedTenantNombreLabel = computed(() => {

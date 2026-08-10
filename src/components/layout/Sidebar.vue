@@ -267,15 +267,16 @@
         >
           <p
             id="sidebar-tenant-label"
-            class="text-xs font-medium text-gray-400 mb-1"
+            class="text-xs font-medium text-gray-400 mb-1 truncate"
+            :title="fixedTenantNombreLabel"
           >
-            Administración
+            {{ fixedTenantNombreLabel }}
           </p>
           <p
             class="text-sm text-white truncate"
-            :title="operativoTenantLabel"
+            :title="fixedTenantClaveLabel"
           >
-            {{ operativoTenantLabel }}
+            {{ fixedTenantClaveLabel }}
           </p>
         </div>
 
@@ -295,7 +296,7 @@
 import { computed, ref, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
-import { getTenants } from '../../services/admin-api.service';
+import { getTenants, getTenantConfig } from '../../services/admin-api.service';
 import type { Tenant } from '../../types/backend';
 
 const router = useRouter();
@@ -306,6 +307,16 @@ const isSidebarOpen = ref(false);
 const tenants = ref<Tenant[]>([]);
 const tenantsLoading = ref(false);
 const tenantsError = ref(false);
+
+/** Identidad del tenant fijo (admin_tenant / operativo) vía GET /tenant-config — AD-16. */
+const isFixedTenantUser = () =>
+  authStore.isAmesUser && !authStore.isAdminSistema;
+const fixedTenantNombre = ref<string | null>(null);
+const fixedTenantClave = ref<string | null>(null);
+const fixedTenantLoading = ref(isFixedTenantUser());
+const fixedTenantError = ref(false);
+const fixedTenantIdentityLoaded = ref(false);
+let fixedTenantLoadGeneration = 0;
 
 const tenantOptions = computed(() =>
   tenants.value.filter((t) => t.activo !== false && t._id),
@@ -320,14 +331,22 @@ const inactiveContextTenant = computed(() => {
   return match;
 });
 
-const operativoTenantLabel = computed(() => {
+const fixedTenantNombreLabel = computed(() => {
+  if (fixedTenantNombre.value) return fixedTenantNombre.value;
+  if (fixedTenantLoading.value) return 'Cargando…';
+  if (fixedTenantError.value) return 'Administración (no disponible)';
+  return 'Administración';
+});
+
+const fixedTenantClaveLabel = computed(() => {
+  if (fixedTenantClave.value) return fixedTenantClave.value;
+  if (fixedTenantLoading.value) return '…';
+  // No presentar ObjectId como si fuera clave cuando ya hay nombre.
+  if (fixedTenantNombre.value) return '—';
+  if (fixedTenantError.value) return 'no disponible';
   const tid = authStore.user?.tenantId;
-  if (!tid) return 'Sin administración asignada';
-  const match = tenants.value.find((t) => t._id === tid);
-  if (match?.nombre) return match.nombre;
-  if (tenantsLoading.value) return 'Cargando…';
-  if (tenantsError.value) return 'Administración (no disponible)';
-  return tid.slice(-6);
+  if (tid) return tid.length > 6 ? `…${tid.slice(-6)}` : tid;
+  return 'Sin administración asignada';
 });
 
 function syncActiveTenantWithOptions() {
@@ -350,7 +369,7 @@ function syncActiveTenantWithOptions() {
 
 async function loadTenants() {
   // GET /tenants = solo admin_sistema (AD-16 / Story 2.1).
-  // Operativo y admin_tenant: label por tenantId del JWT (sin catálogo).
+  // Operativo y admin_tenant: identidad vía getTenantConfig (sin catálogo).
   if (!authStore.isAdminSistema) {
     tenants.value = [];
     tenantsLoading.value = false;
@@ -367,6 +386,39 @@ async function loadTenants() {
     tenantsError.value = true;
   } finally {
     tenantsLoading.value = false;
+  }
+}
+
+/** Carga nombre/clave del tenant fijo. Cache local del componente (Ask First: no composable). */
+async function loadFixedTenantIdentity(force = false) {
+  if (!isFixedTenantUser()) {
+    fixedTenantNombre.value = null;
+    fixedTenantClave.value = null;
+    fixedTenantLoading.value = false;
+    fixedTenantError.value = false;
+    fixedTenantIdentityLoaded.value = false;
+    return;
+  }
+  if (fixedTenantIdentityLoaded.value && !force) return;
+  const generation = ++fixedTenantLoadGeneration;
+  fixedTenantLoading.value = true;
+  fixedTenantError.value = false;
+  try {
+    const cfg = await getTenantConfig();
+    if (generation !== fixedTenantLoadGeneration) return;
+    fixedTenantNombre.value = cfg.tenantNombre?.trim() || null;
+    fixedTenantClave.value = cfg.tenantClave?.trim() || null;
+    fixedTenantIdentityLoaded.value = true;
+  } catch {
+    if (generation !== fixedTenantLoadGeneration) return;
+    fixedTenantNombre.value = null;
+    fixedTenantClave.value = null;
+    fixedTenantError.value = true;
+    fixedTenantIdentityLoaded.value = false;
+  } finally {
+    if (generation === fixedTenantLoadGeneration) {
+      fixedTenantLoading.value = false;
+    }
   }
 }
 
@@ -415,6 +467,15 @@ watch(
   },
 );
 
+watch(
+  () => authStore.user?.tenantId,
+  () => {
+    if (!isFixedTenantUser()) return;
+    fixedTenantIdentityLoaded.value = false;
+    void loadFixedTenantIdentity(true);
+  },
+);
+
 const handleResize = () => {
   if (window.innerWidth >= 768) {
     isSidebarOpen.value = false;
@@ -429,9 +490,11 @@ onMounted(() => {
   window.addEventListener('resize', handleResize);
   window.addEventListener('ames:tenants-catalog-changed', onTenantsCatalogChanged);
   void loadTenants();
+  void loadFixedTenantIdentity();
 });
 
 onUnmounted(() => {
+  fixedTenantLoadGeneration += 1;
   window.removeEventListener('resize', handleResize);
   window.removeEventListener(
     'ames:tenants-catalog-changed',

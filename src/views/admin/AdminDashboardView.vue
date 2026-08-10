@@ -354,10 +354,10 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
 import { useAuthStore } from '../../store/auth';
-import { getTenants } from '../../services/admin-api.service';
+import { getTenants, getTenantConfig } from '../../services/admin-api.service';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 
 const {
@@ -370,25 +370,68 @@ const {
 
 const authStore = useAuthStore();
 const pageTitle = ref('Administración');
+let titleResolveGeneration = 0;
+
+function formatTenantTitle(
+  nombre?: string | null,
+  clave?: string | null,
+  fallbackId?: string | null,
+): string {
+  const n = nombre?.trim();
+  const c = clave?.trim();
+  if (n && c) return `${n} (${c})`;
+  if (n) return n;
+  if (c) return c;
+  if (fallbackId) {
+    return fallbackId.length > 6 ? `…${fallbackId.slice(-6)}` : fallbackId;
+  }
+  return 'Administración';
+}
 
 async function resolveAdministracionTitle() {
-  // GET /tenants = solo admin_sistema (AD-16 / Story 2.1).
-  // Operativo y admin_tenant: sin catálogo → título genérico.
+  // GET /tenants = solo admin_sistema (AD-16).
+  // admin_tenant / operativo: identidad vía GET /tenant-config.
+  const generation = ++titleResolveGeneration;
   if (!authStore.isAdminSistema) {
-    pageTitle.value = 'Administración';
+    try {
+      const cfg = await getTenantConfig();
+      if (generation !== titleResolveGeneration) return;
+      pageTitle.value = formatTenantTitle(
+        cfg.tenantNombre,
+        cfg.tenantClave,
+        cfg.tenantId || authStore.user?.tenantId,
+      );
+    } catch {
+      if (generation !== titleResolveGeneration) return;
+      pageTitle.value = 'Administración';
+    }
     return;
   }
   try {
-    const tenants = await getTenants();
     const tid = authStore.activeTenantId;
-    const match = tid ? tenants.find((t) => t._id === tid) : undefined;
-    pageTitle.value = match?.nombre
-      ? `Administración ${match.nombre}`
-      : 'Administración';
+    if (!tid) {
+      if (generation !== titleResolveGeneration) return;
+      pageTitle.value = 'Administración';
+      return;
+    }
+    const tenants = await getTenants();
+    if (generation !== titleResolveGeneration) return;
+    const match = tenants.find((t) => t._id === tid);
+    pageTitle.value = formatTenantTitle(match?.nombre, match?.clave, tid);
   } catch {
+    if (generation !== titleResolveGeneration) return;
     pageTitle.value = 'Administración';
   }
 }
+
+watch(
+  () => authStore.activeTenantId,
+  () => {
+    if (authStore.isAdminSistema) {
+      void resolveAdministracionTitle();
+    }
+  },
+);
 
 // Cargar contadores al montar el componente
 onMounted(async () => {
@@ -403,6 +446,7 @@ onMounted(async () => {
 
 // Limpiar estado al desmontar
 onUnmounted(() => {
+  titleResolveGeneration += 1;
   limpiarDashboardCounters();
 });
 </script>

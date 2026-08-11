@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,vue,js,json}\" \"*.{ts,js,json}\"",
     "test:pdf-mapper": "npx --yes tsx src/utils/pdf/plantillas/mapPlantillasSnapshot.selftest.ts",
-    "test:conceptos-table": "npx --yes tsx src/utils/pdf/conceptosTableLayout.selftest.ts"
+    "test:conceptos-table": "npx --yes tsx src/utils/pdf/conceptosTableLayout.selftest.ts",
+    "test:product-images": "npx --yes tsx src/utils/resolveProductImageUrls.selftest.ts",
+    "test:pdf-opts-detalle": "npx --yes tsx src/utils/pdfOptsFromDetalle.selftest.ts"
   },
   "dependencies": {
     "@tiptap/extension-text-align": "^3.28.0",

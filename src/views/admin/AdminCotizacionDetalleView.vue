@@ -924,6 +924,7 @@ import {
   generateCotizacionPdfBlob,
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
+import { pdfOptsFromDetalle } from '../../utils/pdfOptsFromDetalle';
 import { formatMoney } from '../../utils/currency';
 import { extractError } from '../../utils/extractError';
 import type { Servicio } from '../../types/backend';
@@ -1291,7 +1292,10 @@ async function handleDownloadPDF(): Promise<void> {
   if (!cotizacionDetalle.value || isPdfBusy.value) return;
   try {
     isPdfBusy.value = true;
-    await downloadCotizacionPDF(cotizacionDetalle.value);
+    await downloadCotizacionPDF(
+      cotizacionDetalle.value,
+      pdfOptsFromDetalle(cotizacionDetalle.value),
+    );
   } finally {
     isPdfBusy.value = false;
   }
@@ -1301,7 +1305,10 @@ async function handlePreviewPDF(): Promise<void> {
   if (!cotizacionDetalle.value || isPdfBusy.value) return;
   try {
     isPdfBusy.value = true;
-    await previewCotizacionPDF(cotizacionDetalle.value);
+    await previewCotizacionPDF(
+      cotizacionDetalle.value,
+      pdfOptsFromDetalle(cotizacionDetalle.value),
+    );
   } finally {
     isPdfBusy.value = false;
   }
@@ -1353,7 +1360,10 @@ async function enviarCorreoDesdeDetalle(payload: {
   enviarEmailsCc.value = [...payload.emailsCc];
 
   try {
-    const blob = await generateCotizacionPdfBlob(cotizacionDetalle.value);
+    const blob = await generateCotizacionPdfBlob(
+      cotizacionDetalle.value,
+      pdfOptsFromDetalle(cotizacionDetalle.value),
+    );
     await enviarCorreoCotizacion(String(id), blob, {
       emailsPara: payload.emailsPara,
       emailsCc: payload.emailsCc,
@@ -1569,7 +1579,10 @@ async function enviarCorreoTrasRepetir(
     } catch {
       /* usar respuesta de repetir como fallback para PDF */
     }
-    const blob = await generateCotizacionPdfBlob(detalle);
+    const blob = await generateCotizacionPdfBlob(
+      detalle,
+      pdfOptsFromDetalle(detalle),
+    );
     await enviarCorreoCotizacion(id, blob, {
       emailsPara: para,
       emailsCc: cc,

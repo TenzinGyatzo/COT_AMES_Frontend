@@ -444,6 +444,8 @@ import {
   downloadCotizacionPDF,
   resolvePublicUrl,
 } from '../utils/pdfHelper';
+import { pdfOptsFromDetalle } from '../utils/pdfOptsFromDetalle';
+import { hasBancariosUtiles } from '../utils/bancarios.util';
 import logoFallback from '../assets/logos/aestimare-logo-fallback.png';
 import BaseSectionLoader from '../components/base/BaseSectionLoader.vue';
 import BaseButtonLoader from '../components/base/BaseButtonLoader.vue';
@@ -618,22 +620,50 @@ function toPdfShape(c: PublicCotizacionResponse): CotizacionDetalleDto {
     nombreContacto: c.nombreContacto,
     telefonoContacto: c.telefonoContacto,
     cargoContacto: c.cargoContacto,
-    items: (c.items || []).map((it) => ({
-      servicioId: 'public',
-      nombreServicioSnapshot: it.nombre,
-      descripcionServicioSnapshot: it.descripcion,
-      cantidad: it.cantidad,
-      precioUnitarioSnapshot: it.precioUnitario,
-      subtotal: it.subtotal,
-    })),
+    incluirDescripciones: c.incluirDescripciones === true,
+    incluirImagenesPdf: c.incluirImagenesPdf === true,
+    incluirDatosBancarios: c.incluirDatosBancarios === true,
+    plantillasSnapshot: c.plantillasSnapshot,
+    items: (c.items || []).map((it) => {
+      const tipoSnapshot =
+        it.tipoSnapshot === 'producto' || it.tipoSnapshot === 'servicio'
+          ? it.tipoSnapshot
+          : it.imagenUrl
+            ? ('producto' as const)
+            : undefined;
+      return {
+        servicioId: it.servicioId || '',
+        nombreServicioSnapshot: it.nombre,
+        descripcionServicioSnapshot: it.descripcion,
+        cantidad: it.cantidad,
+        precioUnitarioSnapshot: it.precioUnitario,
+        subtotal: it.subtotal,
+        ...(tipoSnapshot ? { tipoSnapshot } : {}),
+      };
+    }),
   };
 }
 
 const handleDownloadPDF = async () => {
   if (!cotizacion.value) return;
   try {
-    await downloadCotizacionPDF(toPdfShape(cotizacion.value), {
-      branding: cotizacion.value.branding,
+    const c = cotizacion.value;
+    const detalle = toPdfShape(c);
+    // imagenUrl es proyección pública live → mapa (AD-22), no campo en ItemCotizacion.
+    const opts = pdfOptsFromDetalle({
+      items: (c.items || []).map((it) => ({
+        servicioId: it.servicioId || '',
+        nombreServicioSnapshot: it.nombre,
+        precioUnitarioSnapshot: it.precioUnitario,
+        cantidad: it.cantidad,
+        subtotal: it.subtotal,
+        imagenUrl: it.imagenUrl,
+      })),
+    });
+    await downloadCotizacionPDF(detalle, {
+      branding: c.branding,
+      ...(hasBancariosUtiles(c.bancarios) ? { bancarios: c.bancarios } : {}),
+      ...opts,
     });
   } catch (err) {
     console.error('Error al descargar PDF:', err);

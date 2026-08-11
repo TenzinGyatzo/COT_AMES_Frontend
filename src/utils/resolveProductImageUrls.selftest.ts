@@ -222,6 +222,51 @@ assert(
   'itemServicioId populate',
 );
 
+// Paridad modal/detalle: populate → mismas URLs que mapa desde helper.
+const detallePoblado = [
+  {
+    servicioId: {
+      _id: 'p5',
+      tipo: 'producto',
+      imagenUrl: '/uploads/catalogo/t/p5.webp',
+    } as any,
+    nombreServicioSnapshot: 'P5',
+    precioUnitarioSnapshot: 1,
+    cantidad: 1,
+    subtotal: 1,
+    tipoSnapshot: 'producto' as const,
+  },
+];
+const fromDetallePopulate = resolveProductImageUrls(detallePoblado, {
+  incluirImagenesPdf: true,
+});
+assert(
+  fromDetallePopulate.p5 === '/uploads/catalogo/t/p5.webp',
+  'mapa implícito desde detalle poblado',
+);
+
+// Guest-like: string id + tipoSnapshot + mapa (sin populate).
+const guestLike = resolveProductImageUrls(
+  [
+    {
+      servicioId: 'p6',
+      nombreServicioSnapshot: 'P6',
+      precioUnitarioSnapshot: 1,
+      cantidad: 1,
+      subtotal: 1,
+      tipoSnapshot: 'producto',
+    },
+  ],
+  {
+    incluirImagenesPdf: true,
+    catalogImagenByServicioId: { p6: '/uploads/catalogo/t/p6.webp' },
+  },
+);
+assert(
+  guestLike.p6 === '/uploads/catalogo/t/p6.webp',
+  'guest-like items con tipoSnapshot+mapa',
+);
+
 if (failed) {
   console.error(`resolveProductImageUrls.selftest: ${failed} failure(s)`);
   process.exit(1);

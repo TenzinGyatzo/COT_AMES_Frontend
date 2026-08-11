@@ -220,6 +220,12 @@ export interface PublicCotizacionItem {
   cantidad: number;
   precioUnitario: number;
   subtotal: number;
+  /** Id de catálogo (mapa imágenes PDF). */
+  servicioId?: string;
+  /** AD-22 — gate imágenes PDF. */
+  tipoSnapshot?: 'servicio' | 'producto';
+  /** Proyección live desde Servicio (AD-22); no persistido en línea. */
+  imagenUrl?: string;
 }
 
 export interface PublicCotizacionBranding {
@@ -244,8 +250,20 @@ export interface PublicCotizacionResponse {
   emailContacto?: string;
   /** Story 6.16 — snapshot cargo CRM para PDF */
   cargoContacto?: string;
+  /** Flags PDF (AD-26) — paridad guest con correo creación. */
+  incluirDescripciones?: boolean;
+  incluirImagenesPdf?: boolean;
+  incluirDatosBancarios?: boolean;
+  plantillasSnapshot?: Array<{
+    plantillaId: string;
+    nombreSnapshot: string;
+    schemaVersion: number;
+    secciones: SeccionPlantilla[];
+  }>;
   items: PublicCotizacionItem[];
   branding?: PublicCotizacionBranding;
+  /** Solo si incluirDatosBancarios + útiles (guest PDF sin JWT). */
+  bancarios?: TenantBancarios;
   alreadyResponded?: boolean;
 }
 

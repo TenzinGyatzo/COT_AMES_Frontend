@@ -3,6 +3,7 @@ import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type {
   CotizacionDetalleDto,
   PublicCotizacionBranding,
+  TenantBancarios,
   TenantBranding,
   TenantConfigResponse,
 } from '../types/backend';
@@ -29,6 +30,11 @@ export interface PdfBuildOptions {
    * Detalle con populate no lo necesita.
    */
   catalogImagenByServicioId?: Record<string, string>;
+  /**
+   * Guest sin JWT: bancarios del DTO público (BE solo los envía si flag on + útiles).
+   * Se usa cuando no hay `getTenantConfig` / bancarios de tenant útiles.
+   */
+  bancarios?: TenantBancarios;
 }
 
 // Inicializar vfs para fuentes (necesario para pdfmake en cliente)
@@ -93,9 +99,15 @@ async function buildCotizacionDocDefinition(
   }
 
   const cfgBranding = cfg?.branding;
+  // Tenant JWT primero; guest usa opts.bancarios (sin getTenantConfig).
+  const bancariosSource = hasBancariosUtiles(cfg?.bancarios)
+    ? cfg!.bancarios
+    : hasBancariosUtiles(opts?.bancarios)
+      ? opts!.bancarios
+      : undefined;
   let bankPage: PdfBankPageOptions | undefined;
-  if (cotizacion.incluirDatosBancarios && hasBancariosUtiles(cfg?.bancarios)) {
-    const raw = cfg!.bancarios || {};
+  if (cotizacion.incluirDatosBancarios && hasBancariosUtiles(bancariosSource)) {
+    const raw = bancariosSource || {};
     let bankLogoBase64: string | undefined;
     if (raw.logoUrl) {
       try {

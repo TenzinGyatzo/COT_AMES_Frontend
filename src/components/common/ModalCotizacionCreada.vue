@@ -361,6 +361,7 @@ import {
   downloadCotizacionPDF,
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
+import { pdfOptsFromDetalle } from '../../utils/pdfOptsFromDetalle';
 import { formatMoney } from '../../utils/currency';
 
 // Tipo mínimo requerido para mostrar el modal
@@ -481,7 +482,10 @@ const handleDownloadPDF = async () => {
     isPdfBusy.value = true;
     const cotizacionDetalle = await loadDetalleForPdf();
     if (cotizacionDetalle) {
-      await downloadCotizacionPDF(cotizacionDetalle);
+      await downloadCotizacionPDF(
+        cotizacionDetalle,
+        pdfOptsFromDetalle(cotizacionDetalle),
+      );
     }
   } catch (error) {
     console.error('Error al generar PDF:', error);
@@ -496,7 +500,10 @@ const handlePreviewPDF = async () => {
     isPdfBusy.value = true;
     const cotizacionDetalle = await loadDetalleForPdf();
     if (cotizacionDetalle) {
-      await previewCotizacionPDF(cotizacionDetalle);
+      await previewCotizacionPDF(
+        cotizacionDetalle,
+        pdfOptsFromDetalle(cotizacionDetalle),
+      );
     }
   } catch (error) {
     console.error('Error al previsualizar PDF:', error);

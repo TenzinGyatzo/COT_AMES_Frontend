@@ -914,6 +914,7 @@ export type UpdateTenantVigenciaBancariosPayload = {
   defaultIncluirDatosBancarios?: boolean | null;
   defaultIncluirDescripciones?: boolean | null;
   defaultIncluirImagenesPdf?: boolean | null;
+  defaultUsarVigencia?: boolean | null;
 };
 
 /** PATCH vigencia default + datos bancarios (Story 2.4). */

@@ -70,6 +70,8 @@ export interface TenantConfigResponse {
   defaultIncluirDatosBancarios?: boolean | null;
   defaultIncluirDescripciones?: boolean | null;
   defaultIncluirImagenesPdf?: boolean | null;
+  /** Preferencia «usar vigencia» al crear; ausente/null ≠ false. */
+  defaultUsarVigencia?: boolean | null;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -181,13 +181,8 @@
                 <span v-else class="text-gray-600">Ninguna</span>
               </dd>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <dt class="text-gray-500">Datos bancarios en PDF</dt>
-                <dd class="font-medium text-gray-900">
-                  {{ incluirDatosBancarios ? 'Sí' : 'No' }}
-                </dd>
-              </div>
+            <!-- Orden canónico: Desc | Img / Vigencia | Bancarios -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <dt class="text-gray-500">Descripciones en PDF</dt>
                 <dd class="font-medium text-gray-900">
@@ -200,16 +195,22 @@
                   {{ incluirImagenesPdf ? 'Sí' : 'No' }}
                 </dd>
               </div>
-            </div>
-            <div>
-              <dt class="text-gray-500">Vigencia</dt>
-              <dd class="font-medium text-gray-900">
-                {{
-                  sinVigencia
-                    ? 'Sin vigencia'
-                    : `${vigenciaDias} días (${vigenciaLabel})`
-                }}
-              </dd>
+              <div>
+                <dt class="text-gray-500">Vigencia</dt>
+                <dd class="font-medium text-gray-900">
+                  {{
+                    sinVigencia
+                      ? 'Sin vigencia'
+                      : `${vigenciaDias} días (${vigenciaLabel})`
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-gray-500">Datos bancarios en PDF</dt>
+                <dd class="font-medium text-gray-900">
+                  {{ incluirDatosBancarios ? 'Sí' : 'No' }}
+                </dd>
+              </div>
             </div>
             <div>
               <dt class="text-gray-500 mb-1">Destinatarios</dt>

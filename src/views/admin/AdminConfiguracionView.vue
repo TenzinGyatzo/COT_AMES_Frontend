@@ -395,26 +395,8 @@
           <p class="text-sm text-green-800">{{ vigenciaFormSuccess }}</p>
         </div>
 
-        <div class="space-y-3">
-          <label
-            class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50"
-          >
-            <input
-              v-model="vbForm.defaultIncluirDatosBancarios"
-              type="checkbox"
-              class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              :disabled="isBusy"
-              @change="onVigenciaFormEdited"
-            />
-            <span>
-              <span class="block text-sm font-medium text-gray-800"
-                >Incluir datos bancarios</span
-              >
-              <span class="block text-xs text-gray-500 mt-0.5"
-                >Incluye los datos bancarios configurados en el PDF.</span
-              >
-            </span>
-          </label>
+        <!-- Orden canónico: Desc | Img / Vigencia | Bancarios -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label
             class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50"
           >
@@ -455,9 +437,51 @@
               >
             </span>
           </label>
+          <label
+            class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50"
+          >
+            <input
+              v-model="vbForm.defaultUsarVigencia"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              :disabled="isBusy"
+              @change="onVigenciaFormEdited"
+            />
+            <span>
+              <span class="block text-sm font-medium text-gray-800"
+                >Usar vigencia</span
+              >
+              <span class="block text-xs text-gray-500 mt-0.5"
+                >Las cotizaciones nuevas inician con vigencia en días (se puede
+                desactivar por cotización).</span
+              >
+            </span>
+          </label>
+          <label
+            class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50"
+          >
+            <input
+              v-model="vbForm.defaultIncluirDatosBancarios"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              :disabled="isBusy"
+              @change="onVigenciaFormEdited"
+            />
+            <span>
+              <span class="block text-sm font-medium text-gray-800"
+                >Incluir datos bancarios</span
+              >
+              <span class="block text-xs text-gray-500 mt-0.5"
+                >Incluye los datos bancarios configurados en el PDF.</span
+              >
+            </span>
+          </label>
         </div>
 
-        <div class="border-t border-gray-100 pt-4">
+        <div
+          class="border-t border-gray-100 pt-4"
+          :class="{ 'opacity-50': !vbForm.defaultUsarVigencia }"
+        >
           <label
             for="config-vigencia-dias"
             class="block text-sm font-medium text-gray-700"
@@ -470,8 +494,8 @@
             min="1"
             max="365"
             step="1"
-            class="mt-1 block w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            :disabled="isBusy"
+            class="mt-1 block w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed"
+            :disabled="isBusy || !vbForm.defaultUsarVigencia"
             @input="onVigenciaFormEdited"
           />
           <p class="mt-1 text-xs text-gray-500">
@@ -739,6 +763,7 @@ const vbForm = reactive({
   defaultIncluirDatosBancarios: true,
   defaultIncluirDescripciones: true,
   defaultIncluirImagenesPdf: true,
+  defaultUsarVigencia: true,
   titular: '',
   banco: '',
   cuenta: '',
@@ -893,6 +918,10 @@ function applyVigenciaFromConfig(cfg: TenantConfigResponse) {
   vbForm.defaultIncluirImagenesPdf =
     typeof cfg.defaultIncluirImagenesPdf === 'boolean'
       ? cfg.defaultIncluirImagenesPdf
+      : true;
+  vbForm.defaultUsarVigencia =
+    typeof cfg.defaultUsarVigencia === 'boolean'
+      ? cfg.defaultUsarVigencia
       : true;
 }
 
@@ -1211,19 +1240,25 @@ async function onSaveVigencia() {
   vigenciaFormSuccess.value = null;
 
   const days = Number(vbForm.vigenciaDefaultDias);
-  if (!Number.isInteger(days) || days < 1 || days > 365) {
-    vigenciaFormError.value = 'La vigencia debe ser un entero entre 1 y 365.';
-    return;
+  if (vbForm.defaultUsarVigencia) {
+    if (!Number.isInteger(days) || days < 1 || days > 365) {
+      vigenciaFormError.value = 'La vigencia debe ser un entero entre 1 y 365.';
+      return;
+    }
   }
 
   isSavingVigencia.value = true;
   try {
-    const updated = await updateTenantVigenciaBancarios({
-      vigenciaDefaultDias: days,
+    const payload: Parameters<typeof updateTenantVigenciaBancarios>[0] = {
       defaultIncluirDatosBancarios: vbForm.defaultIncluirDatosBancarios,
       defaultIncluirDescripciones: vbForm.defaultIncluirDescripciones,
       defaultIncluirImagenesPdf: vbForm.defaultIncluirImagenesPdf,
-    });
+      defaultUsarVigencia: vbForm.defaultUsarVigencia,
+    };
+    if (Number.isInteger(days) && days >= 1 && days <= 365) {
+      payload.vigenciaDefaultDias = days;
+    }
+    const updated = await updateTenantVigenciaBancarios(payload);
     config.value = updated;
     applyVigenciaFromConfig(updated);
     vigenciaFormSuccess.value = 'Opciones predeterminadas guardadas.';

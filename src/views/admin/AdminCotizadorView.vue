@@ -1210,6 +1210,7 @@ const bancariosUtiles = ref(false);
 let tenantDefaultIncluirDatosBancarios = true;
 let tenantDefaultIncluirDescripciones = true;
 let tenantDefaultIncluirImagenesPdf = true;
+let tenantDefaultUsarVigencia = true;
 const plantillasDisponibles = ref<Plantilla[]>([]);
 const isLoadingPlantillas = ref(false);
 const errorPlantillas = ref('');
@@ -1564,6 +1565,7 @@ function applyTenantVisualizacionDefaults(cfg: {
   defaultIncluirDatosBancarios?: boolean | null;
   defaultIncluirDescripciones?: boolean | null;
   defaultIncluirImagenesPdf?: boolean | null;
+  defaultUsarVigencia?: boolean | null;
 }) {
   tenantDefaultIncluirDatosBancarios =
     typeof cfg.defaultIncluirDatosBancarios === 'boolean'
@@ -1577,10 +1579,15 @@ function applyTenantVisualizacionDefaults(cfg: {
     typeof cfg.defaultIncluirImagenesPdf === 'boolean'
       ? cfg.defaultIncluirImagenesPdf
       : true;
+  tenantDefaultUsarVigencia =
+    typeof cfg.defaultUsarVigencia === 'boolean'
+      ? cfg.defaultUsarVigencia
+      : true;
   if (visualizacionBasesTouched) return;
   incluirDatosBancarios.value = tenantDefaultIncluirDatosBancarios;
   mostrarDescripciones.value = tenantDefaultIncluirDescripciones;
   incluirImagenesPdf.value = tenantDefaultIncluirImagenesPdf;
+  sinVigencia.value = !tenantDefaultUsarVigencia;
 }
 
 const cargarVigenciaDefault = async () => {
@@ -1967,6 +1974,7 @@ function setIncluirImagenesPdf(value: boolean) {
 }
 
 function setUsarVigencia(value: boolean) {
+  visualizacionBasesTouched = true;
   sinVigencia.value = !value;
 }
 
@@ -2695,7 +2703,7 @@ const cerrarModal = () => {
   identidadConfirmada.value = false;
   cotizarSinCliente.value = false;
   cotizarSinContacto.value = false;
-  sinVigencia.value = false;
+  sinVigencia.value = !tenantDefaultUsarVigencia;
   vigenciaDias.value = clampVigenciaDias(vigenciaDefaultDias);
   emailsPara.value = [];
   emailsCc.value = [];

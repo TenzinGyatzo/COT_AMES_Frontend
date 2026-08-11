@@ -707,7 +707,7 @@
                   for="codigo-item"
                   class="mb-1 block text-sm font-medium text-gray-700"
                 >
-                  Código o SKU (opcional)
+                  {{ labelCodigoItem }}
                 </label>
                 <input
                   id="codigo-item"
@@ -715,7 +715,7 @@
                   type="text"
                   maxlength="64"
                   class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                  placeholder="Ej. MSI-12K-220"
+                  :placeholder="placeholderCodigo"
                   :disabled="isSubmitting"
                 />
                 <p class="mt-1 text-xs text-gray-500">{{ ayudaCodigoItem }}</p>
@@ -812,9 +812,11 @@
             <!-- Descripción (+ imagen en producto) -->
             <div
               class="grid grid-cols-1 gap-4"
-              :class="esProductoForm ? 'lg:grid-cols-12' : ''"
+              :class="esProductoForm ? 'lg:grid-cols-12 lg:items-stretch' : ''"
             >
-              <div :class="esProductoForm ? 'lg:col-span-7' : ''">
+              <div
+                :class="esProductoForm ? 'flex flex-col lg:col-span-7' : ''"
+              >
                 <label
                   for="descripcion"
                   class="mb-1 block text-sm font-medium text-gray-700"
@@ -824,14 +826,22 @@
                 <textarea
                   id="descripcion"
                   v-model="formulario.descripcion"
-                  rows="5"
-                  class="min-h-[9.5rem] w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  :rows="esProductoForm ? 5 : 3"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  :class="
+                    esProductoForm
+                      ? 'h-[8.5rem] min-h-[8.5rem] max-h-[8.5rem] resize-none'
+                      : 'min-h-[5.5rem]'
+                  "
                   :placeholder="placeholderDescripcion"
                   :disabled="isSubmitting"
                 ></textarea>
               </div>
 
-              <div v-if="esProductoForm" class="lg:col-span-5">
+              <div
+                v-if="esProductoForm"
+                class="flex flex-col lg:col-span-5"
+              >
                 <span class="mb-1 block text-sm font-medium text-gray-700">
                   Imagen (opcional)
                 </span>
@@ -850,7 +860,7 @@
                   v-if="!imagenPreviewUrl"
                   role="button"
                   :tabindex="isSubmitting ? -1 : 0"
-                  class="flex min-h-[9.5rem] flex-col items-center justify-center rounded-lg border-2 border-dashed px-3 py-4 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  class="flex h-[8.5rem] min-h-[8.5rem] max-h-[8.5rem] flex-col items-center justify-center rounded-lg border-2 border-dashed px-3 py-3 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
                   :class="[
                     isSubmitting
                       ? 'cursor-not-allowed opacity-60'
@@ -868,61 +878,71 @@
                   @dragleave.prevent="onDragLeave"
                   @drop.prevent="onDropImagen"
                 >
-                  <p class="text-sm font-medium text-gray-700">
-                    {{
-                      isDragOver
-                        ? 'Suelta la imagen para cargarla'
-                        : 'Arrastra una imagen aquí o haz clic para seleccionarla'
-                    }}
-                  </p>
-                  <p class="mt-1 text-xs text-gray-500">
+                  <template v-if="isDragOver">
+                    <p class="text-sm font-medium text-gray-700">
+                      Suelta la imagen para cargarla
+                    </p>
+                  </template>
+                  <template v-else>
+                    <p class="text-sm font-medium leading-snug text-gray-700">
+                      Arrastra una imagen aquí
+                    </p>
+                    <p class="text-sm leading-snug text-gray-700">
+                      o haz clic para seleccionarla
+                    </p>
+                  </template>
+                  <p class="mt-1.5 text-xs text-gray-500">
                     PNG, JPG o WebP · máximo 1 MB
                   </p>
                 </div>
 
                 <div
                   v-else
-                  class="flex min-h-[9.5rem] flex-col rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  class="flex h-[8.5rem] min-h-[8.5rem] max-h-[8.5rem] items-center gap-3 overflow-hidden rounded-lg border border-gray-200 bg-gray-50 p-3"
                   @dragenter.prevent="onDragEnter"
                   @dragover.prevent="onDragOver"
                   @dragleave.prevent="onDragLeave"
                   @drop.prevent="onDropImagen"
                 >
-                  <div class="flex flex-1 items-center justify-center">
+                  <div
+                    class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded border border-gray-200 bg-white"
+                  >
                     <img
                       :src="imagenPreviewUrl"
                       alt="Vista previa del producto"
-                      class="max-h-28 max-w-full object-contain"
+                      class="max-h-full max-w-full object-contain"
                     />
                   </div>
-                  <div class="mt-2 min-w-0">
-                    <p class="truncate text-xs font-medium text-gray-800">
+                  <div class="min-w-0 flex-1">
+                    <p
+                      class="line-clamp-2 text-xs font-medium leading-snug text-gray-800"
+                    >
                       {{ imagenNombreMostrar }}
                     </p>
                     <p
                       v-if="imagenTamanoMostrar"
-                      class="text-xs text-gray-500"
+                      class="mt-0.5 text-xs text-gray-500"
                     >
                       {{ imagenTamanoMostrar }}
                     </p>
-                  </div>
-                  <div class="mt-2 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      class="text-xs font-medium text-medical-blue-700 hover:text-medical-blue-900"
-                      :disabled="isSubmitting"
-                      @click="abrirSelectorImagen"
-                    >
-                      Cambiar imagen
-                    </button>
-                    <button
-                      type="button"
-                      class="text-xs font-medium text-red-600 hover:text-red-700"
-                      :disabled="isSubmitting"
-                      @click="marcarEliminarImagen"
-                    >
-                      Eliminar
-                    </button>
+                    <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                      <button
+                        type="button"
+                        class="text-xs font-medium text-medical-blue-700 hover:text-medical-blue-900"
+                        :disabled="isSubmitting"
+                        @click="abrirSelectorImagen"
+                      >
+                        Cambiar imagen
+                      </button>
+                      <button
+                        type="button"
+                        class="text-xs font-medium text-red-600 hover:text-red-700"
+                        :disabled="isSubmitting"
+                        @click="marcarEliminarImagen"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <p v-if="imagenError" class="mt-1 text-xs text-red-600">
@@ -1094,11 +1114,13 @@ const ALLOWED_IMAGEN_TYPES = new Set([
 
 type ServicioFormState = Omit<
   CreateServicioPayload,
-  'categoriaId' | 'precioUnitario'
+  'categoriaId' | 'precioUnitario' | 'activo'
 > & {
   categoriaId: string;
   /** Vacío en create hasta captura; number en edit / tras blur válido. */
   precioUnitario: number | '';
+  /** Siempre definido en UI (ToggleSwitch exige boolean). */
+  activo: boolean;
 };
 
 type FormSnapshot = {
@@ -1282,8 +1304,18 @@ const labelBotonGuardar = computed(() => {
 
 const placeholderNombre = computed(() =>
   esProductoForm.value
-    ? 'Ej: Equipo de climatización'
-    : 'Ej: Examen Médico Laboral',
+    ? 'Ej. Equipo de climatización'
+    : 'Ej. Mantenimiento Preventivo',
+);
+
+const placeholderCodigo = computed(() =>
+  esProductoForm.value ? 'Ej. MSI-12K-220' : 'Ej. MANT-PREV-01',
+);
+
+const labelCodigoItem = computed(() =>
+  esProductoForm.value
+    ? 'Código o SKU (opcional)'
+    : 'Código del servicio (opcional)',
 );
 
 const placeholderDescripcion = computed(() =>
@@ -1435,11 +1467,8 @@ function onPrecioBlur() {
   }
 }
 
-const ayudaCodigoItem = computed(() =>
-  formulario.value.tipo === 'producto'
-    ? 'Identificador interno del producto. No puede repetirse en el catálogo.'
-    : 'Identificador interno opcional. No puede repetirse en el catálogo.',
-);
+const ayudaCodigoItem =
+  'Identificador interno opcional.';
 
 function imagenPendingKey(): string {
   const f = imagenPendiente.value;

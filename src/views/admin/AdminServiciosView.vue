@@ -13,13 +13,24 @@
         >
           Gestionar categorías
         </router-link>
-        <button
-          type="button"
-          @click="abrirModalCrear"
-          class="w-full sm:w-auto px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium"
-        >
-          + Agregar ítem
-        </button>
+        <div class="flex w-full sm:w-auto gap-2">
+          <button
+            type="button"
+            @click="abrirModalCrear('servicio')"
+            class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md border border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100 transition-colors font-medium text-sm"
+          >
+            <span class="lg:hidden">+ Servicio</span>
+            <span class="hidden lg:inline">+ Agregar Servicio</span>
+          </button>
+          <button
+            type="button"
+            @click="abrirModalCrear('producto')"
+            class="flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-md border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors font-medium text-sm"
+          >
+            <span class="lg:hidden">+ Producto</span>
+            <span class="hidden lg:inline">+ Agregar Producto</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -230,7 +241,8 @@
                   <div class="flex items-start gap-1.5 flex-wrap">
                     <div class="break-words">{{ servicio.nombre }}</div>
                     <span
-                      class="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                      class="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                      :class="claseTipoDe(servicio.tipo)"
                       :title="labelTipoDe(servicio.tipo)"
                     >
                       {{ codigoTipoDe(servicio.tipo) }}
@@ -383,7 +395,8 @@
                   <div class="flex items-start gap-1.5 flex-wrap">
                     <div class="break-words">{{ servicio.nombre }}</div>
                     <span
-                      class="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                      class="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                      :class="claseTipoDe(servicio.tipo)"
                       :title="labelTipoDe(servicio.tipo)"
                     >
                       {{ codigoTipoDe(servicio.tipo) }}
@@ -506,7 +519,8 @@
                   {{ servicio.nombre }}
                 </h3>
                 <span
-                  class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                  class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                  :class="claseTipoDe(servicio.tipo)"
                   :title="labelTipoDe(servicio.tipo)"
                 >
                   {{ codigoTipoDe(servicio.tipo) }}
@@ -620,12 +634,17 @@
       @pointercancel="onBackdropPointerCancel"
     >
       <div
-        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border-l-4 transition-colors"
+        :class="claseAcentoBorde"
       >
         <div class="p-4 sm:p-6">
           <div class="flex justify-between items-center mb-4 sm:mb-6">
             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
-              {{ modoEdicion ? 'Editar ítem' : 'Nuevo ítem' }}
+              {{
+                modoEdicion
+                  ? `Editar ${labelTipoForm}`
+                  : `Nuevo ${labelTipoForm}`
+              }}
             </h2>
             <button
               @click="cerrarModal"
@@ -654,7 +673,8 @@
                 for="nombre"
                 class="block text-sm font-medium text-gray-700 mb-1"
               >
-                Nombre del Servicio <span class="text-red-500">*</span>
+                Nombre del {{ labelTipoForm }}
+                <span class="text-red-500">*</span>
               </label>
               <input
                 id="nombre"
@@ -662,7 +682,7 @@
                 type="text"
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                placeholder="Ej: Examen Médico Laboral"
+                :placeholder="placeholderNombre"
                 :disabled="isSubmitting"
               />
             </div>
@@ -818,7 +838,7 @@
                 v-model="formulario.descripcion"
                 rows="3"
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                placeholder="Descripción detallada del servicio"
+                :placeholder="placeholderDescripcion"
                 :disabled="isSubmitting"
               ></textarea>
             </div>
@@ -857,7 +877,7 @@
                 :disabled="isSubmitting"
               />
               <label for="activo" class="ml-2 block text-sm text-gray-700">
-                Servicio activo
+                {{ labelTipoForm }} activo
               </label>
             </div>
 
@@ -916,7 +936,8 @@
               </button>
               <button
                 type="submit"
-                class="w-full sm:w-auto px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full sm:w-auto px-4 py-2 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                :class="claseAcentoBoton"
                 :disabled="
                   isSubmitting ||
                   (!modoEdicion && categorias.length === 0) ||
@@ -926,9 +947,11 @@
                 "
               >
                 <span v-if="isSubmitting">Guardando...</span>
-                <span v-else
-                  >{{ modoEdicion ? 'Actualizar ítem' : 'Guardar ítem' }}</span
-                >
+                <span v-else>{{
+                  modoEdicion
+                    ? `Actualizar ${labelTipoForm}`
+                    : `Guardar ${labelTipoForm}`
+                }}</span>
               </button>
             </div>
           </form>
@@ -1083,6 +1106,13 @@ function labelTipoDe(tipo?: TipoItemCatalogo): string {
   return '';
 }
 
+/** Alineado a badges SERV/PROD del cotizador (ModalSeleccionServicios). */
+function claseTipoDe(tipo?: TipoItemCatalogo | string | null): string {
+  if (tipo === 'producto') return 'bg-amber-50 text-amber-800';
+  if (tipo === 'servicio') return 'bg-sky-50 text-sky-800';
+  return 'bg-gray-100 text-gray-600';
+}
+
 const tieneFiltrosBusqueda = computed(
   () =>
     !!(
@@ -1120,6 +1150,34 @@ const formulario = ref<ServicioFormState>({
   moneda: 'MXN',
   activo: true,
 });
+
+const labelTipoForm = computed(
+  () => labelTipoDe(formulario.value.tipo) || 'Servicio',
+);
+
+const esProductoForm = computed(() => formulario.value.tipo === 'producto');
+
+const claseAcentoBorde = computed(() =>
+  esProductoForm.value ? 'border-amber-500' : 'border-sky-500',
+);
+
+const claseAcentoBoton = computed(() =>
+  esProductoForm.value
+    ? 'bg-amber-600 hover:bg-amber-700'
+    : 'bg-sky-600 hover:bg-sky-700',
+);
+
+const placeholderNombre = computed(() =>
+  esProductoForm.value
+    ? 'Ej: Equipo de climatización'
+    : 'Ej: Examen Médico Laboral',
+);
+
+const placeholderDescripcion = computed(() =>
+  esProductoForm.value
+    ? 'Descripción detallada del producto'
+    : 'Descripción detallada del servicio',
+);
 
 /** Archivo pendiente de subir tras create (path canónico necesita _id). */
 const imagenPendiente = ref<File | null>(null);
@@ -1424,9 +1482,9 @@ function nextPage() {
 }
 
 /**
- * Abre el modal para crear una nueva servicio
+ * Abre el modal para crear un producto o servicio
  */
-const abrirModalCrear = () => {
+const abrirModalCrear = (tipo: TipoItemCatalogo = 'servicio') => {
   modoEdicion.value = false;
   servicioEditando.value = null;
   clearImagenPendiente();
@@ -1435,7 +1493,7 @@ const abrirModalCrear = () => {
     descripcion: '',
     precioUnitario: 0,
     categoriaId: '',
-    tipo: 'servicio',
+    tipo,
     codigo: '',
     moneda: 'MXN',
     activo: true,
@@ -1468,7 +1526,7 @@ const abrirModalEditar = (servicio: Servicio) => {
   };
   errorCrear.value = tipoValido
     ? null
-    : 'Este ítem no tenía un tipo válido; se guardará como Servicio salvo que elijas otro.';
+    : 'Este registro no tenía un tipo válido; se guardará como Servicio salvo que elijas otro.';
   mostrarModal.value = true;
 };
 

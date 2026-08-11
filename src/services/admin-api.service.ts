@@ -910,6 +910,10 @@ export type UpdateTenantVigenciaBancariosPayload = {
     rfc?: string;
     email?: string;
   };
+  /** true/false configura; null limpia; omitido = no tocar. */
+  defaultIncluirDatosBancarios?: boolean | null;
+  defaultIncluirDescripciones?: boolean | null;
+  defaultIncluirImagenesPdf?: boolean | null;
 };
 
 /** PATCH vigencia default + datos bancarios (Story 2.4). */

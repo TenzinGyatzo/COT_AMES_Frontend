@@ -65,28 +65,50 @@
       v-if="serviciosSeleccionados.length > 0"
       class="px-6 py-3 border-b border-gray-50 bg-gray-50/40 flex flex-wrap items-center justify-between gap-3"
     >
-      <p class="text-xs text-gray-500">
-        Las descripciones se pueden ocultar en pantalla y en el PDF.
-      </p>
-      <label class="inline-flex items-center cursor-pointer group shrink-0">
+      <div class="min-w-0">
+        <p class="text-xs text-gray-500">
+          Las descripciones se pueden ocultar en pantalla y en el PDF.
+        </p>
+        <p
+          v-if="!descripcionesDisponibles"
+          class="text-xs text-gray-500 mt-1"
+        >
+          Los conceptos seleccionados no tienen descripciones para mostrar.
+        </p>
+      </div>
+      <label
+        class="inline-flex items-center group shrink-0"
+        :class="
+          descripcionesDisponibles
+            ? 'cursor-pointer'
+            : 'cursor-not-allowed opacity-70'
+        "
+      >
         <div class="relative">
           <input
             type="checkbox"
             class="sr-only peer"
-            :checked="mostrarDescripciones"
-            @change="
-              $emit(
-                'update:mostrarDescripciones',
-                ($event.target as HTMLInputElement).checked,
-              )
-            "
+            :checked="descripcionesDisponibles && mostrarDescripciones"
+            :disabled="!descripcionesDisponibles"
+            :aria-disabled="!descripcionesDisponibles"
+            @change="onToggleDescripciones($event)"
           />
           <div
-            class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
+            class="w-11 h-6 rounded-full peer peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-medical-blue-400 peer-focus-visible:ring-offset-1 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
+            :class="
+              descripcionesDisponibles && mostrarDescripciones
+                ? 'bg-medical-blue-600 after:transition-all peer-checked:after:transition-all'
+                : 'bg-gray-200'
+            "
           ></div>
         </div>
         <span
-          class="ml-3 text-sm font-medium text-gray-700 group-hover:text-medical-blue-700 transition-colors"
+          class="ml-3 text-sm font-medium"
+          :class="
+            descripcionesDisponibles
+              ? 'text-gray-700 group-hover:text-medical-blue-700'
+              : 'text-gray-500'
+          "
         >
           Mostrar descripciones
         </span>
@@ -376,7 +398,10 @@ interface Props {
   subtitulo?: string;
   textoVacio?: string;
   ayudaVacia?: string;
+  /** Preferencia base (selected); no pisar con availability. */
   mostrarDescripciones?: boolean;
+  /** Availability: hay algún concepto con descripción no vacía. */
+  descripcionesDisponibles?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -385,7 +410,8 @@ const props = withDefaults(defineProps<Props>(), {
   subtitulo: 'Agrega los estudios o servicios médicos solicitados.',
   textoVacio: 'Lista de servicios vacía',
   ayudaVacia: 'Haz clic en el botón verde para comenzar a añadir items.',
-  mostrarDescripciones: false,
+  mostrarDescripciones: true,
+  descripcionesDisponibles: true,
 });
 
 const emit = defineEmits<{
@@ -400,6 +426,15 @@ const emit = defineEmits<{
     value: string | number,
   ): void;
 }>();
+
+/** Misma regla que Paso 3: solo muta la base si hay descripciones disponibles. */
+function onToggleDescripciones(event: Event) {
+  if (!props.descripcionesDisponibles) return;
+  emit(
+    'update:mostrarDescripciones',
+    (event.target as HTMLInputElement).checked,
+  );
+}
 
 function displayOf(servicio: Servicio): ItemOverrideFields {
   const id = servicio._id || '';

@@ -34,8 +34,10 @@ export type CotizadorHydrateContext = {
   incluirDatosBancarios: Ref<boolean>;
   mostrarDescripciones: Ref<boolean>;
   incluirImagenesPdf: Ref<boolean>;
-  /** Si true, no autocalcular default AD-26 al cambiar líneas. */
-  imagenesPdfTouched: Ref<boolean>;
+  /** Fallback cuando el draft no trae el flag (cotización antigua). */
+  tenantDefaultIncluirDatosBancarios?: boolean;
+  tenantDefaultIncluirDescripciones?: boolean;
+  tenantDefaultIncluirImagenesPdf?: boolean;
   plantillasSeleccionadasIds: Ref<string[]>;
   plantillaSnapshots: Ref<
     Record<string, { nombre: string; secciones: import('../types/backend').SeccionPlantilla[] }>
@@ -47,6 +49,15 @@ export type CotizadorHydrateContext = {
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
+}
+
+function resolveFlag(
+  saved: boolean | null | undefined,
+  tenantDefault: boolean | null | undefined,
+): boolean {
+  if (typeof saved === 'boolean') return saved;
+  if (typeof tenantDefault === 'boolean') return tenantDefault;
+  return true;
 }
 
 function mergeServicioStub(
@@ -80,10 +91,19 @@ export async function hydrateCotizadorFromDraft(
   ctx.emailsCc.value = [...(draft.emailsCc || [])].filter(
     (e) => !ctx.emailsPara.value.includes(e),
   );
-  ctx.incluirDatosBancarios.value = !!draft.incluirDatosBancarios;
-  ctx.mostrarDescripciones.value = !!draft.incluirDescripciones;
-  ctx.incluirImagenesPdf.value = !!draft.incluirImagenesPdf;
-  ctx.imagenesPdfTouched.value = true;
+  // Bases: saved ?? tenant ?? true (nunca pisar con availability)
+  ctx.incluirDatosBancarios.value = resolveFlag(
+    draft.incluirDatosBancarios,
+    ctx.tenantDefaultIncluirDatosBancarios,
+  );
+  ctx.mostrarDescripciones.value = resolveFlag(
+    draft.incluirDescripciones,
+    ctx.tenantDefaultIncluirDescripciones,
+  );
+  ctx.incluirImagenesPdf.value = resolveFlag(
+    draft.incluirImagenesPdf,
+    ctx.tenantDefaultIncluirImagenesPdf,
+  );
 
   ctx.plantillasSeleccionadasIds.value = (draft.plantillas || []).map(
     (p) => p.plantillaId,

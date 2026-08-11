@@ -62,6 +62,14 @@ export interface TenantConfigResponse {
   emailCredentialsConfigured?: boolean;
   vigenciaDefaultDias?: number;
   bancarios?: TenantBancarios;
+  /**
+   * Preferencias opcionales al crear cotización nueva.
+   * Ausente/null = sin configurar (el cotizador usa `true`).
+   * `false` es valor explícito (≠ ausencia).
+   */
+  defaultIncluirDatosBancarios?: boolean | null;
+  defaultIncluirDescripciones?: boolean | null;
+  defaultIncluirImagenesPdf?: boolean | null;
   createdAt?: string;
   updatedAt?: string;
 }

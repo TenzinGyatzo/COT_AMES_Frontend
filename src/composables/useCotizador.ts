@@ -11,7 +11,6 @@ export function useCotizador() {
     servicios,
     cantidadesPorServicio,
     incluirImagenesPdf,
-    imagenesPdfTouched,
     isLoading,
     error,
   } = storeToRefs(cotizadorStore);
@@ -36,7 +35,6 @@ export function useCotizador() {
     servicios,
     cantidadesPorServicio,
     incluirImagenesPdf,
-    imagenesPdfTouched,
     isLoading,
     error,
     cargarServicios,

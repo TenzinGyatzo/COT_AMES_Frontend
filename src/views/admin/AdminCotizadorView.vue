@@ -329,7 +329,9 @@
         :cantidades-por-servicio="cantidadesPorServicio"
         :item-overrides="itemOverrides"
         :is-loading="isLoadingServicios"
-        v-model:mostrar-descripciones="mostrarDescripciones"
+        :mostrar-descripciones="mostrarDescripciones"
+        :descripciones-disponibles="descripcionesDisponibles"
+        @update:mostrar-descripciones="setMostrarDescripciones($event)"
         @abrir-modal="abrirModal"
         @actualizar-cantidad="actualizarCantidad"
         @eliminar-servicio="eliminarServicio"
@@ -497,97 +499,237 @@
           </div>
         </div>
 
-        <!-- Bancarios + descripciones PDF -->
+        <!-- Opciones de visualización: base / available / effective -->
         <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
-            class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
-            :class="{ 'opacity-60': !bancariosUtiles }"
+            class="p-4 rounded-2xl border"
+            :class="
+              bancariosUtiles
+                ? 'bg-medical-blue-50/50 border-medical-blue-100 cursor-pointer'
+                : 'bg-gray-50 border-gray-200 cursor-not-allowed'
+            "
+            role="group"
+            :aria-disabled="!bancariosUtiles"
+            @click="bancariosUtiles && setIncluirDatosBancarios(!incluirDatosBancarios)"
           >
-            <label
-              class="flex items-center group"
-              :class="
-                bancariosUtiles ? 'cursor-pointer' : 'cursor-not-allowed'
-              "
-            >
-              <div class="relative">
+            <div class="flex items-start group">
+              <div class="relative shrink-0">
                 <input
+                  id="opt-incluir-bancarios"
                   type="checkbox"
-                  v-model="incluirDatosBancarios"
-                  :disabled="!bancariosUtiles"
                   class="sr-only peer"
+                  :checked="displayIncluirDatosBancarios"
+                  :disabled="!bancariosUtiles"
+                  :aria-disabled="!bancariosUtiles"
+                  @click.stop
+                  @change="
+                    setIncluirDatosBancarios(
+                      ($event.target as HTMLInputElement).checked,
+                    )
+                  "
                 />
                 <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600 peer-disabled:opacity-50"
+                  class="w-11 h-6 rounded-full peer peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-medical-blue-400 peer-focus-visible:ring-offset-1 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
+                  :class="[
+                    displayIncluirDatosBancarios
+                      ? 'bg-medical-blue-600'
+                      : 'bg-gray-200',
+                    bancariosUtiles
+                      ? 'after:transition-all peer-checked:after:transition-all'
+                      : 'opacity-70',
+                  ]"
                 ></div>
               </div>
-              <div class="ml-4">
-                <span
-                  class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors"
+              <div class="ml-4 min-w-0">
+                <label
+                  for="opt-incluir-bancarios"
+                  class="block text-sm font-bold"
+                  :class="
+                    bancariosUtiles
+                      ? 'text-gray-800 group-hover:text-medical-blue-700 cursor-pointer'
+                      : 'text-gray-600 cursor-not-allowed'
+                  "
+                  @click.stop
                 >
                   Incluir datos bancarios en el PDF
-                </span>
-                <span class="text-xs text-medical-blue-600/70">
-                  {{
+                </label>
+                <p
+                  class="text-xs mt-0.5"
+                  :class="
                     bancariosUtiles
-                      ? 'Página bancaria independiente de las plantillas.'
-                      : 'Configura datos bancarios del tenant (CLABE o banco+cuenta) para habilitar.'
-                  }}
-                </span>
+                      ? 'text-medical-blue-600/70'
+                      : 'text-gray-500'
+                  "
+                >
+                  Incluye los datos bancarios configurados en el PDF.
+                </p>
+                <p
+                  v-if="!bancariosUtiles"
+                  class="text-xs text-gray-500 mt-1.5"
+                >
+                  No tienes datos bancarios configurados.
+                  <RouterLink
+                    to="/admin/configuracion"
+                    class="text-medical-blue-600 underline underline-offset-2 hover:text-medical-blue-700"
+                    @click.stop
+                  >
+                    Ir a Configuración
+                  </RouterLink>
+                </p>
               </div>
-            </label>
+            </div>
           </div>
+
           <div
-            class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
+            class="p-4 rounded-2xl border"
+            :class="
+              descripcionesDisponibles
+                ? 'bg-medical-blue-50/50 border-medical-blue-100 cursor-pointer'
+                : 'bg-gray-50 border-gray-200 cursor-not-allowed'
+            "
+            role="group"
+            :aria-disabled="!descripcionesDisponibles"
+            @click="
+              descripcionesDisponibles &&
+                setMostrarDescripciones(!mostrarDescripciones)
+            "
           >
-            <label class="flex items-center group cursor-pointer">
-              <div class="relative">
+            <div class="flex items-start group">
+              <div class="relative shrink-0">
                 <input
-                  v-model="mostrarDescripciones"
+                  id="opt-incluir-descripciones"
                   type="checkbox"
                   class="sr-only peer"
+                  :checked="displayMostrarDescripciones"
+                  :disabled="!descripcionesDisponibles"
+                  :aria-disabled="!descripcionesDisponibles"
+                  @click.stop
+                  @change="
+                    setMostrarDescripciones(
+                      ($event.target as HTMLInputElement).checked,
+                    )
+                  "
                 />
                 <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
+                  class="w-11 h-6 rounded-full peer peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-medical-blue-400 peer-focus-visible:ring-offset-1 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
+                  :class="[
+                    displayMostrarDescripciones
+                      ? 'bg-medical-blue-600'
+                      : 'bg-gray-200',
+                    descripcionesDisponibles
+                      ? 'after:transition-all peer-checked:after:transition-all'
+                      : 'opacity-70',
+                  ]"
                 ></div>
               </div>
-              <div class="ml-4">
-                <span
-                  class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors"
+              <div class="ml-4 min-w-0">
+                <label
+                  for="opt-incluir-descripciones"
+                  class="block text-sm font-bold"
+                  :class="
+                    descripcionesDisponibles
+                      ? 'text-gray-800 group-hover:text-medical-blue-700 cursor-pointer'
+                      : 'text-gray-600 cursor-not-allowed'
+                  "
+                  @click.stop
                 >
                   Incluir descripciones en el PDF
-                </span>
-                <span class="text-xs text-medical-blue-600/70">
-                  Descripción detallada de cada servicio en pantalla y en el PDF.
-                </span>
+                </label>
+                <p
+                  class="text-xs mt-0.5"
+                  :class="
+                    descripcionesDisponibles
+                      ? 'text-medical-blue-600/70'
+                      : 'text-gray-500'
+                  "
+                >
+                  Muestra la descripción detallada de cada concepto en pantalla y
+                  en el PDF.
+                </p>
+                <p
+                  v-if="!descripcionesDisponibles"
+                  class="text-xs text-gray-500 mt-1.5"
+                >
+                  Los conceptos seleccionados no tienen descripciones para
+                  mostrar.
+                </p>
               </div>
-            </label>
+            </div>
           </div>
+
           <div
-            class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
+            class="p-4 rounded-2xl border md:col-span-2"
+            :class="
+              imagenesDisponibles
+                ? 'bg-medical-blue-50/50 border-medical-blue-100 cursor-pointer'
+                : 'bg-gray-50 border-gray-200 cursor-not-allowed'
+            "
+            role="group"
+            :aria-disabled="!imagenesDisponibles"
+            @click="
+              imagenesDisponibles && setIncluirImagenesPdf(!incluirImagenesPdf)
+            "
           >
-            <label class="flex items-center group cursor-pointer">
-              <div class="relative">
+            <div class="flex items-start group">
+              <div class="relative shrink-0">
                 <input
-                  v-model="incluirImagenesPdf"
+                  id="opt-incluir-imagenes"
                   type="checkbox"
                   class="sr-only peer"
-                  @change="imagenesPdfTouched = true"
+                  :checked="displayIncluirImagenesPdf"
+                  :disabled="!imagenesDisponibles"
+                  :aria-disabled="!imagenesDisponibles"
+                  @click.stop
+                  @change="
+                    setIncluirImagenesPdf(
+                      ($event.target as HTMLInputElement).checked,
+                    )
+                  "
                 />
                 <div
-                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
+                  class="w-11 h-6 rounded-full peer peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-medical-blue-400 peer-focus-visible:ring-offset-1 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
+                  :class="[
+                    displayIncluirImagenesPdf
+                      ? 'bg-medical-blue-600'
+                      : 'bg-gray-200',
+                    imagenesDisponibles
+                      ? 'after:transition-all peer-checked:after:transition-all'
+                      : 'opacity-70',
+                  ]"
                 ></div>
               </div>
-              <div class="ml-4">
-                <span
-                  class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors"
+              <div class="ml-4 min-w-0">
+                <label
+                  for="opt-incluir-imagenes"
+                  class="block text-sm font-bold"
+                  :class="
+                    imagenesDisponibles
+                      ? 'text-gray-800 group-hover:text-medical-blue-700 cursor-pointer'
+                      : 'text-gray-600 cursor-not-allowed'
+                  "
+                  @click.stop
                 >
                   Incluir imágenes de producto en el PDF
-                </span>
-                <span class="text-xs text-medical-blue-600/70">
-                  Solo aplica a productos con imagen en catálogo. Los servicios no llevan imagen.
-                </span>
+                </label>
+                <p
+                  class="text-xs mt-0.5"
+                  :class="
+                    imagenesDisponibles
+                      ? 'text-medical-blue-600/70'
+                      : 'text-gray-500'
+                  "
+                >
+                  Muestra las imágenes disponibles de los productos en pantalla y
+                  en el PDF.
+                </p>
+                <p
+                  v-if="!imagenesDisponibles"
+                  class="text-xs text-gray-500 mt-1.5"
+                >
+                  Los productos seleccionados no tienen imágenes para mostrar.
+                </p>
               </div>
-            </label>
+            </div>
           </div>
         </div>
 
@@ -739,9 +881,9 @@
       :items="revisionItems"
       :total-sin-iva="revisionTotalSinIva"
       :total-con-iva="revisionTotalConIva"
-      :mostrar-descripciones="mostrarDescripciones"
-      :incluir-datos-bancarios="bancariosUtiles && incluirDatosBancarios"
-      :incluir-imagenes-pdf="incluirImagenesPdf"
+      :mostrar-descripciones="effectiveIncluirDescripciones"
+      :incluir-datos-bancarios="effectiveIncluirDatosBancarios"
+      :incluir-imagenes-pdf="effectiveIncluirImagenesPdf"
       :sin-vigencia="sinVigencia"
       :vigencia-dias="vigenciaDias"
       :vigencia-label="revisionVigenciaLabel"
@@ -894,7 +1036,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed, nextTick } from 'vue';
-import { useRouter } from 'vue-router';
+import { RouterLink, useRouter } from 'vue-router';
 import ModalSeleccionServicios from '../../components/common/ModalSeleccionServicios.vue';
 import ModalCotizacionCreada from '../../components/common/ModalCotizacionCreada.vue';
 import ModalRevisionCotizacion from '../../components/cotizador/ModalRevisionCotizacion.vue';
@@ -961,7 +1103,6 @@ const {
   servicios,
   cantidadesPorServicio,
   incluirImagenesPdf,
-  imagenesPdfTouched,
   error,
   cargarServicios,
   actualizarCantidad,
@@ -1024,11 +1165,15 @@ const emailCredentialsConfigured = ref<boolean | null>(null);
 /** Create→send en curso (evita «Sin notificación» mid-flight). */
 const isSendingEmail = ref(false);
 const isResendingEmail = ref(false);
-const incluirDatosBancarios = ref(false);
-/** Toggle descripciones en tabla y PDF (default oculto). */
-const mostrarDescripciones = ref(false);
-/** Story 6.5 — bancarios útiles en tenant config. */
+/** Bases (selected/preferidas). No pisar con availability. */
+const incluirDatosBancarios = ref(true);
+const mostrarDescripciones = ref(true);
+/** Story 6.5 — bancarios útiles en tenant config (availability). */
 const bancariosUtiles = ref(false);
+/** Defaults tenant para init/reset (saved ?? tenant ?? true). */
+let tenantDefaultIncluirDatosBancarios = true;
+let tenantDefaultIncluirDescripciones = true;
+let tenantDefaultIncluirImagenesPdf = true;
 const plantillasDisponibles = ref<Plantilla[]>([]);
 const isLoadingPlantillas = ref(false);
 const errorPlantillas = ref('');
@@ -1376,6 +1521,32 @@ async function refreshEmailCredentialsFlag(): Promise<void> {
   }
 }
 
+/** True si el usuario (o hydrate repetir) ya fijó las bases; no pisar con refresh de config. */
+let visualizacionBasesTouched = false;
+
+function applyTenantVisualizacionDefaults(cfg: {
+  defaultIncluirDatosBancarios?: boolean | null;
+  defaultIncluirDescripciones?: boolean | null;
+  defaultIncluirImagenesPdf?: boolean | null;
+}) {
+  tenantDefaultIncluirDatosBancarios =
+    typeof cfg.defaultIncluirDatosBancarios === 'boolean'
+      ? cfg.defaultIncluirDatosBancarios
+      : true;
+  tenantDefaultIncluirDescripciones =
+    typeof cfg.defaultIncluirDescripciones === 'boolean'
+      ? cfg.defaultIncluirDescripciones
+      : true;
+  tenantDefaultIncluirImagenesPdf =
+    typeof cfg.defaultIncluirImagenesPdf === 'boolean'
+      ? cfg.defaultIncluirImagenesPdf
+      : true;
+  if (visualizacionBasesTouched) return;
+  incluirDatosBancarios.value = tenantDefaultIncluirDatosBancarios;
+  mostrarDescripciones.value = tenantDefaultIncluirDescripciones;
+  incluirImagenesPdf.value = tenantDefaultIncluirImagenesPdf;
+}
+
 const cargarVigenciaDefault = async () => {
   try {
     const cfg = await getTenantConfig();
@@ -1385,9 +1556,7 @@ const cargarVigenciaDefault = async () => {
         : 30,
     );
     bancariosUtiles.value = hasBancariosUtiles(cfg.bancarios);
-    if (!bancariosUtiles.value) {
-      incluirDatosBancarios.value = false;
-    }
+    applyTenantVisualizacionDefaults(cfg);
     emailCredentialsConfigured.value =
       typeof cfg.emailCredentialsConfigured === 'boolean'
         ? cfg.emailCredentialsConfigured
@@ -1395,7 +1564,7 @@ const cargarVigenciaDefault = async () => {
   } catch {
     vigenciaDefaultDias = 30;
     bancariosUtiles.value = false;
-    incluirDatosBancarios.value = false;
+    applyTenantVisualizacionDefaults({});
     emailCredentialsConfigured.value = null;
   }
   vigenciaDias.value = vigenciaDefaultDias;
@@ -1607,13 +1776,16 @@ onMounted(async () => {
       incluirDatosBancarios,
       mostrarDescripciones,
       incluirImagenesPdf,
-      imagenesPdfTouched,
+      tenantDefaultIncluirDatosBancarios,
+      tenantDefaultIncluirDescripciones,
+      tenantDefaultIncluirImagenesPdf,
       plantillasSeleccionadasIds,
       plantillaSnapshots,
       cargarContactos,
       actualizarCantidad,
       vigenciaDefaultDias,
     });
+    visualizacionBasesTouched = true;
     repetirSourceFolio.value = repetirDraft.sourceFolio;
     repetirSourceId.value = repetirDraft.sourceCotizacionId;
     repetirCancelarOriginal.value = !!repetirDraft.cancelarOriginal;
@@ -1707,18 +1879,56 @@ const serviciosConCantidadValida = computed(() =>
   ),
 );
 
-watch(
-  serviciosConCantidadValida,
-  (lista) => {
-    if (imagenesPdfTouched.value) return;
-    incluirImagenesPdf.value = lista.some(
-      (s) =>
-        s.tipo === 'producto' &&
-        !!(s.imagenUrl && String(s.imagenUrl).trim()),
-    );
-  },
-  { deep: true },
+/** Availability — no muta bases. */
+const descripcionesDisponibles = computed(() =>
+  serviciosConCantidadValida.value.some((s) => {
+    const id = s._id || '';
+    const o = itemOverrides.value[id];
+    const desc = o ? o.descripcion : s.descripcion;
+    return !!(desc && String(desc).trim());
+  }),
 );
+
+const imagenesDisponibles = computed(() =>
+  serviciosConCantidadValida.value.some(
+    (s) =>
+      s.tipo === 'producto' && !!(s.imagenUrl && String(s.imagenUrl).trim()),
+  ),
+);
+
+/** Display del switch: available ? base : false (sin pisar base). */
+const displayIncluirDatosBancarios = computed(
+  () => bancariosUtiles.value && incluirDatosBancarios.value,
+);
+const displayMostrarDescripciones = computed(
+  () => descripcionesDisponibles.value && mostrarDescripciones.value,
+);
+const displayIncluirImagenesPdf = computed(
+  () => imagenesDisponibles.value && incluirImagenesPdf.value,
+);
+
+/** Effective — solo preview/PDF. */
+const effectiveIncluirDatosBancarios = displayIncluirDatosBancarios;
+const effectiveIncluirDescripciones = displayMostrarDescripciones;
+const effectiveIncluirImagenesPdf = displayIncluirImagenesPdf;
+
+function setIncluirDatosBancarios(value: boolean) {
+  if (!bancariosUtiles.value) return;
+  visualizacionBasesTouched = true;
+  incluirDatosBancarios.value = value;
+}
+
+function setMostrarDescripciones(value: boolean) {
+  if (!descripcionesDisponibles.value) return;
+  visualizacionBasesTouched = true;
+  mostrarDescripciones.value = value;
+}
+
+function setIncluirImagenesPdf(value: boolean) {
+  if (!imagenesDisponibles.value) return;
+  visualizacionBasesTouched = true;
+  incluirImagenesPdf.value = value;
+}
 
 watch(
   cantidadesPorServicio,
@@ -2110,19 +2320,17 @@ function buildCreatePayload(): PendingCreate {
       return item;
     });
 
-  const incluirBancarios =
-    bancariosUtiles.value && incluirDatosBancarios.value;
-
   const para = [...emailsPara.value];
   const cc = emailsCc.value.filter((e) => !para.includes(e));
   const doEnviar = para.length > 0;
 
+  // Persist bases (selected), nunca effective-false por disabled temporal
   const payload: Parameters<typeof createAdminCotizacion>[0] = {
     items,
     moneda: 'MXN',
     sinVigencia: sinVigencia.value,
     enviarEmail: doEnviar,
-    incluirDatosBancarios: incluirBancarios,
+    incluirDatosBancarios: incluirDatosBancarios.value,
     incluirDescripciones: mostrarDescripciones.value,
     incluirImagenesPdf: incluirImagenesPdf.value,
     emailsPara: para,
@@ -2177,10 +2385,9 @@ function buildPreviewDetalleInput() {
     fechaVencimientoIso: sinVigencia.value
       ? undefined
       : isoFromVigenciaDias(vigenciaDias.value),
-    incluirDatosBancarios:
-      bancariosUtiles.value && incluirDatosBancarios.value,
-    incluirDescripciones: mostrarDescripciones.value,
-    incluirImagenesPdf: incluirImagenesPdf.value,
+    incluirDatosBancarios: effectiveIncluirDatosBancarios.value,
+    incluirDescripciones: effectiveIncluirDescripciones.value,
+    incluirImagenesPdf: effectiveIncluirImagenesPdf.value,
     plantillasSeleccionadasIds: plantillasSeleccionadasIds.value,
     plantillaSnapshots: plantillaSnapshots.value,
   };
@@ -2456,9 +2663,10 @@ const cerrarModal = () => {
   emailSendError.value = null;
   isSendingEmail.value = false;
   isResendingEmail.value = false;
-  incluirDatosBancarios.value = false;
-  mostrarDescripciones.value = false;
-  // incluirImagenesPdf + imagenesPdfTouched: limpiados por resetSelection() (Pinia)
+  visualizacionBasesTouched = false;
+  incluirDatosBancarios.value = tenantDefaultIncluirDatosBancarios;
+  mostrarDescripciones.value = tenantDefaultIncluirDescripciones;
+  incluirImagenesPdf.value = tenantDefaultIncluirImagenesPdf;
   plantillasSeleccionadasIds.value = [];
   plantillaSnapshots.value = {};
   showPersonalizarModal.value = false;

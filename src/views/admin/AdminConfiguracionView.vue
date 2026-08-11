@@ -5,7 +5,7 @@
     </h1>
     <p class="text-gray-600 mb-6">
       Parámetros de la administración activa. Puede editar branding, remitente,
-      notificaciones, vigencia y datos bancarios.
+      notificaciones, opciones predeterminadas de cotización y datos bancarios.
     </p>
 
     <div
@@ -372,10 +372,11 @@
       >
         <div>
           <h2 class="text-lg font-medium text-gray-900">
-            Vigencia de Cotizaciones
+            Opciones predeterminadas de cotización
           </h2>
           <p class="mt-1 text-sm text-gray-500">
-            Días de vigencia al crear cotizaciones sin fecha explícita.
+            Define qué información se incluirá inicialmente al crear una
+            cotización. Estas opciones podrán modificarse en cada cotización.
           </p>
         </div>
 
@@ -394,7 +395,69 @@
           <p class="text-sm text-green-800">{{ vigenciaFormSuccess }}</p>
         </div>
 
-        <div>
+        <div class="space-y-3">
+          <label
+            class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50"
+          >
+            <input
+              v-model="vbForm.defaultIncluirDatosBancarios"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              :disabled="isBusy"
+              @change="onVigenciaFormEdited"
+            />
+            <span>
+              <span class="block text-sm font-medium text-gray-800"
+                >Incluir datos bancarios</span
+              >
+              <span class="block text-xs text-gray-500 mt-0.5"
+                >Incluye los datos bancarios configurados en el PDF.</span
+              >
+            </span>
+          </label>
+          <label
+            class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50"
+          >
+            <input
+              v-model="vbForm.defaultIncluirDescripciones"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              :disabled="isBusy"
+              @change="onVigenciaFormEdited"
+            />
+            <span>
+              <span class="block text-sm font-medium text-gray-800"
+                >Mostrar descripciones</span
+              >
+              <span class="block text-xs text-gray-500 mt-0.5"
+                >Muestra la descripción detallada de cada concepto en pantalla y
+                en el PDF.</span
+              >
+            </span>
+          </label>
+          <label
+            class="flex items-start gap-3 rounded-lg border border-gray-200 p-3 cursor-pointer hover:bg-gray-50"
+          >
+            <input
+              v-model="vbForm.defaultIncluirImagenesPdf"
+              type="checkbox"
+              class="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              :disabled="isBusy"
+              @change="onVigenciaFormEdited"
+            />
+            <span>
+              <span class="block text-sm font-medium text-gray-800"
+                >Mostrar imágenes de productos</span
+              >
+              <span class="block text-xs text-gray-500 mt-0.5"
+                >Muestra las imágenes disponibles de los productos en pantalla y
+                en el PDF.</span
+              >
+            </span>
+          </label>
+        </div>
+
+        <div class="border-t border-gray-100 pt-4">
           <label
             for="config-vigencia-dias"
             class="block text-sm font-medium text-gray-700"
@@ -411,7 +474,9 @@
             :disabled="isBusy"
             @input="onVigenciaFormEdited"
           />
-          <p class="mt-1 text-xs text-gray-500">Entero entre 1 y 365.</p>
+          <p class="mt-1 text-xs text-gray-500">
+            Días de vigencia al crear cotizaciones sin fecha explícita (1–365).
+          </p>
         </div>
 
         <div class="flex justify-end pt-2">
@@ -420,7 +485,7 @@
             class="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 disabled:opacity-50"
             :disabled="isBusy"
           >
-            {{ isSavingVigencia ? 'Guardando…' : 'Guardar vigencia' }}
+            {{ isSavingVigencia ? 'Guardando…' : 'Guardar opciones' }}
           </button>
         </div>
       </form>
@@ -670,6 +735,10 @@ const notifDraftError = ref<string | null>(null);
 
 const vbForm = reactive({
   vigenciaDefaultDias: 30,
+  /** Draft visual: ausente en tenant → true sugerido; al guardar se persiste boolean. */
+  defaultIncluirDatosBancarios: true,
+  defaultIncluirDescripciones: true,
+  defaultIncluirImagenesPdf: true,
   titular: '',
   banco: '',
   cuenta: '',
@@ -813,6 +882,18 @@ function fillVbFromConfig(cfg: TenantConfigResponse) {
 function applyVigenciaFromConfig(cfg: TenantConfigResponse) {
   vbForm.vigenciaDefaultDias =
     typeof cfg.vigenciaDefaultDias === 'number' ? cfg.vigenciaDefaultDias : 30;
+  vbForm.defaultIncluirDatosBancarios =
+    typeof cfg.defaultIncluirDatosBancarios === 'boolean'
+      ? cfg.defaultIncluirDatosBancarios
+      : true;
+  vbForm.defaultIncluirDescripciones =
+    typeof cfg.defaultIncluirDescripciones === 'boolean'
+      ? cfg.defaultIncluirDescripciones
+      : true;
+  vbForm.defaultIncluirImagenesPdf =
+    typeof cfg.defaultIncluirImagenesPdf === 'boolean'
+      ? cfg.defaultIncluirImagenesPdf
+      : true;
 }
 
 function applyBancariosFromConfig(cfg: TenantConfigResponse) {
@@ -1139,12 +1220,18 @@ async function onSaveVigencia() {
   try {
     const updated = await updateTenantVigenciaBancarios({
       vigenciaDefaultDias: days,
+      defaultIncluirDatosBancarios: vbForm.defaultIncluirDatosBancarios,
+      defaultIncluirDescripciones: vbForm.defaultIncluirDescripciones,
+      defaultIncluirImagenesPdf: vbForm.defaultIncluirImagenesPdf,
     });
     config.value = updated;
     applyVigenciaFromConfig(updated);
-    vigenciaFormSuccess.value = 'Vigencia guardada.';
+    vigenciaFormSuccess.value = 'Opciones predeterminadas guardadas.';
   } catch (e) {
-    vigenciaFormError.value = mapConfigError(e, 'No se pudo guardar la vigencia');
+    vigenciaFormError.value = mapConfigError(
+      e,
+      'No se pudieron guardar las opciones predeterminadas',
+    );
   } finally {
     isSavingVigencia.value = false;
   }

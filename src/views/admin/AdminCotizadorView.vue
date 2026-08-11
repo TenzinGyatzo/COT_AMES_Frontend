@@ -640,7 +640,7 @@
                       : 'text-gray-500'
                   "
                 >
-                  Muestra las imágenes disponibles de los productos en pantalla y
+                  Muestra las imágenes disponibles de los productos
                   en el PDF.
                 </p>
                 <p
@@ -793,8 +793,7 @@
               días
             </template>
             <template v-else>
-              Vigencia desactivada — no se aplicará vencimiento (el PDF muestra
-              —).
+              Vigencia desactivada — no se aplicará vencimiento.
               <input
                 id="vigenciaDias"
                 v-model.number="vigenciaDias"

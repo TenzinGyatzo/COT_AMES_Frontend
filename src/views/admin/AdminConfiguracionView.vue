@@ -432,7 +432,7 @@
                 >Mostrar imágenes de productos</span
               >
               <span class="block text-xs text-gray-500 mt-0.5"
-                >Muestra las imágenes disponibles de los productos en pantalla y
+                >Muestra las imágenes disponibles de los productos
                 en el PDF.</span
               >
             </span>

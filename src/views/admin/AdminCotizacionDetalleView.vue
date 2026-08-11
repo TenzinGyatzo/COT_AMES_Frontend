@@ -924,7 +924,7 @@ import {
   generateCotizacionPdfBlob,
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
-import { pdfOptsFromDetalle } from '../../utils/pdfOptsFromDetalle';
+import { pdfOptsFromDetalleAsync } from '../../utils/pdfOptsFromDetalle';
 import { formatMoney } from '../../utils/currency';
 import { extractError } from '../../utils/extractError';
 import type { Servicio } from '../../types/backend';
@@ -1294,7 +1294,7 @@ async function handleDownloadPDF(): Promise<void> {
     isPdfBusy.value = true;
     await downloadCotizacionPDF(
       cotizacionDetalle.value,
-      pdfOptsFromDetalle(cotizacionDetalle.value),
+      await pdfOptsFromDetalleAsync(cotizacionDetalle.value),
     );
   } finally {
     isPdfBusy.value = false;
@@ -1307,7 +1307,7 @@ async function handlePreviewPDF(): Promise<void> {
     isPdfBusy.value = true;
     await previewCotizacionPDF(
       cotizacionDetalle.value,
-      pdfOptsFromDetalle(cotizacionDetalle.value),
+      await pdfOptsFromDetalleAsync(cotizacionDetalle.value),
     );
   } finally {
     isPdfBusy.value = false;
@@ -1362,7 +1362,7 @@ async function enviarCorreoDesdeDetalle(payload: {
   try {
     const blob = await generateCotizacionPdfBlob(
       cotizacionDetalle.value,
-      pdfOptsFromDetalle(cotizacionDetalle.value),
+      await pdfOptsFromDetalleAsync(cotizacionDetalle.value),
     );
     await enviarCorreoCotizacion(String(id), blob, {
       emailsPara: payload.emailsPara,
@@ -1581,7 +1581,7 @@ async function enviarCorreoTrasRepetir(
     }
     const blob = await generateCotizacionPdfBlob(
       detalle,
-      pdfOptsFromDetalle(detalle),
+      await pdfOptsFromDetalleAsync(detalle),
     );
     await enviarCorreoCotizacion(id, blob, {
       emailsPara: para,

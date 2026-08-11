@@ -361,7 +361,7 @@ import {
   downloadCotizacionPDF,
   previewCotizacionPDF,
 } from '../../utils/pdfHelper';
-import { pdfOptsFromDetalle } from '../../utils/pdfOptsFromDetalle';
+import { pdfOptsFromDetalleAsync } from '../../utils/pdfOptsFromDetalle';
 import { formatMoney } from '../../utils/currency';
 
 // Tipo mínimo requerido para mostrar el modal
@@ -484,7 +484,7 @@ const handleDownloadPDF = async () => {
     if (cotizacionDetalle) {
       await downloadCotizacionPDF(
         cotizacionDetalle,
-        pdfOptsFromDetalle(cotizacionDetalle),
+        await pdfOptsFromDetalleAsync(cotizacionDetalle),
       );
     }
   } catch (error) {
@@ -502,7 +502,7 @@ const handlePreviewPDF = async () => {
     if (cotizacionDetalle) {
       await previewCotizacionPDF(
         cotizacionDetalle,
-        pdfOptsFromDetalle(cotizacionDetalle),
+        await pdfOptsFromDetalleAsync(cotizacionDetalle),
       );
     }
   } catch (error) {

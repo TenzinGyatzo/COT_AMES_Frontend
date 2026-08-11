@@ -157,7 +157,7 @@ assert(
   'detalle sintético string+tipoSnapshot+mapa',
 );
 
-// Sin tipoSnapshot y servicioId string: gate bloquea (mapa solo no basta).
+// Sin tipoSnapshot y servicioId string: el mapa catálogo basta (items [Object] en BE).
 const sinTipoSnapshot = resolveProductImageUrls(
   [
     {
@@ -174,8 +174,8 @@ const sinTipoSnapshot = resolveProductImageUrls(
   },
 );
 assert(
-  Object.keys(sinTipoSnapshot).length === 0,
-  'string id sin tipoSnapshot + mapa → vacío (gate)',
+  sinTipoSnapshot.p3c === '/uploads/catalogo/t/p3c.webp',
+  'string id sin tipoSnapshot + mapa → URL (paridad creación)',
 );
 
 const catalogOverPopulate = resolveProductImageUrls(

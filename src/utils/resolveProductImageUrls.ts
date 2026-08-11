@@ -44,17 +44,23 @@ export function resolveProductImageUrls(
   if (options.incluirImagenesPdf !== true) return {};
   const out: Record<string, string> = {};
   for (const item of items || []) {
-    if (!isProductoLinea(item)) continue;
     const sid = itemServicioId(item);
     if (!sid) continue;
 
+    // Mapa catálogo = fuente de verdad del cotizador; no exigir isProductoLinea
+    // (items en API suelen traer servicioId string: populate no aplica con items [Object]).
     const fromCatalog = options.catalogImagenByServicioId?.[sid]?.trim();
+    if (fromCatalog) {
+      out[sid] = fromCatalog;
+      continue;
+    }
+
+    if (!isProductoLinea(item)) continue;
     const fromPopulate =
       typeof item.servicioId === 'object' && item.servicioId
         ? String((item.servicioId as Servicio).imagenUrl || '').trim()
         : '';
-    const url = fromCatalog || fromPopulate;
-    if (url) out[sid] = url;
+    if (fromPopulate) out[sid] = fromPopulate;
   }
   return out;
 }

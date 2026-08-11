@@ -279,7 +279,7 @@
               :disabled="isPdfBusy"
               class="flex-1 py-2.5 bg-medical-blue-50 text-medical-blue-700 rounded-xl hover:bg-medical-blue-100 active:scale-[0.98] transition-all font-bold border border-medical-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <span v-if="!isPdfBusy">Vista previa</span>
+              <span v-if="!isPdfBusy">Abrir PDF</span>
               <span v-else>…</span>
             </button>
             <button
@@ -323,7 +323,7 @@
                   d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
                 />
               </svg>
-              <span v-if="!isPdfBusy">PDF</span>
+              <span v-if="!isPdfBusy">Descargar PDF</span>
             </button>
           </div>
           <button

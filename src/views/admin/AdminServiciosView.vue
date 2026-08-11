@@ -632,6 +632,8 @@
       role="dialog"
       aria-modal="true"
       :aria-labelledby="'modal-item-titulo'"
+      :aria-hidden="mostrarVisorImagen ? true : undefined"
+      :inert="mostrarVisorImagen"
       @pointerdown="onBackdropPointerDown"
       @pointerup="onBackdropPointerUp"
       @pointercancel="onBackdropPointerCancel"
@@ -904,15 +906,20 @@
                   @dragleave.prevent="onDragLeave"
                   @drop.prevent="onDropImagen"
                 >
-                  <div
-                    class="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded border border-gray-200 bg-white"
+                  <button
+                    ref="imagenThumbRef"
+                    type="button"
+                    class="flex h-[104px] w-[104px] shrink-0 cursor-zoom-in items-center justify-center overflow-hidden rounded border border-gray-200 bg-white transition-colors hover:border-medical-blue-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-medical-blue-500 disabled:cursor-default"
+                    aria-label="Ver imagen ampliada"
+                    :disabled="isSubmitting"
+                    @click="abrirVisorImagen"
                   >
                     <img
                       :src="imagenPreviewUrl"
                       alt="Vista previa del producto"
-                      class="max-h-full max-w-full object-contain"
+                      class="h-full w-full object-contain"
                     />
-                  </div>
+                  </button>
                   <div class="min-w-0 flex-1">
                     <p
                       class="line-clamp-2 text-xs font-medium leading-snug text-gray-800"
@@ -1058,6 +1065,47 @@
       @confirm="confirmarDescartarModal"
       @cancel="mostrarConfirmDescartar = false"
     />
+
+    <!-- Visor sencillo de imagen de producto -->
+    <div
+      v-if="mostrarModal && mostrarVisorImagen && imagenPreviewUrl"
+      class="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Vista ampliada de la imagen del producto"
+      @pointerdown="onVisorBackdropPointerDown"
+      @pointerup="onVisorBackdropPointerUp"
+      @pointercancel="onVisorBackdropPointerCancel"
+    >
+      <button
+        ref="visorCerrarRef"
+        type="button"
+        class="absolute right-4 top-4 rounded-md bg-black/40 p-2 text-white transition-colors hover:bg-black/60 focus:outline-none focus:ring-2 focus:ring-white"
+        aria-label="Cerrar vista ampliada"
+        @click="cerrarVisorImagen"
+      >
+        <svg
+          class="h-6 w-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+      <img
+        :src="imagenPreviewUrl"
+        alt="Imagen ampliada del producto"
+        class="max-h-[min(85vh,720px)] max-w-full object-contain"
+        @click.stop
+      />
+    </div>
   </div>
 </template>
 
@@ -1329,6 +1377,9 @@ const imagenPendiente = ref<File | null>(null);
 const imagenLocalPreview = ref<string | null>(null);
 const imagenInputRef = ref<HTMLInputElement | null>(null);
 const eliminarImagenPendiente = ref(false);
+const mostrarVisorImagen = ref(false);
+const imagenThumbRef = ref<HTMLButtonElement | null>(null);
+const visorCerrarRef = ref<HTMLButtonElement | null>(null);
 const isDragOver = ref(false);
 let dragDepth = 0;
 
@@ -1378,9 +1429,14 @@ function resetImagenState() {
   clearImagenPendiente();
   eliminarImagenPendiente.value = false;
   imagenError.value = null;
+  mostrarVisorImagen.value = false;
   isDragOver.value = false;
   dragDepth = 0;
 }
+
+watch(imagenPreviewUrl, (url) => {
+  if (!url) mostrarVisorImagen.value = false;
+});
 
 function acceptImagenFile(file: File): boolean {
   const mime = (file.type.split(';')[0] ?? '').trim().toLowerCase();
@@ -1451,9 +1507,23 @@ function onGlobalDragEnd() {
   isDragOver.value = false;
 }
 
+async function abrirVisorImagen() {
+  if (!imagenPreviewUrl.value || isSubmitting.value) return;
+  mostrarVisorImagen.value = true;
+  await nextTick();
+  visorCerrarRef.value?.focus();
+}
+
+function cerrarVisorImagen() {
+  if (!mostrarVisorImagen.value) return;
+  mostrarVisorImagen.value = false;
+  void nextTick(() => imagenThumbRef.value?.focus());
+}
+
 /** Marca eliminación diferida hasta Guardar (no llama API aún). */
 function marcarEliminarImagen() {
   if (isSubmitting.value) return;
+  mostrarVisorImagen.value = false;
   clearImagenPendiente();
   eliminarImagenPendiente.value = true;
   imagenError.value = null;
@@ -1802,6 +1872,7 @@ const forceCerrarModal = () => {
   errorCrear.value = null;
   precioError.value = null;
   mostrarConfirmDescartar.value = false;
+  mostrarVisorImagen.value = false;
   formSnapshot.value = null;
   resetImagenState();
   formulario.value = {
@@ -1818,6 +1889,10 @@ const forceCerrarModal = () => {
 
 const solicitarCerrarModal = () => {
   if (isSubmitting.value) return;
+  if (mostrarVisorImagen.value) {
+    cerrarVisorImagen();
+    return;
+  }
   if (mostrarConfirmDescartar.value) return;
   if (isFormDirty()) {
     mostrarConfirmDescartar.value = true;
@@ -1831,8 +1906,18 @@ const confirmarDescartarModal = () => {
   forceCerrarModal();
 };
 
+const modalItemAbierto = computed(
+  () => mostrarModal.value && !mostrarVisorImagen.value,
+);
+
 const { onBackdropPointerDown, onBackdropPointerUp, onBackdropPointerCancel } =
-  useModalDismiss(solicitarCerrarModal, mostrarModal);
+  useModalDismiss(solicitarCerrarModal, modalItemAbierto);
+
+const {
+  onBackdropPointerDown: onVisorBackdropPointerDown,
+  onBackdropPointerUp: onVisorBackdropPointerUp,
+  onBackdropPointerCancel: onVisorBackdropPointerCancel,
+} = useModalDismiss(cerrarVisorImagen, mostrarVisorImagen);
 
 /**
  * Guarda un servicio (crear o actualizar)
@@ -1887,6 +1972,7 @@ const guardarServicio = async () => {
       'No se puede actualizar: falta el identificador del registro';
     return;
   }
+  mostrarVisorImagen.value = false;
   isSubmitting.value = true;
   errorCrear.value = null;
 

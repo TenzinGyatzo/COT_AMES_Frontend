@@ -1,5 +1,6 @@
 import type { CotizacionDetalleDto, Cliente } from '../types/backend';
 import { formatCurrency, formatDateShort } from './pdfUtils';
+import { buildConceptosTable } from './pdf/conceptosTableLayout';
 import { mapPlantillasSnapshot } from './pdf/plantillas/mapPlantillasSnapshot';
 
 /** Datos de emisor para cabecera/pie (Story 2.2). */
@@ -217,72 +218,12 @@ export const getCotizacionDefinition = (
   const cliente = getCliente();
   const usuario = getUsuarioCliente();
 
-  const incluirDescripciones = detalle.incluirDescripciones === true;
-
-  // Construir filas de la tabla
-  const tableHeaderRow: any[] = [
-    { text: 'Servicio', style: 'tableHeader' },
-  ];
-  if (incluirDescripciones) {
-    tableHeaderRow.push({ text: 'Descripción', style: 'tableHeader' });
-  }
-  tableHeaderRow.push(
-    { text: 'Cantidad', style: 'tableHeader', alignment: 'center' },
-    { text: 'Precio Unitario', style: 'tableHeader', alignment: 'right' },
-    { text: 'Subtotal', style: 'tableHeader', alignment: 'right' },
-  );
-
-  const tableBody = [tableHeaderRow];
-
-  detalle.items.forEach((item) => {
-    const nombreServicio = item.nombreServicioSnapshot || 'Servicio';
-    const descripcion = item.descripcionServicioSnapshot || '';
-    const sid =
-      typeof item.servicioId === 'object' && item.servicioId
-        ? String(
-            (item.servicioId as { _id?: string; id?: string })._id ||
-              (item.servicioId as { id?: string }).id ||
-              '',
-          )
-        : String(item.servicioId || '');
-    const productImg =
-      incluirImagenesPdf && sid ? productImages[sid] : undefined;
-    const servicioCell = productImg
-      ? {
-          stack: [
-            {
-              image: productImg,
-              fit: [48, 48] as [number, number],
-              margin: [0, 0, 0, 4] as [number, number, number, number],
-            },
-            { text: nombreServicio, style: 'tableCell', alignment: 'left' },
-          ],
-        }
-      : { text: nombreServicio, style: 'tableCell', alignment: 'left' };
-    const row: any[] = [servicioCell];
-    if (incluirDescripciones) {
-      row.push({ text: descripcion, style: 'tableCell', alignment: 'left' });
-    }
-    row.push(
-      {
-        text: item.cantidad.toString(),
-        style: 'tableCell',
-        alignment: 'center',
-      },
-      {
-        text: formatCurrency(item.precioUnitarioSnapshot),
-        style: 'tableCell',
-        alignment: 'right',
-        noWrap: true,
-      },
-      {
-        text: formatCurrency(item.subtotal),
-        style: 'tableCell',
-        alignment: 'right',
-        noWrap: true,
-      },
-    );
-    tableBody.push(row);
+  const conceptosTable = buildConceptosTable({
+    items: detalle.items,
+    incluirDescripciones: detalle.incluirDescripciones === true,
+    incluirImagenesPdf,
+    productImageBase64ByServicioId: productImages,
+    formatCurrency,
   });
 
   const mainContent: any[] = [
@@ -421,16 +362,15 @@ export const getCotizacionDefinition = (
       margin: [0, 6, 0, 14],
     },
 
-    // Tabla de Servicios
-    { text: 'SERVICIOS COTIZADOS', style: 'sectionHeader' },
+    // Tabla de conceptos (título / columnas / layout A|B|C dinámicos)
+    { text: conceptosTable.sectionTitle, style: 'sectionHeader' },
     {
       table: {
         headerRows: 1,
+        dontBreakRows: conceptosTable.dontBreakRows,
         // Cantidad / Precio / Subtotal fijos para que montos ($ 1,400.00) no se partan
-        widths: incluirDescripciones
-          ? ['18%', '*', 52, 77, 77]
-          : ['*', 52, 77, 77],
-        body: tableBody,
+        widths: conceptosTable.widths,
+        body: conceptosTable.body,
       },
       layout: 'lightHorizontalLines',
       margin: [0, 10, 0, 20],

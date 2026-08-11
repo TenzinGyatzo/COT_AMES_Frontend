@@ -8,7 +8,8 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "format": "prettier --write \"src/**/*.{ts,vue,js,json}\" \"*.{ts,js,json}\"",
-    "test:pdf-mapper": "npx --yes tsx src/utils/pdf/plantillas/mapPlantillasSnapshot.selftest.ts"
+    "test:pdf-mapper": "npx --yes tsx src/utils/pdf/plantillas/mapPlantillasSnapshot.selftest.ts",
+    "test:conceptos-table": "npx --yes tsx src/utils/pdf/conceptosTableLayout.selftest.ts"
   },
   "dependencies": {
     "@tiptap/extension-text-align": "^3.28.0",

@@ -73,6 +73,7 @@ export function useAdmin() {
   const obtenerMetricas = async (filters?: {
     fechaDesde?: string;
     fechaHasta?: string;
+    tipo?: 'producto' | 'servicio';
   }): Promise<void> => {
     await adminStore.fetchMetricas(filters);
   };

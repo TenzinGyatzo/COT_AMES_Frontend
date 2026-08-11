@@ -9,6 +9,9 @@ import httpClient from '../services/http';
 interface CotizadorState {
   servicios: Servicio[];
   cantidadesPorServicio: Record<string, number>;
+  /** Story 8.2 — sobrevive remount junto a las cantidades. */
+  incluirImagenesPdf: boolean;
+  imagenesPdfTouched: boolean;
   isLoading: boolean;
   error: string | null;
 }
@@ -17,6 +20,8 @@ export const useCotizadorStore = defineStore('cotizador', {
   state: (): CotizadorState => ({
     servicios: [],
     cantidadesPorServicio: {},
+    incluirImagenesPdf: false,
+    imagenesPdfTouched: false,
     isLoading: false,
     error: null,
   }),
@@ -65,6 +70,8 @@ export const useCotizadorStore = defineStore('cotizador', {
 
     resetSelection(): void {
       this.cantidadesPorServicio = {};
+      this.incluirImagenesPdf = false;
+      this.imagenesPdfTouched = false;
       this.error = null;
     },
   },

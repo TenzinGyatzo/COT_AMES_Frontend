@@ -9,12 +9,12 @@
 
     <!-- Filtros -->
     <div class="mb-6 space-y-4">
-      <!-- Filtros por periodo -->
+      <!-- Filtros por periodo + tipo (Story 7.2 / UX-DR7) -->
       <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
         <h3 class="text-sm font-medium text-gray-700 mb-3">
-          Filtro por Periodo
+          Filtros
         </h3>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
             <label
               for="fechaDesde"
@@ -46,11 +46,32 @@
             />
           </div>
           <div>
+            <label
+              for="filtroTipo"
+              class="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Tipo de ítem
+            </label>
+            <select
+              id="filtroTipo"
+              v-model="filtroTipo"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-medical-blue-500 focus:border-medical-blue-500"
+              @change="aplicarFiltros"
+            >
+              <option value="">Todos</option>
+              <option value="producto">Producto</option>
+              <option value="servicio">Servicio</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500">
+              Aplica a catálogo, tops y desglose
+            </p>
+          </div>
+          <div>
             <button
-              @click="limpiarFiltrosFecha"
+              @click="limpiarFiltros"
               class="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md font-medium hover:bg-gray-300 transition-colors"
             >
-              Limpiar Fechas
+              Limpiar filtros
             </button>
           </div>
         </div>
@@ -138,9 +159,9 @@
         </div>
       </div>
 
-      <!-- Sección Servicios -->
+      <!-- Sección Catálogo (ítems tipados — Story 7.1) -->
       <div>
-        <h2 class="text-xl font-semibold text-gray-800 mb-4">Servicios</h2>
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Catálogo</h2>
         <div class="bg-white shadow-md rounded-lg overflow-hidden">
           <div class="overflow-y-auto max-h-[306px]">
             <table class="min-w-full divide-y divide-gray-200">
@@ -154,7 +175,7 @@
                   <th
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                   >
-                    Servicio
+                    Ítem
                   </th>
                   <th
                     class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
@@ -171,7 +192,7 @@
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-if="isLoading">
                   <td colspan="4" class="px-6 py-4 text-center text-gray-500">
-                    Cargando métricas de servicios...
+                    Cargando métricas del catálogo...
                   </td>
                 </tr>
                 <tr v-else-if="metricasServicios.length === 0">
@@ -189,7 +210,16 @@
                     {{ index + 1 }}
                   </td>
                   <td class="px-6 py-4 text-sm text-gray-900">
-                    {{ servicio.nombreServicio }}
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span>{{ servicio.nombreServicio }}</span>
+                      <span
+                        class="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                        :class="claseTipoDe(servicio.tipoSnapshot)"
+                        :title="labelTipoDe(servicio.tipoSnapshot)"
+                      >
+                        {{ codigoTipoDe(servicio.tipoSnapshot) }}
+                      </span>
+                    </div>
                   </td>
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium"
@@ -368,7 +398,7 @@
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
-            Servicio más contratado
+            Ítem más contratado
           </h3>
           <template v-if="isLoading">
             <p class="text-lg font-semibold text-gray-900">
@@ -392,7 +422,7 @@
         </div>
         <div class="bg-white shadow-md rounded-lg p-6">
           <h3 class="text-sm font-medium text-gray-500 mb-2">
-            Servicio más rentable
+            Ítem más rentable
           </h3>
           <template v-if="isLoading">
             <p class="text-lg font-semibold text-gray-900">
@@ -464,6 +494,43 @@
             </template>
           </p>
           <p class="text-xs text-gray-500 mt-1">No incluye IVA</p>
+          <!-- FR63 / UX-DR7 — desglose por línea (tipoSnapshot); Sin tipo solo si > 0 -->
+          <ul
+            v-if="!isLoading && desgloseVisible"
+            class="mt-3 space-y-1 text-xs text-gray-600 border-t border-gray-100 pt-2"
+            aria-label="Desglose por tipo"
+          >
+            <li class="flex justify-between gap-2">
+              <span>Producto</span>
+              <span class="tabular-nums text-gray-800">
+                {{ formatMoney(desglose.producto.ingresosTotales) }}
+                <span class="text-gray-400"
+                  >({{ desglose.producto.vecesContratado }} uds)</span
+                >
+              </span>
+            </li>
+            <li class="flex justify-between gap-2">
+              <span>Servicio</span>
+              <span class="tabular-nums text-gray-800">
+                {{ formatMoney(desglose.servicio.ingresosTotales) }}
+                <span class="text-gray-400"
+                  >({{ desglose.servicio.vecesContratado }} uds)</span
+                >
+              </span>
+            </li>
+            <li
+              v-if="mostrarSinTipo"
+              class="flex justify-between gap-2 text-gray-500"
+            >
+              <span>Sin tipo</span>
+              <span class="tabular-nums">
+                {{ formatMoney(desglose.sinTipo.ingresosTotales) }}
+                <span class="text-gray-400"
+                  >({{ desglose.sinTipo.vecesContratado }} uds)</span
+                >
+              </span>
+            </li>
+          </ul>
         </div>
       </div>
     </div>
@@ -489,6 +556,8 @@ const {
 
 const fechaDesde = ref<string>('');
 const fechaHasta = ref<string>('');
+/** '' = todos (omitir query); Story 7.2 SaaS. */
+const filtroTipo = ref<'' | 'producto' | 'servicio'>('');
 
 /** Denominador de conversión: emitidas menos canceladas (alineado al BE). */
 const ofertasValidasConversion = computed(() => {
@@ -496,6 +565,43 @@ const ofertasValidasConversion = computed(() => {
   const canceladas = metricasTotales.value?.cotizacionesCanceladas ?? 0;
   return Math.max(0, emitidas - canceladas);
 });
+
+const emptyBucket = () => ({ ingresosTotales: 0, vecesContratado: 0 });
+
+/** Desglose por línea (AD-22); ceros si el BE aún no envía el campo. */
+const desglose = computed(() => {
+  const d = metricasTotales.value?.desglosePorTipo;
+  return {
+    producto: { ...emptyBucket(), ...(d?.producto ?? {}) },
+    servicio: { ...emptyBucket(), ...(d?.servicio ?? {}) },
+    sinTipo: { ...emptyBucket(), ...(d?.sinTipo ?? {}) },
+  };
+});
+
+const desgloseVisible = computed(() => !!metricasTotales.value?.desglosePorTipo);
+
+const mostrarSinTipo = computed(() => {
+  const s = desglose.value.sinTipo;
+  return s.ingresosTotales > 0 || s.vecesContratado > 0;
+});
+
+function codigoTipoDe(tipo?: string | null): string {
+  if (tipo === 'producto') return 'PROD';
+  if (tipo === 'servicio') return 'SERV';
+  return '—';
+}
+
+function labelTipoDe(tipo?: string | null): string {
+  if (tipo === 'producto') return 'Producto';
+  if (tipo === 'servicio') return 'Servicio';
+  return 'Sin tipo';
+}
+
+function claseTipoDe(tipo?: string | null): string {
+  if (tipo === 'producto') return 'bg-amber-50 text-amber-800';
+  if (tipo === 'servicio') return 'bg-sky-50 text-sky-800';
+  return 'bg-gray-100 text-gray-600';
+}
 
 /**
  * Construye los filtros actuales y aplica las métricas
@@ -505,6 +611,7 @@ const aplicarFiltros = async () => {
     const filters: {
       fechaDesde?: string;
       fechaHasta?: string;
+      tipo?: 'producto' | 'servicio';
     } = {};
 
     // Filtros por fecha
@@ -540,6 +647,10 @@ const aplicarFiltros = async () => {
       }
     }
 
+    if (filtroTipo.value === 'producto' || filtroTipo.value === 'servicio') {
+      filters.tipo = filtroTipo.value;
+    }
+
     // Recargar métricas con los filtros aplicados
     await obtenerMetricas(filters);
   } catch (err) {
@@ -548,11 +659,12 @@ const aplicarFiltros = async () => {
 };
 
 /**
- * Limpia los filtros de fecha
+ * Limpia fechas + tipo (Todos)
  */
-const limpiarFiltrosFecha = async () => {
+const limpiarFiltros = async () => {
   fechaDesde.value = '';
   fechaHasta.value = '';
+  filtroTipo.value = '';
   await aplicarFiltros();
 };
 

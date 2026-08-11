@@ -23,6 +23,7 @@ export type BuildPreviewDetalleInput = {
   fechaVencimientoIso?: string;
   incluirDatosBancarios: boolean;
   incluirDescripciones: boolean;
+  incluirImagenesPdf: boolean;
   plantillasSeleccionadasIds: string[];
   plantillaSnapshots: Record<
     string,
@@ -61,6 +62,11 @@ export function buildCotizacionPreviewDetalle(
       const display = displayOf(svc, input.itemOverrides);
       const precioUnitario = Number(display.precioUnitario);
       const subtotal = precioUnitario * cantidad;
+      // Story 8.3 — tipoSnapshot para live-resolve PDF (sin imagenUrl en línea).
+      const tipoSnapshot =
+        svc.tipo === 'producto' || svc.tipo === 'servicio'
+          ? svc.tipo
+          : undefined;
       return {
         servicioId,
         nombreServicioSnapshot: display.nombre.trim() || svc.nombre,
@@ -68,6 +74,7 @@ export function buildCotizacionPreviewDetalle(
         precioUnitarioSnapshot: precioUnitario,
         cantidad,
         subtotal,
+        ...(tipoSnapshot ? { tipoSnapshot } : {}),
       };
     });
 
@@ -106,6 +113,7 @@ export function buildCotizacionPreviewDetalle(
     sinVigencia: input.sinVigencia,
     incluirDatosBancarios: input.incluirDatosBancarios,
     incluirDescripciones: input.incluirDescripciones,
+    incluirImagenesPdf: input.incluirImagenesPdf,
   };
 
   if (!input.sinVigencia && input.fechaVencimientoIso) {

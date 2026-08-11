@@ -17,12 +17,18 @@ import { API_BASE_URL } from '../config/api';
 import { getTenantConfig } from '../services/admin-api.service';
 import { useAuthStore } from '../store/auth';
 import { hasBancariosUtiles } from './bancarios.util';
+import { resolveProductImageUrls } from './resolveProductImageUrls';
 
 /** Branding opcional (guest magic link) cuando no hay sesión AMES / getTenantConfig. */
 export type PdfBrandingOverride = TenantBranding | PublicCotizacionBranding;
 
 export interface PdfBuildOptions {
   branding?: PdfBrandingOverride;
+  /**
+   * Story 8.3 — preview wizard sin populate: servicioId → imagenUrl relativa.
+   * Detalle con populate no lo necesita.
+   */
+  catalogImagenByServicioId?: Record<string, string>;
 }
 
 // Inicializar vfs para fuentes (necesario para pdfmake en cliente)
@@ -127,7 +133,27 @@ async function buildCotizacionDocDefinition(
       }
     : undefined;
 
-  return getCotizacionDefinition(cotizacion, logoBase64, bankPage, emisor);
+  // Story 8.3 — imágenes producto live (AD-22); fallo → omitir slot.
+  const productImageBase64ByServicioId: Record<string, string> = {};
+  const urlByServicioId = resolveProductImageUrls(cotizacion.items, {
+    incluirImagenesPdf: cotizacion.incluirImagenesPdf === true,
+    catalogImagenByServicioId: opts?.catalogImagenByServicioId,
+  });
+  await Promise.all(
+    Object.entries(urlByServicioId).map(async ([sid, rawUrl]) => {
+      try {
+        productImageBase64ByServicioId[sid] = await getBase64ImageFromURL(
+          resolvePublicUrl(rawUrl),
+        );
+      } catch {
+        /* omitir slot */
+      }
+    }),
+  );
+
+  return getCotizacionDefinition(cotizacion, logoBase64, bankPage, emisor, {
+    productImageBase64ByServicioId,
+  });
 }
 
 /**

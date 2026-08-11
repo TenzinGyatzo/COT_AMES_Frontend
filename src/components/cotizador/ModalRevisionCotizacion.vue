@@ -194,6 +194,12 @@
                   {{ mostrarDescripciones ? 'Sí' : 'No' }}
                 </dd>
               </div>
+              <div>
+                <dt class="text-gray-500">Imágenes de producto en PDF</dt>
+                <dd class="font-medium text-gray-900">
+                  {{ incluirImagenesPdf ? 'Sí' : 'No' }}
+                </dd>
+              </div>
             </div>
             <div>
               <dt class="text-gray-500">Vigencia</dt>
@@ -316,6 +322,7 @@ interface Props {
   totalConIva: number;
   mostrarDescripciones: boolean;
   incluirDatosBancarios: boolean;
+  incluirImagenesPdf: boolean;
   sinVigencia: boolean;
   vigenciaDias: number;
   vigenciaLabel: string;

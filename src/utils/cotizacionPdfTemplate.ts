@@ -140,16 +140,24 @@ function buildDatosBancariosPage(opts: PdfBankPageOptions): any[] {
   ];
 }
 
+/** Story 8.3 — extras opcionales (imágenes producto ya resueltas a base64). */
+export type CotizacionPdfExtras = {
+  productImageBase64ByServicioId?: Record<string, string>;
+};
+
 export const getCotizacionDefinition = (
   detalle: CotizacionDetalleDto,
   logoBase64: string,
   bankPage?: PdfBankPageOptions,
   emisor?: PdfEmisorBranding,
+  extras?: CotizacionPdfExtras,
 ): any => {
   // Retorna any para evitar errores de tipos de pdfmake si no están instalados
   const incluirDatosBancarios = Boolean(
     detalle.incluirDatosBancarios && bankPage,
   );
+  const incluirImagenesPdf = detalle.incluirImagenesPdf === true;
+  const productImages = extras?.productImageBase64ByServicioId || {};
 
   const footerLine1 = emisor?.razonSocial?.trim() || 'Aestimare';
   const footerLine2 = emisor?.domicilio?.trim() || '';
@@ -229,9 +237,29 @@ export const getCotizacionDefinition = (
   detalle.items.forEach((item) => {
     const nombreServicio = item.nombreServicioSnapshot || 'Servicio';
     const descripcion = item.descripcionServicioSnapshot || '';
-    const row: any[] = [
-      { text: nombreServicio, style: 'tableCell', alignment: 'left' },
-    ];
+    const sid =
+      typeof item.servicioId === 'object' && item.servicioId
+        ? String(
+            (item.servicioId as { _id?: string; id?: string })._id ||
+              (item.servicioId as { id?: string }).id ||
+              '',
+          )
+        : String(item.servicioId || '');
+    const productImg =
+      incluirImagenesPdf && sid ? productImages[sid] : undefined;
+    const servicioCell = productImg
+      ? {
+          stack: [
+            {
+              image: productImg,
+              fit: [48, 48] as [number, number],
+              margin: [0, 0, 0, 4] as [number, number, number, number],
+            },
+            { text: nombreServicio, style: 'tableCell', alignment: 'left' },
+          ],
+        }
+      : { text: nombreServicio, style: 'tableCell', alignment: 'left' };
+    const row: any[] = [servicioCell];
     if (incluirDescripciones) {
       row.push({ text: descripcion, style: 'tableCell', alignment: 'left' });
     }

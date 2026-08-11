@@ -3,8 +3,6 @@
  * Estos tipos representan las estructuras de datos que se intercambian con la API
  */
 
-import type { CategoriaServicioCode } from '../constants/categorias-servicio';
-
 /** Tenant AMES (Story 1.2) */
 export interface Tenant {
   _id?: string;
@@ -69,14 +67,23 @@ export interface TenantConfigResponse {
 }
 
 // Tipo para un servicio médico
+/** Discriminador catálogo unificado (AD-19 / FR-58 / Story 6.1). */
+export type TipoItemCatalogo = 'servicio' | 'producto';
+
 export interface Servicio {
   _id?: string;
   tenantId?: string;
   nombre: string;
   descripcion?: string;
   precioUnitario: number;
-  /** Categoría fija MED…OTR (Story 4.1). Legacy backfill → OTR. */
-  categoria: CategoriaServicioCode;
+  /** Categoría dinámica del tenant (Story 5.3 / AD-20). */
+  categoriaId: string;
+  /** Discriminador servicio | producto (Story 6.1). */
+  tipo: TipoItemCatalogo;
+  /** Código interno opcional único por tenant (Story 6.2 / AD-21). */
+  codigo?: string;
+  /** Imagen de producto (Story 8.1 / AD-23); path relativo `/uploads/catalogo/...`. */
+  imagenUrl?: string;
   moneda?: string;
   activo?: boolean;
 }
@@ -108,6 +115,28 @@ export interface Plantilla {
   activo?: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+/**
+ * Categoría dinámica de catálogo por tenant (Story 5.2 / AD-20).
+ */
+export interface CategoriaServicioCatalogo {
+  _id: string;
+  tenantId?: string;
+  nombre: string;
+  /** 2–3 chars, uppercase en BE */
+  codigo: string;
+  activo?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PaginatedCategoriasServicioResponse {
+  data: CategoriaServicioCatalogo[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // Tipo para un cliente
@@ -142,6 +171,9 @@ export interface ItemCotizacion {
   precioUnitarioSnapshot?: number;
   cantidad: number;
   subtotal: number;
+  /** AD-22 / Story 6.4 — opcional en lectura (líneas legacy). */
+  tipoSnapshot?: 'servicio' | 'producto';
+  codigoSnapshot?: string;
 }
 
 // Tipo para una cotización completa
@@ -245,6 +277,20 @@ export interface ServiceMetricDto {
   nombreServicio: string;
   precioUnitario: number;
   vecesContratado: number;
+  /** AD-22 / Story 7.1 tipado — null/undefined = legacy sin tipoSnapshot. */
+  tipoSnapshot?: 'producto' | 'servicio' | null;
+}
+
+/** Bucket de desglose por tipoSnapshot (líneas aceptadas). Story 7.1 SaaS. */
+export interface TipoBucketDto {
+  ingresosTotales: number;
+  vecesContratado: number;
+}
+
+export interface DesglosePorTipoDto {
+  producto: TipoBucketDto;
+  servicio: TipoBucketDto;
+  sinTipo: TipoBucketDto;
 }
 
 // Tipo para cliente solicitante en métricas totales
@@ -288,6 +334,8 @@ export interface TotalsMetricDto {
   /** aceptadas / (emitidas − canceladas) */
   tasaConversion: number;
   ingresosTotales: number;
+  /** FR63 / AD-22 — desglose por línea; opcional en clients viejos. */
+  desglosePorTipo?: DesglosePorTipoDto;
 }
 
 // Tipo para un item de cotización en la lista
@@ -341,6 +389,9 @@ export interface CotizacionDetalleDto {
     precioUnitarioSnapshot: number;
     cantidad: number;
     subtotal: number;
+    /** AD-22 / Story 6.4 — opcional en lectura (líneas legacy). */
+    tipoSnapshot?: 'servicio' | 'producto';
+    codigoSnapshot?: string;
   }>;
   total: number;
   moneda?: string;
@@ -379,6 +430,8 @@ export interface CotizacionDetalleDto {
   incluirDatosBancarios?: boolean;
   /** Si false, el PDF omite la columna de descripción (default true). */
   incluirDescripciones?: boolean;
+  /** Story 8.2 / AD-26 — PDF puede incluir imágenes de producto (render en 8.3). */
+  incluirImagenesPdf?: boolean;
   /** Destinatarios Para (Story 6.6). */
   emailsPara?: string[];
   /** Destinatarios CC (Story 6.6). */

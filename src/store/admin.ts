@@ -145,13 +145,15 @@ export const useAdminStore = defineStore('admin', {
     async fetchMetricas(filters?: {
       fechaDesde?: string;
       fechaHasta?: string;
+      /** Story 7.2 SaaS — omitido = todos; solo líneas tipoSnapshot. */
+      tipo?: 'producto' | 'servicio';
     }): Promise<void> {
       const authStore = useAuthStore();
       const seq = ++this.metricasFetchSeq;
       this.isLoading = true;
       this.error = null;
 
-      // Story 7.2 review: clear solo al cambiar tenant admin (no filtros / operativo)
+      // Clear solo al cambiar tenant admin (no filtros / operativo) — MVP selector
       const tenantKey = authStore.isAdminSistema
         ? authStore.activeTenantId
         : 'operativo';
@@ -166,6 +168,7 @@ export const useAdminStore = defineStore('admin', {
         const params: any = {};
         if (filters?.fechaDesde) params.fechaDesde = filters.fechaDesde;
         if (filters?.fechaHasta) params.fechaHasta = filters.fechaHasta;
+        if (filters?.tipo) params.tipo = filters.tipo;
 
         const [clientesResponse, serviciosResponse, totalsResponse] =
           await Promise.all([

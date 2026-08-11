@@ -25,6 +25,7 @@ import AdminCotizadorView from '../views/admin/AdminCotizadorView.vue';
 import AdminClientesView from '../views/admin/AdminClientesView.vue';
 import AdminClienteDetalleView from '../views/admin/AdminClienteDetalleView.vue';
 import AdminServiciosView from '../views/admin/AdminServiciosView.vue';
+import AdminCategoriasServicioView from '../views/admin/AdminCategoriasServicioView.vue';
 import AdminMetricasView from '../views/admin/AdminMetricasView.vue';
 import AdminUsuariosView from '../views/admin/AdminUsuariosView.vue';
 import AdminPlantillasView from '../views/admin/AdminPlantillasView.vue';
@@ -108,6 +109,12 @@ const routes: RouteRecordRaw[] = [
         path: 'servicios',
         name: 'admin-servicios',
         component: AdminServiciosView,
+        meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
+      },
+      {
+        path: 'categorias',
+        name: 'admin-categorias',
+        component: AdminCategoriasServicioView,
         meta: { requiresAuth: true, allowedRoles: ['operativo', 'admin_tenant', 'admin_sistema'] },
       },
       {

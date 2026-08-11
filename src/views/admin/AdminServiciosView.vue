@@ -4,14 +4,23 @@
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4"
     >
       <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">
-        Lista de Servicios
+        Productos y servicios
       </h1>
-      <button
-        @click="abrirModalCrear"
-        class="w-full sm:w-auto px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium"
-      >
-        + Agregar Servicio
-      </button>
+      <div class="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+        <router-link
+          to="/admin/categorias"
+          class="w-full sm:w-auto text-center px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium text-sm"
+        >
+          Gestionar categorías
+        </router-link>
+        <button
+          type="button"
+          @click="abrirModalCrear"
+          class="w-full sm:w-auto px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium"
+        >
+          + Agregar ítem
+        </button>
+      </div>
     </div>
 
     <div class="mb-4">
@@ -45,12 +54,12 @@
               <button
                 type="button"
                 role="tab"
-                :aria-selected="!filters.categoria"
+                :aria-selected="!filters.categoriaId"
                 aria-label="Todas las categorías"
                 title="Todas las categorías"
                 class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
                 :class="
-                  !filters.categoria
+                  !filters.categoriaId
                     ? 'bg-medical-blue-600 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 "
@@ -59,25 +68,43 @@
                 Todas
               </button>
               <button
-                v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
-                :key="opt.code"
+                v-for="cat in categorias"
+                :key="cat._id"
                 type="button"
                 role="tab"
-                :aria-selected="filters.categoria === opt.code"
-                :aria-label="opt.label"
-                :title="opt.label"
+                :aria-selected="filters.categoriaId === cat._id"
+                :aria-label="cat.nombre"
+                :title="cat.nombre"
                 class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis"
                 :class="
-                  filters.categoria === opt.code
+                  filters.categoriaId === cat._id
                     ? 'bg-medical-blue-600 text-white'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 "
-                @click="selectCategoria(opt.code)"
+                @click="selectCategoria(cat._id)"
               >
-                {{ opt.code }}
+                {{ cat.codigo }}
               </button>
             </div>
           </div>
+        </div>
+
+        <div class="min-w-[140px] shrink-0">
+          <label
+            for="filtro-tipo-servicio"
+            class="block text-xs font-medium text-gray-600 mb-1"
+            >Tipo</label
+          >
+          <select
+            id="filtro-tipo-servicio"
+            v-model="filters.tipo"
+            class="w-full rounded-md border-gray-300 text-sm px-3 py-2 border focus:outline-none focus:ring-2 focus:ring-medical-blue-500 bg-white"
+            @change="onTipoFilterChange"
+          >
+            <option value="">Todos</option>
+            <option value="servicio">Servicio</option>
+            <option value="producto">Producto</option>
+          </select>
         </div>
 
         <div class="min-w-[180px] shrink-0">
@@ -200,14 +227,22 @@
                 <td
                   class="w-[180px] max-w-[180px] px-3 lg:px-4 py-4 text-sm font-medium text-gray-900"
                 >
-                  <div class="break-words">{{ servicio.nombre }}</div>
+                  <div class="flex items-start gap-1.5 flex-wrap">
+                    <div class="break-words">{{ servicio.nombre }}</div>
+                    <span
+                      class="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                      :title="labelTipoDe(servicio.tipo)"
+                    >
+                      {{ codigoTipoDe(servicio.tipo) }}
+                    </span>
+                  </div>
                 </td>
                 <td
                   class="px-3 lg:px-4 py-4 text-sm text-gray-700"
-                  :title="labelCategoriaServicio(servicio.categoria)"
+                  :title="labelCategoriaDe(servicio.categoriaId)"
                 >
                   <div class="truncate">
-                    {{ labelCategoriaServicio(servicio.categoria) }}
+                    {{ codigoCategoriaDe(servicio.categoriaId) }}
                   </div>
                 </td>
                 <td
@@ -345,11 +380,22 @@
                 <td
                   class="w-[160px] max-w-[160px] px-3 py-4 text-xs font-medium text-gray-900"
                 >
-                  <div class="break-words">{{ servicio.nombre }}</div>
+                  <div class="flex items-start gap-1.5 flex-wrap">
+                    <div class="break-words">{{ servicio.nombre }}</div>
+                    <span
+                      class="shrink-0 text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                      :title="labelTipoDe(servicio.tipo)"
+                    >
+                      {{ codigoTipoDe(servicio.tipo) }}
+                    </span>
+                  </div>
                 </td>
-                <td class="px-3 py-4 text-xs text-gray-700">
+                <td
+                  class="px-3 py-4 text-xs text-gray-700"
+                  :title="labelCategoriaDe(servicio.categoriaId)"
+                >
                   <div class="truncate max-w-[100px]">
-                    {{ labelCategoriaServicio(servicio.categoria) }}
+                    {{ codigoCategoriaDe(servicio.categoriaId) }}
                   </div>
                 </td>
                 <td
@@ -455,11 +501,22 @@
                   {{ isServicioActivo(servicio) ? 'Activo' : 'Inactivo' }}
                 </span>
               </div>
-              <h3 class="text-lg font-semibold text-gray-900">
-                {{ servicio.nombre }}
-              </h3>
-              <p class="text-sm text-gray-600 mt-1">
-                {{ labelCategoriaServicio(servicio.categoria) }}
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-lg font-semibold text-gray-900">
+                  {{ servicio.nombre }}
+                </h3>
+                <span
+                  class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                  :title="labelTipoDe(servicio.tipo)"
+                >
+                  {{ codigoTipoDe(servicio.tipo) }}
+                </span>
+              </div>
+              <p
+                class="text-sm text-gray-600 mt-1"
+                :title="labelCategoriaDe(servicio.categoriaId)"
+              >
+                {{ codigoCategoriaDe(servicio.categoriaId) }}
               </p>
             </div>
           </div>
@@ -568,7 +625,7 @@
         <div class="p-4 sm:p-6">
           <div class="flex justify-between items-center mb-4 sm:mb-6">
             <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
-              {{ modoEdicion ? 'Editar Servicio' : 'Nuevo Servicio' }}
+              {{ modoEdicion ? 'Editar ítem' : 'Nuevo ítem' }}
             </h2>
             <button
               @click="cerrarModal"
@@ -613,27 +670,139 @@
             <!-- Categoría -->
             <div>
               <label
-                for="categoria"
+                for="categoriaId"
                 class="block text-sm font-medium text-gray-700 mb-1"
               >
                 Categoría <span class="text-red-500">*</span>
               </label>
+              <div
+                v-if="categorias.length === 0 && !categoriaHuerfanaForm"
+                class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+              >
+                No hay categorías activas en esta administración.
+                <router-link
+                  to="/admin/categorias"
+                  class="font-medium text-medical-blue-700 underline hover:text-medical-blue-900"
+                >
+                  Gestionar categorías
+                </router-link>
+              </div>
+              <template v-else>
+                <select
+                  id="categoriaId"
+                  v-model="formulario.categoriaId"
+                  required
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  :disabled="isSubmitting"
+                >
+                  <option disabled value="">Selecciona una categoría</option>
+                  <option
+                    v-if="categoriaHuerfanaForm"
+                    :value="categoriaHuerfanaForm.id"
+                  >
+                    {{ categoriaHuerfanaForm.label }}
+                  </option>
+                  <option
+                    v-for="cat in categorias"
+                    :key="cat._id"
+                    :value="cat._id"
+                  >
+                    {{ cat.codigo }} — {{ cat.nombre }}
+                  </option>
+                </select>
+                <p
+                  v-if="categoriaHuerfanaForm"
+                  class="mt-1 text-xs text-amber-800"
+                >
+                  La categoría actual no está activa o no aparece en el
+                  catálogo. Elige una categoría activa para guardar.
+                </p>
+              </template>
+            </div>
+
+            <!-- Tipo (Story 6.1 / FR-58) -->
+            <div>
+              <label
+                for="tipo"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Tipo <span class="text-red-500">*</span>
+              </label>
               <select
-                id="categoria"
-                v-model="formulario.categoria"
+                id="tipo"
+                v-model="formulario.tipo"
                 required
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
                 :disabled="isSubmitting"
               >
-                <option disabled value="">Selecciona una categoría</option>
-                <option
-                  v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
-                  :key="opt.code"
-                  :value="opt.code"
-                >
-                  {{ opt.label }}
-                </option>
+                <option value="servicio">Servicio</option>
+                <option value="producto">Producto</option>
               </select>
+            </div>
+
+            <!-- Código opcional (Story 6.2 / FR-59 / UX-DR3) -->
+            <div>
+              <label
+                for="codigo-item"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                {{ labelCodigoItem }}
+              </label>
+              <input
+                id="codigo-item"
+                v-model="formulario.codigo"
+                type="text"
+                maxlength="64"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                :placeholder="
+                  formulario.tipo === 'producto' ? 'Ej. SKU-001' : 'Opcional'
+                "
+                :disabled="isSubmitting"
+              />
+              <p class="mt-1 text-xs text-gray-500">
+                {{ ayudaCodigoItem }}
+              </p>
+            </div>
+
+            <!-- Imagen producto (Story 8.1 / AD-23 / UX-DR3) -->
+            <div v-if="formulario.tipo === 'producto'">
+              <label
+                for="imagen-producto"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Imagen (opcional)
+              </label>
+              <div class="flex flex-wrap items-start gap-3">
+                <img
+                  v-if="imagenPreviewUrl"
+                  :src="imagenPreviewUrl"
+                  alt="Vista previa"
+                  class="h-16 w-16 rounded border border-gray-200 object-cover bg-gray-50"
+                />
+                <div class="min-w-0 flex-1 space-y-2">
+                  <input
+                    id="imagen-producto"
+                    ref="imagenInputRef"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-medical-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-medical-blue-700 hover:file:bg-medical-blue-100"
+                    :disabled="isSubmitting"
+                    @change="onImagenSelected"
+                  />
+                  <p class="text-xs text-gray-500">
+                    PNG, JPEG o WebP · máx. 1&nbsp;MB · se guarda como WebP
+                  </p>
+                  <button
+                    v-if="modoEdicion && servicioEditando?.imagenUrl"
+                    type="button"
+                    class="text-xs font-medium text-red-600 hover:text-red-700"
+                    :disabled="isSubmitting"
+                    @click="eliminarImagenProducto"
+                  >
+                    Quitar imagen
+                  </button>
+                </div>
+              </div>
             </div>
 
             <!-- Descripción -->
@@ -748,11 +917,17 @@
               <button
                 type="submit"
                 class="w-full sm:w-auto px-4 py-2 bg-medical-green-500 text-white rounded-md hover:bg-medical-green-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="isSubmitting"
+                :disabled="
+                  isSubmitting ||
+                  (!modoEdicion && categorias.length === 0) ||
+                  (modoEdicion &&
+                    !!categoriaHuerfanaForm &&
+                    categorias.length === 0)
+                "
               >
                 <span v-if="isSubmitting">Guardando...</span>
                 <span v-else
-                  >{{ modoEdicion ? 'Actualizar' : 'Guardar' }} Servicio</span
+                  >{{ modoEdicion ? 'Actualizar ítem' : 'Guardar ítem' }}</span
                 >
               </button>
             </div>
@@ -786,18 +961,27 @@ import {
   updateServicio,
   deleteServicio,
   toggleServicioActivo,
+  uploadServicioImagen,
+  deleteServicioImagen,
   getTenants,
+  getCategoriasServicio,
   type CreateServicioPayload,
   type UpdateServicioPayload,
   type AdminServiciosFilters,
   type ServicioOrden,
 } from '../../services/admin-api.service';
-import type { Servicio, Tenant } from '../../types/backend';
+import type {
+  CategoriaServicioCatalogo,
+  Servicio,
+  TipoItemCatalogo,
+  Tenant,
+} from '../../types/backend';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ToggleSwitch from '../../components/common/ToggleSwitch.vue';
 import ListLoadingOverlay from '../../components/base/ListLoadingOverlay.vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import { useAuthStore } from '../../store/auth';
+import { API_BASE_URL } from '../../config/api';
 import { formatMoney } from '../../utils/currency';
 import { extractError } from '../../utils/extractError';
 import {
@@ -808,15 +992,17 @@ import {
   queryString,
   shouldResetListQueryForTenant,
 } from '../../utils/listQuery';
-import {
-  CATEGORIA_SERVICIO_CODES,
-  CATEGORIA_SERVICIO_OPTIONS,
-  labelCategoriaServicio,
-  type CategoriaServicioCode,
-} from '../../constants/categorias-servicio';
 
-type ServicioFormState = Omit<CreateServicioPayload, 'categoria'> & {
-  categoria: CategoriaServicioCode | '';
+const MAX_IMAGEN_BYTES = 1_000_000;
+const ALLOWED_IMAGEN_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp',
+]);
+
+type ServicioFormState = Omit<CreateServicioPayload, 'categoriaId'> & {
+  categoriaId: string;
 };
 
 const route = useRoute();
@@ -828,6 +1014,14 @@ const isAdminSistema = computed(() => authStore.isAdminSistema);
 const ORDENES: ServicioOrden[] = ['creacion', 'nombre_asc', 'nombre_desc'];
 
 const servicios = ref<Servicio[]>([]);
+const categorias = ref<CategoriaServicioCatalogo[]>([]);
+const categoriaById = computed(() => {
+  const map = new Map<string, CategoriaServicioCatalogo>();
+  for (const cat of categorias.value) {
+    if (cat._id) map.set(cat._id, cat);
+  }
+  return map;
+});
 const isLoading = ref(false);
 const hasLoadedOnce = ref(false);
 const error = ref<string | null>(null);
@@ -836,17 +1030,20 @@ const successMsg = ref<string | null>(null);
 const actionError = ref<string | null>(null);
 const isMutating = ref(false);
 let loadSeq = 0;
+let categoriasLoadSeq = 0;
 let filterTimeout: ReturnType<typeof setTimeout> | null = null;
 
 const filters = ref<{
   nombre: string;
-  categoria: CategoriaServicioCode | '';
+  categoriaId: string;
+  tipo: '' | TipoItemCatalogo;
   orden: ServicioOrden;
   page: number;
   limit: number;
 }>({
   nombre: '',
-  categoria: '',
+  categoriaId: '',
+  tipo: '',
   orden: 'creacion',
   page: 1,
   limit: 20,
@@ -863,9 +1060,36 @@ function isServicioActivo(servicio: Servicio): boolean {
   return servicio.activo !== false;
 }
 
+function codigoCategoriaDe(categoriaId?: string): string {
+  if (!categoriaId) return '—';
+  return categoriaById.value.get(categoriaId)?.codigo || '—';
+}
+
+function labelCategoriaDe(categoriaId?: string): string {
+  if (!categoriaId) return '';
+  const cat = categoriaById.value.get(categoriaId);
+  return cat?.nombre || '';
+}
+
+function codigoTipoDe(tipo?: TipoItemCatalogo): string {
+  if (tipo === 'producto') return 'PROD';
+  if (tipo === 'servicio') return 'SERV';
+  return '—';
+}
+
+function labelTipoDe(tipo?: TipoItemCatalogo): string {
+  if (tipo === 'producto') return 'Producto';
+  if (tipo === 'servicio') return 'Servicio';
+  return '';
+}
+
 const tieneFiltrosBusqueda = computed(
   () =>
-    !!(filters.value.nombre?.trim() || filters.value.categoria),
+    !!(
+      filters.value.nombre?.trim() ||
+      filters.value.categoriaId ||
+      filters.value.tipo
+    ),
 );
 
 const emptyListMessage = computed(() => {
@@ -890,9 +1114,98 @@ const formulario = ref<ServicioFormState>({
   nombre: '',
   descripcion: '',
   precioUnitario: 0,
-  categoria: '',
+  categoriaId: '',
+  tipo: 'servicio',
+  codigo: '',
   moneda: 'MXN',
   activo: true,
+});
+
+/** Archivo pendiente de subir tras create (path canónico necesita _id). */
+const imagenPendiente = ref<File | null>(null);
+const imagenLocalPreview = ref<string | null>(null);
+const imagenInputRef = ref<HTMLInputElement | null>(null);
+
+function publicAssetPreviewUrl(path: string | undefined | null): string | null {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  const apiBase = API_BASE_URL.replace(/\/api\/?$/, '');
+  if (apiBase.startsWith('http')) return `${apiBase}${path}`;
+  return path;
+}
+
+const imagenPreviewUrl = computed(() => {
+  if (imagenLocalPreview.value) return imagenLocalPreview.value;
+  if (formulario.value.tipo !== 'producto') return null;
+  return publicAssetPreviewUrl(servicioEditando.value?.imagenUrl);
+});
+
+function clearImagenPendiente() {
+  imagenPendiente.value = null;
+  if (imagenLocalPreview.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(imagenLocalPreview.value);
+  }
+  imagenLocalPreview.value = null;
+  if (imagenInputRef.value) imagenInputRef.value.value = '';
+}
+
+function onImagenSelected(ev: Event) {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  const mime = (file.type.split(';')[0] ?? '').trim().toLowerCase();
+  if (!ALLOWED_IMAGEN_TYPES.has(mime)) {
+    errorCrear.value = 'Tipo de imagen no permitido (use PNG, JPEG o WebP)';
+    clearImagenPendiente();
+    return;
+  }
+  if (file.size > MAX_IMAGEN_BYTES) {
+    errorCrear.value = 'La imagen no puede superar 1MB';
+    clearImagenPendiente();
+    return;
+  }
+  errorCrear.value = null;
+  if (imagenLocalPreview.value?.startsWith('blob:')) {
+    URL.revokeObjectURL(imagenLocalPreview.value);
+  }
+  imagenPendiente.value = file;
+  imagenLocalPreview.value = URL.createObjectURL(file);
+}
+
+async function eliminarImagenProducto() {
+  const id = servicioEditando.value?._id;
+  if (!id || !modoEdicion.value) return;
+  isSubmitting.value = true;
+  errorCrear.value = null;
+  try {
+    const updated = await deleteServicioImagen(id);
+    servicioEditando.value = updated;
+    clearImagenPendiente();
+  } catch (err: unknown) {
+    errorCrear.value = extractError(err, 'No fue posible eliminar la imagen');
+  } finally {
+    isSubmitting.value = false;
+  }
+}
+
+const labelCodigoItem = computed(() =>
+  formulario.value.tipo === 'producto'
+    ? 'Código o SKU'
+    : 'Código de Servicio',
+);
+
+const ayudaCodigoItem = computed(() =>
+  formulario.value.tipo === 'producto'
+    ? 'Identificador interno del producto. No puede repetirse en el catálogo.'
+    : 'Identificador interno opcional. No puede repetirse en el catálogo.',
+);
+
+/** Categoría del form que no está en el lote activo cargado (inactiva / huérfana). */
+const categoriaHuerfanaForm = computed(() => {
+  const id = formulario.value.categoriaId?.trim();
+  if (!id) return null;
+  if (categorias.value.some((c) => c._id === id)) return null;
+  return { id, label: 'Categoría no disponible (elige otra)' };
 });
 
 const tenantsDisponibles = ref<Tenant[]>([]);
@@ -902,13 +1215,13 @@ const mostrarConfirmDesactivar = ref(false);
 const mensajeConfirmDesactivar = ref('');
 const servicioADesactivar = ref<Servicio | null>(null);
 
-function applyQueryToState() {
+/** true si la query traía `tipo` inválido/vacío y hay que limpiar la URL */
+function applyQueryToState(): boolean {
   filters.value.nombre = queryString(route.query, 'nombre') ?? '';
-  const cat = queryString(route.query, 'categoria');
-  filters.value.categoria =
-    cat && (CATEGORIA_SERVICIO_CODES as readonly string[]).includes(cat)
-      ? (cat as CategoriaServicioCode)
-      : '';
+  filters.value.categoriaId = queryString(route.query, 'categoriaId') ?? '';
+  const tipo = queryString(route.query, 'tipo');
+  const tipoValido = tipo === 'servicio' || tipo === 'producto';
+  filters.value.tipo = tipoValido ? tipo : '';
   const orden = queryString(route.query, 'orden');
   filters.value.orden =
     orden && (ORDENES as readonly string[]).includes(orden)
@@ -917,12 +1230,15 @@ function applyQueryToState() {
   filters.value.page = queryInt(route.query, 'page', 1);
   filters.value.limit = queryInt(route.query, 'limit', 20, { max: 100 });
   verInactivos.value = queryFlag(route.query, 'verInactivos');
+  // `tipo` presente en URL pero no usable → sync para no dejar query sucia
+  return tipo != null && tipo !== '' && !tipoValido;
 }
 
 async function syncQuery() {
   const next = compactQuery({
     nombre: filters.value.nombre?.trim() || undefined,
-    categoria: filters.value.categoria || undefined,
+    categoriaId: filters.value.categoriaId || undefined,
+    tipo: filters.value.tipo || undefined,
     orden:
       filters.value.orden !== 'creacion' ? filters.value.orden : undefined,
     page: (filters.value.page ?? 1) > 1 ? filters.value.page : undefined,
@@ -936,12 +1252,43 @@ async function syncQuery() {
 function resetFilters() {
   filters.value = {
     nombre: '',
-    categoria: '',
+    categoriaId: '',
+    tipo: '',
     orden: 'creacion',
     page: 1,
     limit: 20,
   };
   verInactivos.value = false;
+}
+
+async function cargarCategorias() {
+  const seq = ++categoriasLoadSeq;
+  try {
+    const res = await getCategoriasServicio({ limit: 100 });
+    if (seq !== categoriasLoadSeq) return;
+    categorias.value = res.data || [];
+    // Si el filtro apunta a una categoría que ya no existe en el tenant, limpiarlo
+    if (
+      filters.value.categoriaId &&
+      !categorias.value.some((c) => c._id === filters.value.categoriaId)
+    ) {
+      filters.value.categoriaId = '';
+      // Sync inmediato: cargarServicios puede fallar después y dejar URL stale
+      await syncQuery();
+    }
+  } catch (err: unknown) {
+    if (seq !== categoriasLoadSeq) return;
+    console.error('Error al cargar categorías:', err);
+    categorias.value = [];
+    if (filters.value.categoriaId) {
+      filters.value.categoriaId = '';
+      await syncQuery();
+    }
+    actionError.value = extractError(
+      err,
+      'No fue posible cargar las categorías',
+    );
+  }
 }
 
 const cargarServicios = async () => {
@@ -960,8 +1307,11 @@ const cargarServicios = async () => {
     if (filters.value.nombre?.trim()) {
       activeFilters.nombre = filters.value.nombre.trim();
     }
-    if (filters.value.categoria) {
-      activeFilters.categoria = filters.value.categoria;
+    if (filters.value.categoriaId) {
+      activeFilters.categoriaId = filters.value.categoriaId;
+    }
+    if (filters.value.tipo) {
+      activeFilters.tipo = filters.value.tipo;
     }
     if (verInactivos.value) {
       activeFilters.activo = false;
@@ -1033,9 +1383,15 @@ function onCategoriaChange() {
   reloadFromFilters();
 }
 
-function selectCategoria(code: CategoriaServicioCode | '') {
-  if (filters.value.categoria === code) return;
-  filters.value.categoria = code;
+function onTipoFilterChange() {
+  clearFilterDebounce();
+  filters.value.page = 1;
+  reloadFromFilters();
+}
+
+function selectCategoria(categoriaId: string) {
+  if (filters.value.categoriaId === categoriaId) return;
+  filters.value.categoriaId = categoriaId;
   onCategoriaChange();
 }
 
@@ -1073,11 +1429,14 @@ function nextPage() {
 const abrirModalCrear = () => {
   modoEdicion.value = false;
   servicioEditando.value = null;
+  clearImagenPendiente();
   formulario.value = {
     nombre: '',
     descripcion: '',
     precioUnitario: 0,
-    categoria: '',
+    categoriaId: '',
+    tipo: 'servicio',
+    codigo: '',
     moneda: 'MXN',
     activo: true,
   };
@@ -1094,15 +1453,22 @@ const abrirModalCrear = () => {
 const abrirModalEditar = (servicio: Servicio) => {
   modoEdicion.value = true;
   servicioEditando.value = servicio;
+  clearImagenPendiente();
+  const tipoValido =
+    servicio.tipo === 'producto' || servicio.tipo === 'servicio';
   formulario.value = {
     nombre: servicio.nombre,
     descripcion: servicio.descripcion || '',
     precioUnitario: servicio.precioUnitario,
-    categoria: (servicio.categoria || '') as ServicioFormState['categoria'],
+    categoriaId: servicio.categoriaId || '',
+    tipo: tipoValido ? servicio.tipo : 'servicio',
+    codigo: servicio.codigo || '',
     moneda: 'MXN',
     activo: servicio.activo !== undefined ? servicio.activo : true,
   };
-  errorCrear.value = null;
+  errorCrear.value = tipoValido
+    ? null
+    : 'Este ítem no tenía un tipo válido; se guardará como Servicio salvo que elijas otro.';
   mostrarModal.value = true;
 };
 
@@ -1114,11 +1480,14 @@ const cerrarModal = () => {
   modoEdicion.value = false;
   servicioEditando.value = null;
   errorCrear.value = null;
+  clearImagenPendiente();
   formulario.value = {
     nombre: '',
     descripcion: '',
     precioUnitario: 0,
-    categoria: '',
+    categoriaId: '',
+    tipo: 'servicio',
+    codigo: '',
     moneda: 'MXN',
     activo: true,
   };
@@ -1136,8 +1505,26 @@ const guardarServicio = async () => {
     errorCrear.value = 'Debe proporcionar el nombre del servicio';
     return;
   }
-  if (!formulario.value.categoria) {
-    errorCrear.value = 'Debe seleccionar una categoría';
+  if (!formulario.value.categoriaId) {
+    errorCrear.value =
+      categorias.value.length === 0
+        ? 'Crea al menos una categoría antes de agregar servicios'
+        : 'Debe seleccionar una categoría';
+    return;
+  }
+  const categoriaEnCatalogo = categorias.value.some(
+    (c) => c._id === formulario.value.categoriaId,
+  );
+  if (!modoEdicion.value && !categoriaEnCatalogo) {
+    errorCrear.value =
+      categorias.value.length === 0
+        ? 'Crea al menos una categoría antes de agregar servicios'
+        : 'Debe seleccionar una categoría activa del catálogo';
+    return;
+  }
+  if (modoEdicion.value && !categoriaEnCatalogo) {
+    errorCrear.value =
+      'La categoría actual no está disponible. Elige una categoría activa';
     return;
   }
   if (modoEdicion.value && !servicioEditando.value?._id) {
@@ -1149,16 +1536,26 @@ const guardarServicio = async () => {
   errorCrear.value = null;
 
   try {
+    const codigoTrim = formulario.value.codigo?.trim() || '';
+    const fileToUpload =
+      formulario.value.tipo === 'producto' ? imagenPendiente.value : null;
+
     if (modoEdicion.value) {
+      const id = servicioEditando.value!._id!;
       const payload: UpdateServicioPayload = {
         nombre,
         descripcion: formulario.value.descripcion?.trim() || '',
         precioUnitario: formulario.value.precioUnitario,
-        categoria: formulario.value.categoria,
+        categoriaId: formulario.value.categoriaId,
+        tipo: formulario.value.tipo,
+        codigo: codigoTrim,
         moneda: 'MXN',
         activo: formulario.value.activo,
       };
-      await updateServicio(servicioEditando.value!._id!, payload);
+      await updateServicio(id, payload);
+      if (fileToUpload) {
+        await uploadServicioImagen(id, fileToUpload);
+      }
     } else if (isAdminSistema.value) {
       const ids = [...new Set(tenantIdsDestino.value.filter(Boolean))];
       if (ids.length < 1) {
@@ -1170,11 +1567,23 @@ const guardarServicio = async () => {
         nombre,
         descripcion: formulario.value.descripcion?.trim() || undefined,
         precioUnitario: formulario.value.precioUnitario,
-        categoria: formulario.value.categoria,
+        categoriaId: formulario.value.categoriaId,
+        tipo: formulario.value.tipo,
+        ...(codigoTrim ? { codigo: codigoTrim } : {}),
         moneda: 'MXN',
         activo: formulario.value.activo,
         tenantIds: ids,
       });
+      // Imagen solo en el ítem del tenant activo (mismo listado); no multi-upload
+      if (fileToUpload) {
+        const activeId = authStore.activeTenantId;
+        const target =
+          result.created.find((c) => String(c.tenantId) === String(activeId)) ||
+          result.created[0];
+        if (target?._id) {
+          await uploadServicioImagen(target._id, fileToUpload);
+        }
+      }
       const nombres = ids
         .map(
           (id) =>
@@ -1186,14 +1595,19 @@ const guardarServicio = async () => {
           ? `Servicio creado en ${nombres}. El listado muestra la administración activa.`
           : 'Servicio creado.';
     } else {
-      await createServicio({
+      const created = await createServicio({
         nombre,
         descripcion: formulario.value.descripcion?.trim() || undefined,
         precioUnitario: formulario.value.precioUnitario,
-        categoria: formulario.value.categoria,
+        categoriaId: formulario.value.categoriaId,
+        tipo: formulario.value.tipo,
+        ...(codigoTrim ? { codigo: codigoTrim } : {}),
         moneda: 'MXN',
         activo: formulario.value.activo,
       });
+      if (fileToUpload && created._id) {
+        await uploadServicioImagen(created._id, fileToUpload);
+      }
       successMsg.value = 'Servicio creado.';
     }
     cerrarModal();
@@ -1268,6 +1682,13 @@ const reactivar = async (servicio: Servicio) => {
   }
 };
 
+watch(
+  () => formulario.value.tipo,
+  (tipo) => {
+    if (tipo !== 'producto') clearImagenPendiente();
+  },
+);
+
 watch(activeTenantId, () => {
   if (filterTimeout) {
     clearTimeout(filterTimeout);
@@ -1275,8 +1696,15 @@ watch(activeTenantId, () => {
   }
   resetFilters();
   hasLoadedOnce.value = false;
+  categorias.value = [];
+  if (mostrarModal.value) cerrarModal();
+  mostrarConfirmDesactivar.value = false;
+  servicioADesactivar.value = null;
+  successMsg.value = null;
+  actionError.value = null;
   void (async () => {
     await syncQuery();
+    await cargarCategorias();
     await cargarServicios();
   })();
 });
@@ -1286,8 +1714,12 @@ onMounted(async () => {
   if (shouldResetListQueryForTenant(activeTenantId.value)) {
     resetFilters();
   } else {
-    applyQueryToState();
+    const tipoQuerySucia = applyQueryToState();
+    if (tipoQuerySucia) {
+      await syncQuery();
+    }
   }
+  await cargarCategorias();
   await cargarServicios();
   if (authStore.isAdminSistema) {
     try {

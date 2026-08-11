@@ -7,8 +7,14 @@ import { useCotizadorStore } from '../store/cotizador';
 
 export function useCotizador() {
   const cotizadorStore = useCotizadorStore();
-  const { servicios, cantidadesPorServicio, isLoading, error } =
-    storeToRefs(cotizadorStore);
+  const {
+    servicios,
+    cantidadesPorServicio,
+    incluirImagenesPdf,
+    imagenesPdfTouched,
+    isLoading,
+    error,
+  } = storeToRefs(cotizadorStore);
 
   const cargarServicios = async (): Promise<void> => {
     await cotizadorStore.fetchServicios();
@@ -29,6 +35,8 @@ export function useCotizador() {
   return {
     servicios,
     cantidadesPorServicio,
+    incluirImagenesPdf,
+    imagenesPdfTouched,
     isLoading,
     error,
     cargarServicios,

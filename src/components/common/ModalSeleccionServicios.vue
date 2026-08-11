@@ -15,10 +15,10 @@
       >
         <div>
           <h3 class="text-lg sm:text-xl font-bold text-gray-900">
-            Catálogo de Servicios
+            Catálogo
           </h3>
           <p class="text-xs text-gray-500 mt-0.5">
-            Selecciona servicios y ajusta la cantidad de cada uno
+            Selecciona ítems y ajusta la cantidad de cada uno
           </p>
         </div>
         <button
@@ -43,44 +43,52 @@
         </button>
       </div>
 
-      <!-- Tabs Todas + categorías -->
       <div
         class="px-4 sm:px-6 pt-1.5 sm:pt-3 pb-2 sm:pb-3 border-b border-gray-100"
-        role="tablist"
-        aria-label="Categorías de servicio"
       >
-        <div class="flex flex-wrap gap-1 sm:gap-1.5">
-          <button
-            type="button"
-            role="tab"
-            :aria-selected="categoriaActiva === null"
-            class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-bold transition-colors"
-            :class="
-              categoriaActiva === null
-                ? 'bg-medical-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            "
-            @click="categoriaActiva = null"
-          >
-            Todas
-          </button>
-          <button
-            v-for="opt in CATEGORIA_SERVICIO_OPTIONS"
-            :key="opt.code"
-            type="button"
-            role="tab"
-            :aria-selected="categoriaActiva === opt.code"
-            :title="opt.label"
-            class="px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs font-bold transition-colors"
-            :class="
-              categoriaActiva === opt.code
-                ? 'bg-medical-blue-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            "
-            @click="categoriaActiva = opt.code"
-          >
-            {{ opt.code }}
-          </button>
+        <div
+          class="overflow-x-auto"
+          role="tablist"
+          aria-label="Categorías de servicio"
+        >
+          <div class="inline-grid grid-flow-col auto-cols-[2.75rem] gap-1">
+            <button
+              type="button"
+              role="tab"
+              :aria-selected="!categoriaIdFiltro"
+              aria-label="Todas las categorías"
+              title="Todas las categorías"
+              :disabled="loadingCategorias"
+              class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis disabled:opacity-60 disabled:pointer-events-none"
+              :class="
+                !categoriaIdFiltro
+                  ? 'bg-medical-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              "
+              @click="selectCategoria('')"
+            >
+              Todas
+            </button>
+            <button
+              v-for="cat in categorias"
+              :key="cat._id"
+              type="button"
+              role="tab"
+              :aria-selected="categoriaIdFiltro === cat._id"
+              :aria-label="cat.nombre"
+              :title="cat.nombre"
+              :disabled="loadingCategorias"
+              class="w-[2.75rem] px-1 py-1.5 rounded-lg text-[10px] font-bold transition-colors whitespace-nowrap overflow-hidden text-ellipsis disabled:opacity-60 disabled:pointer-events-none"
+              :class="
+                categoriaIdFiltro === cat._id
+                  ? 'bg-medical-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              "
+              @click="selectCategoria(cat._id)"
+            >
+              {{ cat.codigo }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -111,6 +119,21 @@
                 />
               </svg>
             </div>
+          </div>
+          <div class="shrink-0 min-w-[7.5rem]">
+            <label for="filtro-tipo-modal-catalogo" class="sr-only"
+              >Tipo</label
+            >
+            <select
+              id="filtro-tipo-modal-catalogo"
+              v-model="tipoFiltro"
+              class="w-full rounded-lg sm:rounded-xl border border-gray-200 bg-white text-sm px-2 sm:px-3 py-2 sm:py-2.5 focus:outline-none focus:ring-2 focus:ring-medical-blue-500 shadow-sm"
+              @change="onTipoFiltroChange"
+            >
+              <option value="">Todos</option>
+              <option value="servicio">Servicio</option>
+              <option value="producto">Producto</option>
+            </select>
           </div>
           <div
             class="hidden sm:flex items-center gap-1 shrink-0"
@@ -150,7 +173,7 @@
         class="flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-4 custom-scrollbar"
       >
         <div
-          v-if="loadingCatalogo"
+          v-if="loadingCatalogo || loadingCategorias"
           class="flex flex-col items-center justify-center py-12 gap-3 text-gray-400"
         >
           <svg
@@ -176,12 +199,30 @@
         </div>
 
         <div
+          v-else-if="categoriasCargadas && categorias.length === 0"
+          class="flex flex-col items-center justify-center py-12 text-center"
+        >
+          <p class="text-gray-900 font-bold">No hay categorías activas</p>
+          <p class="text-sm text-gray-500 max-w-xs mx-auto mt-1">
+            Crea categorías en administración para organizar y filtrar el
+            catálogo.
+          </p>
+          <router-link
+            to="/admin/categorias"
+            class="mt-3 text-sm font-bold text-medical-blue-600 hover:text-medical-blue-700 underline"
+            @click="cerrar"
+          >
+            Gestionar categorías
+          </router-link>
+        </div>
+
+        <div
           v-else-if="catalogo.length === 0"
           class="flex flex-col items-center justify-center py-12 text-center"
         >
           <p class="text-gray-900 font-bold">No se encontraron resultados</p>
           <p class="text-sm text-gray-500 max-w-xs mx-auto mt-1">
-            Prueba otra categoría o término de búsqueda.
+            Prueba otro término de búsqueda, tipo o categoría.
           </p>
         </div>
 
@@ -211,11 +252,17 @@
                     {{ servicio.nombre || 'Sin nombre' }}
                   </h4>
                   <span
-                    v-if="servicio.categoria"
-                    class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
-                    :title="labelCategoriaServicio(servicio.categoria)"
+                    class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                    :class="claseTipoDe(servicio.tipo)"
+                    :title="labelTipoDe(servicio.tipo)"
                   >
-                    {{ servicio.categoria }}
+                    {{ codigoTipoDe(servicio.tipo) }}
+                  </span>
+                  <span
+                    class="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                    :title="labelCategoriaDe(servicio.categoriaId)"
+                  >
+                    {{ codigoCategoriaDe(servicio.categoriaId) }}
                   </span>
                 </div>
                 <p
@@ -298,13 +345,12 @@
 import { ref, computed, watch } from 'vue';
 import { useModalDismiss } from '../../composables/useModalDismiss';
 import QuantitySelector from './QuantitySelector.vue';
-import type { Servicio } from '../../types/backend';
-import { getServicios, type ServicioOrden } from '../../services/admin-api.service';
+import type { CategoriaServicioCatalogo, Servicio } from '../../types/backend';
 import {
-  CATEGORIA_SERVICIO_OPTIONS,
-  labelCategoriaServicio,
-  type CategoriaServicioCode,
-} from '../../constants/categorias-servicio';
+  getCategoriasServicio,
+  getServicios,
+  type ServicioOrden,
+} from '../../services/admin-api.service';
 import { formatMoney } from '../../utils/currency';
 
 interface Props {
@@ -327,16 +373,63 @@ const emit = defineEmits<{
 }>();
 
 const busqueda = ref('');
-const categoriaActiva = ref<CategoriaServicioCode | null>(null);
 const ordenActivo = ref<ServicioOrden>('creacion');
+/** Filtro de tab: '' = Todas; ObjectId string = categoría activa. */
+const categoriaIdFiltro = ref('');
+/** Filtro UX-DR4: '' = Todos; servicio | producto. */
+const tipoFiltro = ref<'servicio' | 'producto' | ''>('');
 /** Cantidades editables en esta sesión del modal (solo IDs con qty > 0). */
 const cantidadesModal = ref<Record<string, number>>({});
 const catalogo = ref<Servicio[]>([]);
 const loadingCatalogo = ref(false);
+const loadingCategorias = ref(false);
 /** Cache de servicios vistos (para merge al wizard aunque salgan del filtro) */
 const serviciosVistos = ref<Map<string, Servicio>>(new Map());
+const categorias = ref<CategoriaServicioCatalogo[]>([]);
+const categoriasCargadas = ref(false);
+
+const categoriaById = computed(() => {
+  const map = new Map<string, CategoriaServicioCatalogo>();
+  for (const cat of categorias.value) {
+    if (cat._id) map.set(cat._id, cat);
+  }
+  return map;
+});
+
+function codigoCategoriaDe(categoriaId?: string): string {
+  if (!categoriaId) return '—';
+  return categoriaById.value.get(categoriaId)?.codigo || '—';
+}
+
+function labelCategoriaDe(categoriaId?: string): string {
+  if (!categoriaId) return '';
+  return categoriaById.value.get(categoriaId)?.nombre || '';
+}
+
+function codigoTipoDe(tipo?: string): string {
+  if (tipo === 'producto') return 'PROD';
+  if (tipo === 'servicio') return 'SERV';
+  return '—';
+}
+
+function claseTipoDe(tipo?: string): string {
+  if (tipo === 'producto') return 'bg-amber-50 text-amber-800';
+  if (tipo === 'servicio') return 'bg-sky-50 text-sky-800';
+  return 'bg-gray-100 text-gray-600';
+}
+
+function labelTipoDe(tipo?: string): string {
+  if (tipo === 'producto') return 'Producto';
+  if (tipo === 'servicio') return 'Servicio';
+  return '';
+}
+
+function onTipoFiltroChange() {
+  if (props.isOpen) void fetchCatalogo();
+}
 
 let fetchSeq = 0;
+let catSeq = 0;
 let busquedaTimer: ReturnType<typeof setTimeout> | null = null;
 
 function snapshotCantidadesIniciales(): Record<string, number> {
@@ -347,22 +440,55 @@ function snapshotCantidadesIniciales(): Record<string, number> {
   return next;
 }
 
+async function ensureCategorias(force = false) {
+  if (categoriasCargadas.value && !force) return;
+  const seq = ++catSeq;
+  loadingCategorias.value = true;
+  if (force) categorias.value = [];
+  try {
+    const res = await getCategoriasServicio({ limit: 100 });
+    if (seq !== catSeq) return;
+    categorias.value = res.data || [];
+    categoriasCargadas.value = true;
+    // Si el filtro apunta a categoría ya no activa / ausente → Todas
+    if (
+      categoriaIdFiltro.value &&
+      !categorias.value.some((c) => c._id === categoriaIdFiltro.value)
+    ) {
+      categoriaIdFiltro.value = '';
+      if (props.isOpen) void fetchCatalogo();
+    }
+  } catch {
+    if (seq !== catSeq) return;
+    categorias.value = [];
+    // No latchar éxito: reabrir el modal puede reintentar
+    categoriasCargadas.value = false;
+  } finally {
+    if (seq === catSeq) loadingCategorias.value = false;
+  }
+}
+
+function selectCategoria(categoriaId: string) {
+  if (categoriaIdFiltro.value === categoriaId) return;
+  categoriaIdFiltro.value = categoriaId;
+  if (props.isOpen) void fetchCatalogo();
+}
+
 watch(
   () => props.isOpen,
   (isOpen) => {
     if (isOpen) {
       cantidadesModal.value = snapshotCantidadesIniciales();
       busqueda.value = '';
-      categoriaActiva.value = null;
       ordenActivo.value = 'creacion';
+      categoriaIdFiltro.value = '';
+      tipoFiltro.value = '';
+      // Re-cargar mapa de badges/tabs (retry tras error + refresh tras cambios Admin)
+      void ensureCategorias(true);
       void fetchCatalogo();
     }
   },
 );
-
-watch(categoriaActiva, () => {
-  if (props.isOpen) void fetchCatalogo();
-});
 
 function setOrden(orden: ServicioOrden) {
   if (ordenActivo.value === orden) return;
@@ -391,8 +517,9 @@ async function fetchCatalogo() {
         page,
         limit: 100,
         orden: ordenActivo.value,
-        categoria: categoriaActiva.value || undefined,
         nombre: busqueda.value.trim() || undefined,
+        categoriaId: categoriaIdFiltro.value || undefined,
+        tipo: tipoFiltro.value || undefined,
       });
       if (seq !== fetchSeq) return;
       all.push(...(res.data || []));

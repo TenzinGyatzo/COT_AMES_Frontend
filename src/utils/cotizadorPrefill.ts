@@ -33,6 +33,9 @@ export type CotizadorHydrateContext = {
   emailsCc: Ref<string[]>;
   incluirDatosBancarios: Ref<boolean>;
   mostrarDescripciones: Ref<boolean>;
+  incluirImagenesPdf: Ref<boolean>;
+  /** Si true, no autocalcular default AD-26 al cambiar líneas. */
+  imagenesPdfTouched: Ref<boolean>;
   plantillasSeleccionadasIds: Ref<string[]>;
   plantillaSnapshots: Ref<
     Record<string, { nombre: string; secciones: import('../types/backend').SeccionPlantilla[] }>
@@ -54,13 +57,13 @@ function mergeServicioStub(
   if (disponibles.some((s) => s._id === servicioId)) {
     return disponibles;
   }
-  const stub: Servicio = {
+  // Preview no trae categoría; omitir campo (no usar '' — ObjectId inválido)
+  const stub = {
     _id: servicioId,
     nombre: item.nombre?.trim() || 'Servicio',
     descripcion: item.descripcion?.trim() || '',
     precioUnitario: item.precioUnitario ?? 0,
     activo: true,
-    categoria: 'OTR',
   } as Servicio;
   return [...disponibles, stub];
 }
@@ -79,6 +82,8 @@ export async function hydrateCotizadorFromDraft(
   );
   ctx.incluirDatosBancarios.value = !!draft.incluirDatosBancarios;
   ctx.mostrarDescripciones.value = !!draft.incluirDescripciones;
+  ctx.incluirImagenesPdf.value = !!draft.incluirImagenesPdf;
+  ctx.imagenesPdfTouched.value = true;
 
   ctx.plantillasSeleccionadasIds.value = (draft.plantillas || []).map(
     (p) => p.plantillaId,

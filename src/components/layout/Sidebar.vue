@@ -117,14 +117,26 @@
         </router-link>
         <router-link
           to="/admin/servicios"
-          class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          title="Productos y servicios"
+          class="block px-4 py-2 rounded-md text-sm font-medium leading-snug transition-colors"
           :class="
             $route.name === 'admin-servicios'
               ? 'bg-medical-blue-600 text-white'
               : 'text-gray-300 hover:bg-gray-700 hover:text-white'
           "
         >
-          Servicios
+          Productos y servicios
+        </router-link>
+        <router-link
+          to="/admin/categorias"
+          class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          :class="
+            $route.name === 'admin-categorias'
+              ? 'bg-medical-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+          "
+        >
+          Categorías
         </router-link>
         <router-link
           to="/admin/metricas"

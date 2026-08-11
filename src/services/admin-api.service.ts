@@ -8,13 +8,14 @@ import type {
   Contacto,
   Servicio,
   Plantilla,
+  CategoriaServicioCatalogo,
+  PaginatedCategoriasServicioResponse,
   CotizacionDetalleDto,
   PaginatedCotizacionesResponseDto,
   Tenant,
   TenantConfigResponse,
   DashboardEntityTotals,
 } from '../types/backend';
-import type { CategoriaServicioCode } from '../constants/categorias-servicio';
 
 export interface AdminClientesFilters {
   empresa?: string;
@@ -49,7 +50,9 @@ export type ServicioOrden = 'creacion' | 'nombre_asc' | 'nombre_desc';
 
 export interface AdminServiciosFilters {
   nombre?: string;
-  categoria?: CategoriaServicioCode;
+  categoriaId?: string;
+  /** Filtrar por tipo servicio | producto (Story 6.1). */
+  tipo?: 'servicio' | 'producto';
   activo?: boolean;
   orden?: ServicioOrden;
   page?: number;
@@ -68,7 +71,10 @@ export interface CreateServicioPayload {
   nombre: string;
   descripcion?: string;
   precioUnitario: number;
-  categoria: CategoriaServicioCode;
+  categoriaId: string;
+  tipo: 'servicio' | 'producto';
+  /** Código interno opcional (Story 6.2). */
+  codigo?: string;
   moneda?: string;
   activo?: boolean;
 }
@@ -307,6 +313,8 @@ export interface CreateAdminCotizacionPayload {
   incluirDatosBancarios?: boolean;
   /** Si false, el PDF omite la columna de descripción (default true). */
   incluirDescripciones?: boolean;
+  /** Story 8.2 / AD-26 — omitido en BE → default por catálogo. */
+  incluirImagenesPdf?: boolean;
   /** Plantillas ordenadas (Story 6.5). Omitido/vacío = ninguna. */
   plantillas?: Array<{
     plantillaId: string;
@@ -434,6 +442,8 @@ export type RepetirCotizacionPreviewDto = {
   sinVigencia: boolean;
   incluirDatosBancarios: boolean;
   incluirDescripciones: boolean;
+  /** Story 8.2 / AD-26 */
+  incluirImagenesPdf: boolean;
   plantillas: Array<{
     plantillaId: string;
     nombre?: string;
@@ -507,7 +517,8 @@ export async function getServicios(
     limit: filters.limit ?? 20,
   };
   if (filters.nombre?.trim()) params.nombre = filters.nombre.trim();
-  if (filters.categoria) params.categoria = filters.categoria;
+  if (filters.categoriaId) params.categoriaId = filters.categoriaId;
+  if (filters.tipo) params.tipo = filters.tipo;
   if (filters.activo !== undefined) params.activo = filters.activo;
   if (filters.orden) params.orden = filters.orden;
 
@@ -543,7 +554,10 @@ export interface UpdateServicioPayload {
   nombre?: string;
   descripcion?: string;
   precioUnitario?: number;
-  categoria?: CategoriaServicioCode;
+  categoriaId?: string;
+  tipo?: 'servicio' | 'producto';
+  /** Enviar '' para limpiar (BE $unset). */
+  codigo?: string;
   moneda?: string;
   activo?: boolean;
 }
@@ -568,6 +582,93 @@ export async function toggleServicioActivo(id: string): Promise<Servicio> {
 
 export async function deleteServicio(id: string): Promise<Servicio> {
   const { data } = await httpClient.delete<Servicio>(`/servicios/${id}`);
+  return data;
+}
+
+/** Subir o reemplazar imagen de producto (Story 8.1 / AD-23). */
+export async function uploadServicioImagen(
+  id: string,
+  file: File,
+): Promise<Servicio> {
+  const form = new FormData();
+  form.append('file', file);
+  const { data } = await httpClient.post<Servicio>(
+    `/servicios/${id}/imagen`,
+    form,
+  );
+  return data;
+}
+
+/** Eliminar imagen de producto. */
+export async function deleteServicioImagen(id: string): Promise<Servicio> {
+  const { data } = await httpClient.delete<Servicio>(
+    `/servicios/${id}/imagen`,
+  );
+  return data;
+}
+
+/** Filtros categorías de catálogo (Story 5.2 / AD-20). */
+export interface AdminCategoriasServicioFilters {
+  /** Omitido = solo activas. false = inactivas. */
+  activo?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+export interface CreateCategoriaServicioPayload {
+  nombre: string;
+  codigo: string;
+}
+
+export interface UpdateCategoriaServicioPayload {
+  nombre?: string;
+  codigo?: string;
+}
+
+export async function getCategoriasServicio(
+  filters: AdminCategoriasServicioFilters = {},
+): Promise<PaginatedCategoriasServicioResponse> {
+  const params: Record<string, string | number | boolean> = {
+    page: filters.page ?? 1,
+    limit: filters.limit ?? 20,
+  };
+  if (filters.activo !== undefined) params.activo = filters.activo;
+
+  const { data } = await httpClient.get<PaginatedCategoriasServicioResponse>(
+    '/servicios/categorias',
+    { params },
+  );
+  return data;
+}
+
+export async function createCategoriaServicio(
+  payload: CreateCategoriaServicioPayload,
+): Promise<CategoriaServicioCatalogo> {
+  const { data } = await httpClient.post<CategoriaServicioCatalogo>(
+    '/servicios/categorias',
+    payload,
+  );
+  return data;
+}
+
+export async function updateCategoriaServicio(
+  id: string,
+  payload: UpdateCategoriaServicioPayload,
+): Promise<CategoriaServicioCatalogo> {
+  const { data } = await httpClient.patch<CategoriaServicioCatalogo>(
+    `/servicios/categorias/${id}`,
+    payload,
+  );
+  return data;
+}
+
+/** Soft-delete. 409 si hay ítems activos (FR57). */
+export async function deleteCategoriaServicio(
+  id: string,
+): Promise<CategoriaServicioCatalogo> {
+  const { data } = await httpClient.delete<CategoriaServicioCatalogo>(
+    `/servicios/categorias/${id}`,
+  );
   return data;
 }
 

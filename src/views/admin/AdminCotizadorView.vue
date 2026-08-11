@@ -562,6 +562,33 @@
               </div>
             </label>
           </div>
+          <div
+            class="p-4 bg-medical-blue-50/50 rounded-2xl border border-medical-blue-100"
+          >
+            <label class="flex items-center group cursor-pointer">
+              <div class="relative">
+                <input
+                  v-model="incluirImagenesPdf"
+                  type="checkbox"
+                  class="sr-only peer"
+                  @change="imagenesPdfTouched = true"
+                />
+                <div
+                  class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
+                ></div>
+              </div>
+              <div class="ml-4">
+                <span
+                  class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 transition-colors"
+                >
+                  Incluir imágenes de producto en el PDF
+                </span>
+                <span class="text-xs text-medical-blue-600/70">
+                  Solo aplica a productos con imagen en catálogo. Los servicios no llevan imagen.
+                </span>
+              </div>
+            </label>
+          </div>
         </div>
 
         <!-- Destinatarios Para/CC (Story 6.6 / 6.15) -->
@@ -714,6 +741,7 @@
       :total-con-iva="revisionTotalConIva"
       :mostrar-descripciones="mostrarDescripciones"
       :incluir-datos-bancarios="bancariosUtiles && incluirDatosBancarios"
+      :incluir-imagenes-pdf="incluirImagenesPdf"
       :sin-vigencia="sinVigencia"
       :vigencia-dias="vigenciaDias"
       :vigencia-label="revisionVigenciaLabel"
@@ -746,7 +774,7 @@
 
     <ConfirmationModal
       :show="showSyncModal"
-      title="¿Actualizar el catálogo de servicios?"
+      title="¿Actualizar el catálogo con estos cambios?"
       :message="syncModalMessage"
       confirm-text="Sí, actualizar catálogo"
       cancel-text="No, solo esta cotización"
@@ -932,6 +960,8 @@ function cerrarRepetirBanner() {
 const {
   servicios,
   cantidadesPorServicio,
+  incluirImagenesPdf,
+  imagenesPdfTouched,
   error,
   cargarServicios,
   actualizarCantidad,
@@ -1576,6 +1606,8 @@ onMounted(async () => {
       emailsCc,
       incluirDatosBancarios,
       mostrarDescripciones,
+      incluirImagenesPdf,
+      imagenesPdfTouched,
       plantillasSeleccionadasIds,
       plantillaSnapshots,
       cargarContactos,
@@ -1673,6 +1705,19 @@ const serviciosConCantidadValida = computed(() =>
   serviciosEnLista.value.filter(
     (servicio) => (cantidadesPorServicio.value[servicio._id || ''] || 0) > 0,
   ),
+);
+
+watch(
+  serviciosConCantidadValida,
+  (lista) => {
+    if (imagenesPdfTouched.value) return;
+    incluirImagenesPdf.value = lista.some(
+      (s) =>
+        s.tipo === 'producto' &&
+        !!(s.imagenUrl && String(s.imagenUrl).trim()),
+    );
+  },
+  { deep: true },
 );
 
 watch(
@@ -1880,7 +1925,7 @@ function collectDirtySync(): DirtySync[] {
 function askSyncModal(dirty: DirtySync[]): Promise<SyncModalChoice> {
   const lines = dirty.map((d) => `• ${d.label}: ${d.campos.join(', ')}`);
   syncModalMessage.value = [
-    'Hubo cambios inline en uno o más ítems. ¿Deseas actualizar el catálogo de servicios del tenant con esos valores?',
+    'Hubo cambios inline en uno o más ítems. ¿Deseas actualizar el catálogo del tenant con esos valores?',
     '',
     ...lines,
     '',
@@ -2079,6 +2124,7 @@ function buildCreatePayload(): PendingCreate {
     enviarEmail: doEnviar,
     incluirDatosBancarios: incluirBancarios,
     incluirDescripciones: mostrarDescripciones.value,
+    incluirImagenesPdf: incluirImagenesPdf.value,
     emailsPara: para,
     emailsCc: cc,
   };
@@ -2134,9 +2180,26 @@ function buildPreviewDetalleInput() {
     incluirDatosBancarios:
       bancariosUtiles.value && incluirDatosBancarios.value,
     incluirDescripciones: mostrarDescripciones.value,
+    incluirImagenesPdf: incluirImagenesPdf.value,
     plantillasSeleccionadasIds: plantillasSeleccionadasIds.value,
     plantillaSnapshots: plantillaSnapshots.value,
   };
+}
+
+/** Story 8.3 — mapa live para PDF preview (sin populate en detalle sintético). */
+function buildCatalogImagenByServicioId(): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const s of serviciosDisponibles.value) {
+    if (s.tipo !== 'producto') continue;
+    const id = s._id;
+    const url = s.imagenUrl?.trim();
+    if (id && url) map[id] = url;
+  }
+  return map;
+}
+
+function pdfOptsFromCatalog() {
+  return { catalogImagenByServicioId: buildCatalogImagenByServicioId() };
 }
 
 function cerrarRevisionModal() {
@@ -2149,7 +2212,7 @@ async function previewPdfRevision() {
   isPreviewPdfBusy.value = true;
   try {
     const detalle = buildCotizacionPreviewDetalle(buildPreviewDetalleInput());
-    await previewCotizacionPDF(detalle);
+    await previewCotizacionPDF(detalle, pdfOptsFromCatalog());
   } finally {
     isPreviewPdfBusy.value = false;
   }
@@ -2269,7 +2332,10 @@ const confirmarGeneracion = async () => {
           isSendingEmail.value = true;
           try {
             const detalle = await loadDetalleForSend(String(id), response);
-            const blob = await generateCotizacionPdfBlob(detalle);
+            const blob = await generateCotizacionPdfBlob(
+              detalle,
+              pdfOptsFromCatalog(),
+            );
             await enviarCorreoCotizacion(String(id), blob, {
               emailsPara: para,
               emailsCc: cc,
@@ -2343,7 +2409,10 @@ async function reintentarEnvioCorreo(payload: {
       String(id),
       ultimaRespuesta.value as CotizacionDetalleDto,
     );
-    const blob = await generateCotizacionPdfBlob(detalle);
+    const blob = await generateCotizacionPdfBlob(
+      detalle,
+      pdfOptsFromCatalog(),
+    );
     await enviarCorreoCotizacion(String(id), blob, {
       emailsPara: payload.emailsPara,
       emailsCc: payload.emailsCc,
@@ -2389,6 +2458,7 @@ const cerrarModal = () => {
   isResendingEmail.value = false;
   incluirDatosBancarios.value = false;
   mostrarDescripciones.value = false;
+  // incluirImagenesPdf + imagenesPdfTouched: limpiados por resetSelection() (Pinia)
   plantillasSeleccionadasIds.value = [];
   plantillaSnapshots.value = {};
   showPersonalizarModal.value = false;

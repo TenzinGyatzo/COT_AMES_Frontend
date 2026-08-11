@@ -8,7 +8,6 @@
  */
 
 import type { CotizacionDetalleDto, Servicio } from '../types/backend';
-import { getServicios } from '../services/admin-api.service';
 import type { PdfBuildOptions } from './pdfHelper';
 import { itemServicioId } from './resolveProductImageUrls';
 
@@ -55,6 +54,8 @@ export function pdfOptsFromDetalle(
 export async function fetchCatalogImagenByServicioId(): Promise<
   Record<string, string>
 > {
+  // Import dinámico: evita romper selftests Node (import.meta.env / axios).
+  const { getServicios } = await import('../services/admin-api.service');
   const map: Record<string, string> = {};
   let page = 1;
   let totalPages = 1;

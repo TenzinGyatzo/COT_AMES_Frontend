@@ -2,7 +2,6 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import pdfFonts from 'pdfmake/build/vfs_fonts';
 import type {
   CotizacionDetalleDto,
-  PublicCotizacionBranding,
   TenantBancarios,
   TenantBranding,
   TenantConfigResponse,
@@ -20,8 +19,11 @@ import { useAuthStore } from '../store/auth';
 import { hasBancariosUtiles } from './bancarios.util';
 import { resolveProductImageUrls } from './resolveProductImageUrls';
 
-/** Branding opcional (guest magic link) cuando no hay sesión AMES / getTenantConfig. */
-export type PdfBrandingOverride = TenantBranding | PublicCotizacionBranding;
+/**
+ * Branding opcional (guest magic link) cuando no hay sesión AMES / getTenantConfig.
+ * `Partial<TenantBranding>` cubre TenantBranding y PublicCotizacionBranding (subset).
+ */
+export type PdfBrandingOverride = Partial<TenantBranding>;
 
 export interface PdfBuildOptions {
   branding?: PdfBrandingOverride;

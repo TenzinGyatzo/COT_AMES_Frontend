@@ -4,6 +4,7 @@
  */
 
 import assert from 'node:assert/strict';
+import type { CotizacionDetalleDto } from '../../types/backend';
 import {
   buildConceptosTable,
   buildImagenCell,
@@ -17,16 +18,18 @@ import {
   resolveTableWidths,
 } from './conceptosTableLayout';
 
+type LineaPdf = CotizacionDetalleDto['items'][number];
+
 const fmt = (n: number) => `$${n.toFixed(2)}`;
 
 function item(
-  overrides: Record<string, unknown> & {
+  overrides: {
     tipoSnapshot?: 'producto' | 'servicio';
     nombreServicioSnapshot?: string;
     descripcionServicioSnapshot?: string;
-    servicioId?: string | { _id: string; tipo?: string };
-  },
-) {
+    servicioId?: string;
+  } = {},
+): LineaPdf {
   return {
     servicioId: overrides.servicioId ?? 's1',
     nombreServicioSnapshot: overrides.nombreServicioSnapshot ?? 'Item',
@@ -143,8 +146,8 @@ assert.ok(!('stack' in nombreSolo));
 const nombreConImgA = buildNombreCell('X', 'data:img', 'A') as {
   stack: Array<{ text?: string; image?: string }>;
 };
-assert.equal(nombreConImgA.stack[0].text, 'X', 'Variante A: nombre primero');
-assert.equal(nombreConImgA.stack[1].image, 'data:img', 'luego imagen');
+assert.equal(nombreConImgA.stack[0]?.text, 'X', 'Variante A: nombre primero');
+assert.equal(nombreConImgA.stack[1]?.image, 'data:img', 'luego imagen');
 
 const imgVacia = buildImagenCell(undefined);
 assert.equal((imgVacia as { text: string }).text, '');
@@ -168,8 +171,10 @@ assert.ok(!('image' in imgVacia), 'sin placeholder de imagen');
   assert.equal(t.firstColumnHeader, 'Producto');
   assert.equal(t.variant, 'C');
   assert.equal(t.dontBreakRows, true);
-  assert.equal((t.body[0][0] as { text: string }).text, 'Producto');
-  assert.equal(t.body[0].length, 4, 'Variante C: 4 columnas');
+  const header = t.body[0];
+  assert.ok(header);
+  assert.equal((header[0] as { text: string }).text, 'Producto');
+  assert.equal(header.length, 4, 'Variante C: 4 columnas');
 }
 
 // --- solo servicios ---
@@ -223,13 +228,17 @@ assert.ok(!('image' in imgVacia), 'sin placeholder de imagen');
     formatCurrency: fmt,
   });
   assert.equal(t.variant, 'A');
-  assert.equal((t.body[0][1] as { text: string }).text, 'Descripción');
-  assert.equal(t.body[0].length, 5);
-  const cell0 = t.body[1][0] as { stack: unknown[] };
+  const header = t.body[0];
+  const row1 = t.body[1];
+  const row2 = t.body[2];
+  assert.ok(header && row1 && row2);
+  assert.equal((header[1] as { text: string }).text, 'Descripción');
+  assert.equal(header.length, 5);
+  const cell0 = row1[0] as { stack: unknown[] };
   assert.ok(Array.isArray(cell0.stack), 'fila con imagen: stack nombre→img');
-  const cell1 = t.body[2][0] as { text: string };
+  const cell1 = row2[0] as { text: string };
   assert.equal(cell1.text, 'Sin img', 'sin imagen: solo texto');
-  assert.equal((t.body[2][1] as { text: string }).text, '', 'desc vacía OK');
+  assert.equal((row2[1] as { text: string }).text, '', 'desc vacía OK');
 }
 
 // --- Variante B: imágenes sin descripciones ---
@@ -253,11 +262,15 @@ assert.ok(!('image' in imgVacia), 'sin placeholder de imagen');
     formatCurrency: fmt,
   });
   assert.equal(t.variant, 'B');
-  assert.equal((t.body[0][1] as { text: string }).text, 'Imagen');
-  assert.ok('image' in (t.body[1][1] as object));
-  assert.equal((t.body[2][1] as { text: string }).text, '');
+  const header = t.body[0];
+  const row1 = t.body[1];
+  const row2 = t.body[2];
+  assert.ok(header && row1 && row2);
+  assert.equal((header[1] as { text: string }).text, 'Imagen');
+  assert.ok('image' in (row1[1] as object));
+  assert.equal((row2[1] as { text: string }).text, '');
   assert.equal(
-    (t.body[1][0] as { text: string }).text,
+    (row1[0] as { text: string }).text,
     'Con',
     'Variante B: nombre sin stack de imagen',
   );
@@ -273,7 +286,9 @@ assert.ok(!('image' in imgVacia), 'sin placeholder de imagen');
     formatCurrency: fmt,
   });
   assert.equal(t.variant, 'C');
-  assert.equal(t.body[0].length, 4);
+  const header = t.body[0];
+  assert.ok(header);
+  assert.equal(header.length, 4);
 }
 
 // --- Multi-página: muchas filas conservan dontBreakRows y columnas financieras ---
@@ -297,6 +312,7 @@ assert.ok(!('image' in imgVacia), 'sin placeholder de imagen');
   assert.equal(t.variant, 'A');
   assert.equal(t.body.length, 41); // header + 40
   const last = t.body[40];
+  assert.ok(last);
   assert.equal(last.length, 5);
   assert.equal((last[2] as { text: string }).text, '1'); // Cantidad
   assert.ok(String((last[3] as { text: string }).text).includes('100'));

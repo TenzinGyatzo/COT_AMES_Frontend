@@ -625,266 +625,330 @@
       </div>
     </template>
 
-    <!-- Modal para crear/editar servicio -->
+    <!-- Modal crear/editar producto|servicio (tipo inmutable) -->
     <div
       v-if="mostrarModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      :aria-labelledby="'modal-item-titulo'"
       @pointerdown="onBackdropPointerDown"
       @pointerup="onBackdropPointerUp"
       @pointercancel="onBackdropPointerCancel"
     >
       <div
-        class="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto border-l-4 transition-colors"
-        :class="claseAcentoBorde"
+        class="flex w-full max-w-3xl max-h-[min(90vh,880px)] flex-col overflow-hidden rounded-xl bg-white shadow-xl"
       >
-        <div class="p-4 sm:p-6">
-          <div class="flex justify-between items-center mb-4 sm:mb-6">
-            <h2 class="text-xl sm:text-2xl font-bold text-gray-900">
-              {{
-                modoEdicion
-                  ? `Editar ${labelTipoForm}`
-                  : `Nuevo ${labelTipoForm}`
-              }}
-            </h2>
-            <button
-              @click="cerrarModal"
-              class="text-gray-400 hover:text-gray-600 transition-colors"
+        <div
+          class="flex shrink-0 items-start justify-between gap-3 border-b border-gray-100 px-4 py-4 sm:px-6"
+        >
+          <div class="min-w-0">
+            <h2
+              id="modal-item-titulo"
+              class="text-xl font-bold text-gray-900 sm:text-2xl"
             >
-              <svg
-                class="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
+              {{ tituloModalItem }}
+            </h2>
+            <p class="mt-1 text-sm text-gray-500">
+              {{ subtituloModalItem }}
+            </p>
           </div>
-
-          <form @submit.prevent="guardarServicio" class="space-y-4">
-            <!-- Nombre -->
-            <div>
-              <label
-                for="nombre"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Nombre del {{ labelTipoForm }}
-                <span class="text-red-500">*</span>
-              </label>
-              <input
-                id="nombre"
-                v-model="formulario.nombre"
-                type="text"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :placeholder="placeholderNombre"
-                :disabled="isSubmitting"
+          <button
+            type="button"
+            class="shrink-0 rounded-md p-1 text-gray-400 transition-colors hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+            aria-label="Cerrar"
+            :disabled="isSubmitting"
+            @click="solicitarCerrarModal"
+          >
+            <svg
+              class="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
               />
-            </div>
+            </svg>
+          </button>
+        </div>
 
-            <!-- Categoría -->
-            <div>
-              <label
-                for="categoriaId"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Categoría <span class="text-red-500">*</span>
-              </label>
-              <div
-                v-if="categorias.length === 0 && !categoriaHuerfanaForm"
-                class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
-              >
-                No hay categorías activas en esta administración.
-                <router-link
-                  to="/admin/categorias"
-                  class="font-medium text-medical-blue-700 underline hover:text-medical-blue-900"
+        <form
+          class="flex min-h-0 flex-1 flex-col"
+          @submit.prevent="guardarServicio"
+        >
+          <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-6">
+            <!-- Fila 1: Nombre + Código -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+              <div class="sm:col-span-8">
+                <label
+                  for="nombre"
+                  class="mb-1 block text-sm font-medium text-gray-700"
                 >
-                  Gestionar categorías
-                </router-link>
-              </div>
-              <template v-else>
-                <select
-                  id="categoriaId"
-                  v-model="formulario.categoriaId"
-                  required
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                  :disabled="isSubmitting"
-                >
-                  <option disabled value="">Selecciona una categoría</option>
-                  <option
-                    v-if="categoriaHuerfanaForm"
-                    :value="categoriaHuerfanaForm.id"
-                  >
-                    {{ categoriaHuerfanaForm.label }}
-                  </option>
-                  <option
-                    v-for="cat in categorias"
-                    :key="cat._id"
-                    :value="cat._id"
-                  >
-                    {{ cat.codigo }} — {{ cat.nombre }}
-                  </option>
-                </select>
-                <p
-                  v-if="categoriaHuerfanaForm"
-                  class="mt-1 text-xs text-amber-800"
-                >
-                  La categoría actual no está activa o no aparece en el
-                  catálogo. Elige una categoría activa para guardar.
-                </p>
-              </template>
-            </div>
-
-            <!-- Tipo (Story 6.1 / FR-58) -->
-            <div>
-              <label
-                for="tipo"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Tipo <span class="text-red-500">*</span>
-              </label>
-              <select
-                id="tipo"
-                v-model="formulario.tipo"
-                required
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :disabled="isSubmitting"
-              >
-                <option value="servicio">Servicio</option>
-                <option value="producto">Producto</option>
-              </select>
-            </div>
-
-            <!-- Código opcional (Story 6.2 / FR-59 / UX-DR3) -->
-            <div>
-              <label
-                for="codigo-item"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                {{ labelCodigoItem }}
-              </label>
-              <input
-                id="codigo-item"
-                v-model="formulario.codigo"
-                type="text"
-                maxlength="64"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :placeholder="
-                  formulario.tipo === 'producto' ? 'Ej. SKU-001' : 'Opcional'
-                "
-                :disabled="isSubmitting"
-              />
-              <p class="mt-1 text-xs text-gray-500">
-                {{ ayudaCodigoItem }}
-              </p>
-            </div>
-
-            <!-- Imagen producto (Story 8.1 / AD-23 / UX-DR3) -->
-            <div v-if="formulario.tipo === 'producto'">
-              <label
-                for="imagen-producto"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Imagen (opcional)
-              </label>
-              <div class="flex flex-wrap items-start gap-3">
-                <img
-                  v-if="imagenPreviewUrl"
-                  :src="imagenPreviewUrl"
-                  alt="Vista previa"
-                  class="h-16 w-16 rounded border border-gray-200 object-cover bg-gray-50"
-                />
-                <div class="min-w-0 flex-1 space-y-2">
-                  <input
-                    id="imagen-producto"
-                    ref="imagenInputRef"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    class="block w-full text-sm text-gray-600 file:mr-3 file:rounded-md file:border-0 file:bg-medical-blue-50 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-medical-blue-700 hover:file:bg-medical-blue-100"
-                    :disabled="isSubmitting"
-                    @change="onImagenSelected"
-                  />
-                  <p class="text-xs text-gray-500">
-                    PNG, JPEG o WebP · máx. 1&nbsp;MB · se guarda como WebP
-                  </p>
-                  <button
-                    v-if="modoEdicion && servicioEditando?.imagenUrl"
-                    type="button"
-                    class="text-xs font-medium text-red-600 hover:text-red-700"
-                    :disabled="isSubmitting"
-                    @click="eliminarImagenProducto"
-                  >
-                    Quitar imagen
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <!-- Descripción -->
-            <div>
-              <label
-                for="descripcion"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Descripción
-              </label>
-              <textarea
-                id="descripcion"
-                v-model="formulario.descripcion"
-                rows="3"
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                :placeholder="placeholderDescripcion"
-                :disabled="isSubmitting"
-              ></textarea>
-            </div>
-
-            <!-- Precio Unitario -->
-            <div>
-              <label
-                for="precioUnitario"
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Precio Unitario <span class="text-red-500">*</span>
-              </label>
-              <div class="flex items-center space-x-2">
-                <span class="text-gray-500">$</span>
+                  Nombre <span class="text-red-500">*</span>
+                </label>
                 <input
-                  id="precioUnitario"
-                  v-model.number="formulario.precioUnitario"
-                  type="number"
-                  step="10"
-                  min="0"
+                  id="nombre"
+                  ref="nombreInputRef"
+                  v-model="formulario.nombre"
+                  type="text"
                   required
-                  class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-                  placeholder="0.00"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  :placeholder="placeholderNombre"
                   :disabled="isSubmitting"
                 />
               </div>
+              <div class="sm:col-span-4">
+                <label
+                  for="codigo-item"
+                  class="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Código o SKU (opcional)
+                </label>
+                <input
+                  id="codigo-item"
+                  v-model="formulario.codigo"
+                  type="text"
+                  maxlength="64"
+                  class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  placeholder="Ej. MSI-12K-220"
+                  :disabled="isSubmitting"
+                />
+                <p class="mt-1 text-xs text-gray-500">{{ ayudaCodigoItem }}</p>
+              </div>
             </div>
 
-            <!-- Estado Activo -->
-            <div class="flex items-center">
-              <input
-                id="activo"
+            <!-- Fila 2: Categoría + Precio -->
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-12">
+              <div class="sm:col-span-8">
+                <label
+                  for="categoriaId"
+                  class="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Categoría <span class="text-red-500">*</span>
+                </label>
+                <div
+                  v-if="categorias.length === 0 && !categoriaHuerfanaForm"
+                  class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+                >
+                  No hay categorías activas en esta administración.
+                  <router-link
+                    to="/admin/categorias"
+                    class="font-medium text-medical-blue-700 underline hover:text-medical-blue-900"
+                  >
+                    Gestionar categorías
+                  </router-link>
+                </div>
+                <template v-else>
+                  <select
+                    id="categoriaId"
+                    v-model="formulario.categoriaId"
+                    required
+                    class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                    :disabled="isSubmitting"
+                  >
+                    <option disabled value="">Selecciona una categoría</option>
+                    <option
+                      v-if="categoriaHuerfanaForm"
+                      :value="categoriaHuerfanaForm.id"
+                    >
+                      {{ categoriaHuerfanaForm.label }}
+                    </option>
+                    <option
+                      v-for="cat in categorias"
+                      :key="cat._id"
+                      :value="cat._id"
+                    >
+                      {{ cat.codigo }} — {{ cat.nombre }}
+                    </option>
+                  </select>
+                  <p
+                    v-if="categoriaHuerfanaForm"
+                    class="mt-1 text-xs text-amber-800"
+                  >
+                    La categoría actual no está activa o no aparece en el
+                    catálogo. Elige una categoría activa para guardar.
+                  </p>
+                </template>
+              </div>
+              <div class="sm:col-span-4">
+                <label
+                  for="precioUnitario"
+                  class="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Precio unitario <span class="text-red-500">*</span>
+                </label>
+                <div
+                  class="flex overflow-hidden rounded-md border border-gray-300 focus-within:ring-2 focus-within:ring-medical-blue-500"
+                >
+                  <span
+                    class="flex items-center bg-gray-50 px-3 text-sm text-gray-500"
+                    aria-hidden="true"
+                    >$</span
+                  >
+                  <input
+                    id="precioUnitario"
+                    v-model="precioInput"
+                    type="number"
+                    step="any"
+                    min="0"
+                    required
+                    class="w-full border-0 px-3 py-2 focus:outline-none focus:ring-0"
+                    placeholder="0.00"
+                    :disabled="isSubmitting"
+                    @blur="onPrecioBlur"
+                  />
+                </div>
+                <p v-if="precioError" class="mt-1 text-xs text-red-600">
+                  {{ precioError }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Descripción (+ imagen en producto) -->
+            <div
+              class="grid grid-cols-1 gap-4"
+              :class="esProductoForm ? 'lg:grid-cols-12' : ''"
+            >
+              <div :class="esProductoForm ? 'lg:col-span-7' : ''">
+                <label
+                  for="descripcion"
+                  class="mb-1 block text-sm font-medium text-gray-700"
+                >
+                  Descripción
+                </label>
+                <textarea
+                  id="descripcion"
+                  v-model="formulario.descripcion"
+                  rows="5"
+                  class="min-h-[9.5rem] w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  :placeholder="placeholderDescripcion"
+                  :disabled="isSubmitting"
+                ></textarea>
+              </div>
+
+              <div v-if="esProductoForm" class="lg:col-span-5">
+                <span class="mb-1 block text-sm font-medium text-gray-700">
+                  Imagen (opcional)
+                </span>
+                <input
+                  id="imagen-producto"
+                  ref="imagenInputRef"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                  class="sr-only"
+                  tabindex="-1"
+                  :disabled="isSubmitting"
+                  @change="onImagenSelected"
+                />
+
+                <div
+                  v-if="!imagenPreviewUrl"
+                  role="button"
+                  :tabindex="isSubmitting ? -1 : 0"
+                  class="flex min-h-[9.5rem] flex-col items-center justify-center rounded-lg border-2 border-dashed px-3 py-4 text-center transition-colors focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
+                  :class="[
+                    isSubmitting
+                      ? 'cursor-not-allowed opacity-60'
+                      : 'cursor-pointer',
+                    isDragOver
+                      ? 'border-medical-blue-500 bg-medical-blue-50'
+                      : 'border-gray-300 bg-gray-50/50 hover:border-medical-blue-400 hover:bg-medical-blue-50/40',
+                  ]"
+                  :aria-disabled="isSubmitting"
+                  @click="abrirSelectorImagen"
+                  @keydown.enter.prevent="abrirSelectorImagen"
+                  @keydown.space.prevent="abrirSelectorImagen"
+                  @dragenter.prevent="onDragEnter"
+                  @dragover.prevent="onDragOver"
+                  @dragleave.prevent="onDragLeave"
+                  @drop.prevent="onDropImagen"
+                >
+                  <p class="text-sm font-medium text-gray-700">
+                    {{
+                      isDragOver
+                        ? 'Suelta la imagen para cargarla'
+                        : 'Arrastra una imagen aquí o haz clic para seleccionarla'
+                    }}
+                  </p>
+                  <p class="mt-1 text-xs text-gray-500">
+                    PNG, JPG o WebP · máximo 1 MB
+                  </p>
+                </div>
+
+                <div
+                  v-else
+                  class="flex min-h-[9.5rem] flex-col rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  @dragenter.prevent="onDragEnter"
+                  @dragover.prevent="onDragOver"
+                  @dragleave.prevent="onDragLeave"
+                  @drop.prevent="onDropImagen"
+                >
+                  <div class="flex flex-1 items-center justify-center">
+                    <img
+                      :src="imagenPreviewUrl"
+                      alt="Vista previa del producto"
+                      class="max-h-28 max-w-full object-contain"
+                    />
+                  </div>
+                  <div class="mt-2 min-w-0">
+                    <p class="truncate text-xs font-medium text-gray-800">
+                      {{ imagenNombreMostrar }}
+                    </p>
+                    <p
+                      v-if="imagenTamanoMostrar"
+                      class="text-xs text-gray-500"
+                    >
+                      {{ imagenTamanoMostrar }}
+                    </p>
+                  </div>
+                  <div class="mt-2 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      class="text-xs font-medium text-medical-blue-700 hover:text-medical-blue-900"
+                      :disabled="isSubmitting"
+                      @click="abrirSelectorImagen"
+                    >
+                      Cambiar imagen
+                    </button>
+                    <button
+                      type="button"
+                      class="text-xs font-medium text-red-600 hover:text-red-700"
+                      :disabled="isSubmitting"
+                      @click="marcarEliminarImagen"
+                    >
+                      Eliminar
+                    </button>
+                  </div>
+                </div>
+                <p v-if="imagenError" class="mt-1 text-xs text-red-600">
+                  {{ imagenError }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Disponibilidad -->
+            <div class="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-3">
+              <ToggleSwitch
+                id="disponible-catalogo"
                 v-model="formulario.activo"
-                type="checkbox"
-                class="h-4 w-4 text-medical-blue-600 focus:ring-medical-blue-500 border-gray-300 rounded"
                 :disabled="isSubmitting"
-              />
-              <label for="activo" class="ml-2 block text-sm text-gray-700">
-                {{ labelTipoForm }} activo
-              </label>
+              >
+                Disponible en el catálogo
+              </ToggleSwitch>
+              <p class="mt-1 pl-[3.25rem] text-xs text-gray-500">
+                Puede utilizarse en nuevas cotizaciones.
+              </p>
             </div>
 
             <!-- Story 4.4: multi-tenant create — solo admin + modo crear -->
             <div
               v-if="!modoEdicion && isAdminSistema"
-              class="rounded-md border border-gray-200 bg-gray-50 p-3 space-y-2"
+              class="space-y-2 rounded-md border border-gray-200 bg-gray-50 p-3"
             >
               <p class="text-sm font-medium text-gray-800">
                 Crear en administración(es)
@@ -914,48 +978,41 @@
               </div>
             </div>
 
-            <!-- Mensaje de error -->
             <div
               v-if="errorCrear"
-              class="bg-red-50 border border-red-200 rounded-lg p-3"
+              class="rounded-lg border border-red-200 bg-red-50 p-3"
             >
-              <p class="text-red-800 text-sm">{{ errorCrear }}</p>
+              <p class="text-sm text-red-800">{{ errorCrear }}</p>
             </div>
+          </div>
 
-            <!-- Botones -->
-            <div
-              class="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3 pt-4"
+          <div
+            class="flex shrink-0 flex-col-reverse gap-2 border-t border-gray-100 bg-white px-4 py-3 sm:flex-row sm:justify-end sm:gap-3 sm:px-6"
+          >
+            <button
+              type="button"
+              class="w-full rounded-md border border-gray-300 px-4 py-2 text-gray-700 transition-colors hover:bg-gray-50 sm:w-auto"
+              :disabled="isSubmitting"
+              @click="solicitarCerrarModal"
             >
-              <button
-                type="button"
-                @click="cerrarModal"
-                class="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-                :disabled="isSubmitting"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                class="w-full sm:w-auto px-4 py-2 text-white rounded-md transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                :class="claseAcentoBoton"
-                :disabled="
-                  isSubmitting ||
-                  (!modoEdicion && categorias.length === 0) ||
-                  (modoEdicion &&
-                    !!categoriaHuerfanaForm &&
-                    categorias.length === 0)
-                "
-              >
-                <span v-if="isSubmitting">Guardando...</span>
-                <span v-else>{{
-                  modoEdicion
-                    ? `Actualizar ${labelTipoForm}`
-                    : `Guardar ${labelTipoForm}`
-                }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="w-full rounded-md bg-medical-blue-600 px-4 py-2 font-medium text-white transition-colors hover:bg-medical-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+              :disabled="
+                isSubmitting ||
+                (!modoEdicion && categorias.length === 0) ||
+                (modoEdicion &&
+                  !!categoriaHuerfanaForm &&
+                  categorias.length === 0)
+              "
+            >
+              <span v-if="isSubmitting">Guardando...</span>
+              <span v-else>{{ labelBotonGuardar }}</span>
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 
@@ -970,11 +1027,22 @@
       @confirm="ejecutarDesactivar"
       @cancel="mostrarConfirmDesactivar = false"
     />
+
+    <ConfirmationModal
+      :show="mostrarConfirmDescartar"
+      title="¿Descartar cambios?"
+      message="Hay cambios sin guardar. Si cierras ahora, se perderán."
+      type="warning"
+      confirm-text="Descartar"
+      cancel-text="Seguir editando"
+      @confirm="confirmarDescartarModal"
+      @cancel="mostrarConfirmDescartar = false"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import {
@@ -1024,8 +1092,25 @@ const ALLOWED_IMAGEN_TYPES = new Set([
   'image/webp',
 ]);
 
-type ServicioFormState = Omit<CreateServicioPayload, 'categoriaId'> & {
+type ServicioFormState = Omit<
+  CreateServicioPayload,
+  'categoriaId' | 'precioUnitario'
+> & {
   categoriaId: string;
+  /** Vacío en create hasta captura; number en edit / tras blur válido. */
+  precioUnitario: number | '';
+};
+
+type FormSnapshot = {
+  nombre: string;
+  descripcion: string;
+  precio: string;
+  categoriaId: string;
+  codigo: string;
+  activo: boolean;
+  tenants: string;
+  imagenKey: string;
+  eliminarImagen: boolean;
 };
 
 const route = useRoute();
@@ -1139,16 +1224,38 @@ const modoEdicion = ref(false);
 const servicioEditando = ref<Servicio | null>(null);
 const isSubmitting = ref(false);
 const errorCrear = ref<string | null>(null);
+const precioError = ref<string | null>(null);
+const imagenError = ref<string | null>(null);
+const mostrarConfirmDescartar = ref(false);
+const formSnapshot = ref<FormSnapshot | null>(null);
+const nombreInputRef = ref<HTMLInputElement | null>(null);
 
 const formulario = ref<ServicioFormState>({
   nombre: '',
   descripcion: '',
-  precioUnitario: 0,
+  precioUnitario: '',
   categoriaId: '',
   tipo: 'servicio',
   codigo: '',
   moneda: 'MXN',
   activo: true,
+});
+
+/** Binding del input precio (permite vacío en create). */
+const precioInput = computed({
+  get: () =>
+    formulario.value.precioUnitario === ''
+      ? ''
+      : String(formulario.value.precioUnitario),
+  set: (raw: string) => {
+    precioError.value = null;
+    if (raw === '' || raw === null || raw === undefined) {
+      formulario.value.precioUnitario = '';
+      return;
+    }
+    const n = Number(raw);
+    formulario.value.precioUnitario = Number.isFinite(n) ? n : '';
+  },
 });
 
 const labelTipoForm = computed(
@@ -1157,15 +1264,21 @@ const labelTipoForm = computed(
 
 const esProductoForm = computed(() => formulario.value.tipo === 'producto');
 
-const claseAcentoBorde = computed(() =>
-  esProductoForm.value ? 'border-amber-500' : 'border-sky-500',
+const tituloModalItem = computed(() => {
+  const t = labelTipoForm.value.toLowerCase();
+  return modoEdicion.value ? `Editar ${t}` : `Nuevo ${t}`;
+});
+
+const subtituloModalItem = computed(() =>
+  esProductoForm.value
+    ? 'Registra la información comercial del producto.'
+    : 'Registra la información comercial del servicio.',
 );
 
-const claseAcentoBoton = computed(() =>
-  esProductoForm.value
-    ? 'bg-amber-600 hover:bg-amber-700'
-    : 'bg-sky-600 hover:bg-sky-700',
-);
+const labelBotonGuardar = computed(() => {
+  if (modoEdicion.value) return 'Guardar cambios';
+  return esProductoForm.value ? 'Guardar producto' : 'Guardar servicio';
+});
 
 const placeholderNombre = computed(() =>
   esProductoForm.value
@@ -1179,10 +1292,13 @@ const placeholderDescripcion = computed(() =>
     : 'Descripción detallada del servicio',
 );
 
-/** Archivo pendiente de subir tras create (path canónico necesita _id). */
+/** Archivo pendiente de subir tras create/update (path canónico necesita _id). */
 const imagenPendiente = ref<File | null>(null);
 const imagenLocalPreview = ref<string | null>(null);
 const imagenInputRef = ref<HTMLInputElement | null>(null);
+const eliminarImagenPendiente = ref(false);
+const isDragOver = ref(false);
+let dragDepth = 0;
 
 function publicAssetPreviewUrl(path: string | undefined | null): string | null {
   if (!path) return null;
@@ -1192,10 +1308,29 @@ function publicAssetPreviewUrl(path: string | undefined | null): string | null {
   return path;
 }
 
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(2)} MB`;
+}
+
 const imagenPreviewUrl = computed(() => {
   if (imagenLocalPreview.value) return imagenLocalPreview.value;
-  if (formulario.value.tipo !== 'producto') return null;
+  if (!esProductoForm.value || eliminarImagenPendiente.value) return null;
   return publicAssetPreviewUrl(servicioEditando.value?.imagenUrl);
+});
+
+const imagenNombreMostrar = computed(() => {
+  if (imagenPendiente.value) return imagenPendiente.value.name;
+  const url = servicioEditando.value?.imagenUrl;
+  if (!url || eliminarImagenPendiente.value) return 'Imagen actual';
+  const base = url.split('?')[0]?.split('/').pop();
+  return base || 'Imagen actual';
+});
+
+const imagenTamanoMostrar = computed(() => {
+  if (!imagenPendiente.value) return '';
+  return formatBytes(imagenPendiente.value.size);
 });
 
 function clearImagenPendiente() {
@@ -1207,56 +1342,146 @@ function clearImagenPendiente() {
   if (imagenInputRef.value) imagenInputRef.value.value = '';
 }
 
-function onImagenSelected(ev: Event) {
-  const input = ev.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
+function resetImagenState() {
+  clearImagenPendiente();
+  eliminarImagenPendiente.value = false;
+  imagenError.value = null;
+  isDragOver.value = false;
+  dragDepth = 0;
+}
+
+function acceptImagenFile(file: File): boolean {
   const mime = (file.type.split(';')[0] ?? '').trim().toLowerCase();
-  if (!ALLOWED_IMAGEN_TYPES.has(mime)) {
-    errorCrear.value = 'Tipo de imagen no permitido (use PNG, JPEG o WebP)';
-    clearImagenPendiente();
-    return;
+  const extOk = /\.(png|jpe?g|webp)$/i.test(file.name || '');
+  if (mime ? !ALLOWED_IMAGEN_TYPES.has(mime) : !extOk) {
+    imagenError.value = 'Tipo de imagen no permitido (use PNG, JPG o WebP)';
+    return false;
+  }
+  if (file.size <= 0) {
+    imagenError.value = 'El archivo de imagen está vacío';
+    return false;
   }
   if (file.size > MAX_IMAGEN_BYTES) {
-    errorCrear.value = 'La imagen no puede superar 1MB';
-    clearImagenPendiente();
-    return;
+    imagenError.value = 'La imagen no puede superar 1 MB';
+    return false;
   }
-  errorCrear.value = null;
+  imagenError.value = null;
   if (imagenLocalPreview.value?.startsWith('blob:')) {
     URL.revokeObjectURL(imagenLocalPreview.value);
   }
   imagenPendiente.value = file;
   imagenLocalPreview.value = URL.createObjectURL(file);
+  eliminarImagenPendiente.value = false;
+  return true;
 }
 
-async function eliminarImagenProducto() {
-  const id = servicioEditando.value?._id;
-  if (!id || !modoEdicion.value) return;
-  isSubmitting.value = true;
-  errorCrear.value = null;
-  try {
-    const updated = await deleteServicioImagen(id);
-    servicioEditando.value = updated;
-    clearImagenPendiente();
-  } catch (err: unknown) {
-    errorCrear.value = extractError(err, 'No fue posible eliminar la imagen');
-  } finally {
-    isSubmitting.value = false;
+function onImagenSelected(ev: Event) {
+  const input = ev.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!acceptImagenFile(file) && imagenInputRef.value) {
+    imagenInputRef.value.value = '';
   }
 }
 
-const labelCodigoItem = computed(() =>
-  formulario.value.tipo === 'producto'
-    ? 'Código o SKU'
-    : 'Código de Servicio',
-);
+function abrirSelectorImagen() {
+  if (isSubmitting.value) return;
+  imagenInputRef.value?.click();
+}
+
+function onDragEnter() {
+  if (isSubmitting.value) return;
+  dragDepth += 1;
+  isDragOver.value = true;
+}
+
+function onDragOver() {
+  if (isSubmitting.value) return;
+  isDragOver.value = true;
+}
+
+function onDragLeave() {
+  dragDepth = Math.max(0, dragDepth - 1);
+  if (dragDepth === 0) isDragOver.value = false;
+}
+
+function onDropImagen(ev: DragEvent) {
+  dragDepth = 0;
+  isDragOver.value = false;
+  if (isSubmitting.value) return;
+  const file = ev.dataTransfer?.files?.[0];
+  if (!file) return;
+  acceptImagenFile(file);
+}
+
+function onGlobalDragEnd() {
+  dragDepth = 0;
+  isDragOver.value = false;
+}
+
+/** Marca eliminación diferida hasta Guardar (no llama API aún). */
+function marcarEliminarImagen() {
+  if (isSubmitting.value) return;
+  clearImagenPendiente();
+  eliminarImagenPendiente.value = true;
+  imagenError.value = null;
+}
+
+function onPrecioBlur() {
+  if (formulario.value.precioUnitario === '') return;
+  const n = Number(formulario.value.precioUnitario);
+  if (!Number.isFinite(n) || n < 0) {
+    precioError.value = 'Ingresa un precio válido (mínimo 0)';
+  }
+}
 
 const ayudaCodigoItem = computed(() =>
   formulario.value.tipo === 'producto'
     ? 'Identificador interno del producto. No puede repetirse en el catálogo.'
     : 'Identificador interno opcional. No puede repetirse en el catálogo.',
 );
+
+function imagenPendingKey(): string {
+  const f = imagenPendiente.value;
+  if (!f) return '';
+  return `${f.name}|${f.size}|${f.lastModified}`;
+}
+
+function captureFormSnapshot(): FormSnapshot {
+  return {
+    nombre: formulario.value.nombre,
+    descripcion: formulario.value.descripcion || '',
+    precio: String(formulario.value.precioUnitario),
+    categoriaId: formulario.value.categoriaId,
+    codigo: formulario.value.codigo || '',
+    activo: formulario.value.activo !== false,
+    tenants: [...tenantIdsDestino.value].sort().join(','),
+    imagenKey: imagenPendingKey(),
+    eliminarImagen: eliminarImagenPendiente.value,
+  };
+}
+
+function isFormDirty(): boolean {
+  const snap = formSnapshot.value;
+  if (!snap) return false;
+  const cur = captureFormSnapshot();
+  return (
+    cur.nombre !== snap.nombre ||
+    cur.descripcion !== snap.descripcion ||
+    cur.precio !== snap.precio ||
+    cur.categoriaId !== snap.categoriaId ||
+    cur.codigo !== snap.codigo ||
+    cur.activo !== snap.activo ||
+    cur.tenants !== snap.tenants ||
+    cur.imagenKey !== snap.imagenKey ||
+    cur.eliminarImagen !== snap.eliminarImagen
+  );
+}
+
+async function focusNombreInput() {
+  await nextTick();
+  nombreInputRef.value?.focus();
+}
 
 /** Categoría del form que no está en el lote activo cargado (inactiva / huérfana). */
 const categoriaHuerfanaForm = computed(() => {
@@ -1482,42 +1707,48 @@ function nextPage() {
 }
 
 /**
- * Abre el modal para crear un producto o servicio
+ * Abre el modal para crear un producto o servicio (tipo fijo desde CTA).
  */
 const abrirModalCrear = (tipo: TipoItemCatalogo = 'servicio') => {
   modoEdicion.value = false;
   servicioEditando.value = null;
-  clearImagenPendiente();
+  resetImagenState();
   formulario.value = {
     nombre: '',
     descripcion: '',
-    precioUnitario: 0,
+    precioUnitario: '',
     categoriaId: '',
     tipo,
     codigo: '',
     moneda: 'MXN',
     activo: true,
   };
-  // Default: solo el tenant activo del sidebar
   const active = authStore.activeTenantId;
   tenantIdsDestino.value = active ? [active] : [];
   errorCrear.value = null;
+  precioError.value = null;
+  mostrarConfirmDescartar.value = false;
   mostrarModal.value = true;
+  formSnapshot.value = captureFormSnapshot();
+  void focusNombreInput();
 };
 
 /**
- * Abre el modal para editar un servicio existente
+ * Abre el modal para editar; tipo del registro, inmutable.
  */
 const abrirModalEditar = (servicio: Servicio) => {
   modoEdicion.value = true;
   servicioEditando.value = servicio;
-  clearImagenPendiente();
+  resetImagenState();
   const tipoValido =
     servicio.tipo === 'producto' || servicio.tipo === 'servicio';
   formulario.value = {
     nombre: servicio.nombre,
     descripcion: servicio.descripcion || '',
-    precioUnitario: servicio.precioUnitario,
+    precioUnitario:
+      servicio.precioUnitario === undefined || servicio.precioUnitario === null
+        ? ''
+        : servicio.precioUnitario,
     categoriaId: servicio.categoriaId || '',
     tipo: tipoValido ? servicio.tipo : 'servicio',
     codigo: servicio.codigo || '',
@@ -1526,23 +1757,28 @@ const abrirModalEditar = (servicio: Servicio) => {
   };
   errorCrear.value = tipoValido
     ? null
-    : 'Este registro no tenía un tipo válido; se guardará como Servicio salvo que elijas otro.';
+    : 'Este registro no tenía un tipo válido; se guardará como Servicio.';
+  precioError.value = null;
+  mostrarConfirmDescartar.value = false;
   mostrarModal.value = true;
+  formSnapshot.value = captureFormSnapshot();
+  void focusNombreInput();
 };
 
-/**
- * Cierra el modal y resetea el formulario
- */
-const cerrarModal = () => {
+/** Cierre forzado (sin dirty check). */
+const forceCerrarModal = () => {
   mostrarModal.value = false;
   modoEdicion.value = false;
   servicioEditando.value = null;
   errorCrear.value = null;
-  clearImagenPendiente();
+  precioError.value = null;
+  mostrarConfirmDescartar.value = false;
+  formSnapshot.value = null;
+  resetImagenState();
   formulario.value = {
     nombre: '',
     descripcion: '',
-    precioUnitario: 0,
+    precioUnitario: '',
     categoriaId: '',
     tipo: 'servicio',
     codigo: '',
@@ -1551,8 +1787,23 @@ const cerrarModal = () => {
   };
 };
 
+const solicitarCerrarModal = () => {
+  if (isSubmitting.value) return;
+  if (mostrarConfirmDescartar.value) return;
+  if (isFormDirty()) {
+    mostrarConfirmDescartar.value = true;
+    return;
+  }
+  forceCerrarModal();
+};
+
+const confirmarDescartarModal = () => {
+  mostrarConfirmDescartar.value = false;
+  forceCerrarModal();
+};
+
 const { onBackdropPointerDown, onBackdropPointerUp, onBackdropPointerCancel } =
-  useModalDismiss(cerrarModal, mostrarModal);
+  useModalDismiss(solicitarCerrarModal, mostrarModal);
 
 /**
  * Guarda un servicio (crear o actualizar)
@@ -1560,13 +1811,30 @@ const { onBackdropPointerDown, onBackdropPointerUp, onBackdropPointerCancel } =
 const guardarServicio = async () => {
   const nombre = formulario.value.nombre.trim();
   if (!nombre) {
-    errorCrear.value = 'Debe proporcionar el nombre del servicio';
+    errorCrear.value = `Debe proporcionar el nombre del ${labelTipoForm.value.toLowerCase()}`;
     return;
   }
+  if (
+    formulario.value.precioUnitario === '' ||
+    !Number.isFinite(Number(formulario.value.precioUnitario)) ||
+    Number(formulario.value.precioUnitario) < 0
+  ) {
+    precioError.value = 'Ingresa un precio válido (mínimo 0)';
+    errorCrear.value = null;
+    return;
+  }
+  const precioUnitario = Number(formulario.value.precioUnitario);
+  precioError.value = null;
+
+  if (esProductoForm.value && imagenError.value) {
+    errorCrear.value = imagenError.value;
+    return;
+  }
+
   if (!formulario.value.categoriaId) {
     errorCrear.value =
       categorias.value.length === 0
-        ? 'Crea al menos una categoría antes de agregar servicios'
+        ? 'Crea al menos una categoría antes de agregar ítems'
         : 'Debe seleccionar una categoría';
     return;
   }
@@ -1576,7 +1844,7 @@ const guardarServicio = async () => {
   if (!modoEdicion.value && !categoriaEnCatalogo) {
     errorCrear.value =
       categorias.value.length === 0
-        ? 'Crea al menos una categoría antes de agregar servicios'
+        ? 'Crea al menos una categoría antes de agregar ítems'
         : 'Debe seleccionar una categoría activa del catálogo';
     return;
   }
@@ -1587,7 +1855,7 @@ const guardarServicio = async () => {
   }
   if (modoEdicion.value && !servicioEditando.value?._id) {
     errorCrear.value =
-      'No se puede actualizar: falta el identificador del servicio';
+      'No se puede actualizar: falta el identificador del registro';
     return;
   }
   isSubmitting.value = true;
@@ -1597,13 +1865,18 @@ const guardarServicio = async () => {
     const codigoTrim = formulario.value.codigo?.trim() || '';
     const fileToUpload =
       formulario.value.tipo === 'producto' ? imagenPendiente.value : null;
+    const shouldDeleteImagen =
+      formulario.value.tipo === 'producto' &&
+      modoEdicion.value &&
+      eliminarImagenPendiente.value &&
+      !fileToUpload;
 
     if (modoEdicion.value) {
       const id = servicioEditando.value!._id!;
       const payload: UpdateServicioPayload = {
         nombre,
         descripcion: formulario.value.descripcion?.trim() || '',
-        precioUnitario: formulario.value.precioUnitario,
+        precioUnitario,
         categoriaId: formulario.value.categoriaId,
         tipo: formulario.value.tipo,
         codigo: codigoTrim,
@@ -1611,9 +1884,12 @@ const guardarServicio = async () => {
         activo: formulario.value.activo,
       };
       await updateServicio(id, payload);
-      if (fileToUpload) {
+      if (shouldDeleteImagen) {
+        await deleteServicioImagen(id);
+      } else if (fileToUpload) {
         await uploadServicioImagen(id, fileToUpload);
       }
+      successMsg.value = `${labelTipoForm.value} actualizado.`;
     } else if (isAdminSistema.value) {
       const ids = [...new Set(tenantIdsDestino.value.filter(Boolean))];
       if (ids.length < 1) {
@@ -1624,7 +1900,7 @@ const guardarServicio = async () => {
       const result = await createServicioMulti({
         nombre,
         descripcion: formulario.value.descripcion?.trim() || undefined,
-        precioUnitario: formulario.value.precioUnitario,
+        precioUnitario,
         categoriaId: formulario.value.categoriaId,
         tipo: formulario.value.tipo,
         ...(codigoTrim ? { codigo: codigoTrim } : {}),
@@ -1632,7 +1908,6 @@ const guardarServicio = async () => {
         activo: formulario.value.activo,
         tenantIds: ids,
       });
-      // Imagen solo en el ítem del tenant activo (mismo listado); no multi-upload
       if (fileToUpload) {
         const activeId = authStore.activeTenantId;
         const target =
@@ -1650,13 +1925,13 @@ const guardarServicio = async () => {
         .join(' y ');
       successMsg.value =
         result.created.length > 1
-          ? `Servicio creado en ${nombres}. El listado muestra la administración activa.`
-          : 'Servicio creado.';
+          ? `${labelTipoForm.value} creado en ${nombres}. El listado muestra la administración activa.`
+          : `${labelTipoForm.value} creado.`;
     } else {
       const created = await createServicio({
         nombre,
         descripcion: formulario.value.descripcion?.trim() || undefined,
-        precioUnitario: formulario.value.precioUnitario,
+        precioUnitario,
         categoriaId: formulario.value.categoriaId,
         tipo: formulario.value.tipo,
         ...(codigoTrim ? { codigo: codigoTrim } : {}),
@@ -1666,15 +1941,15 @@ const guardarServicio = async () => {
       if (fileToUpload && created._id) {
         await uploadServicioImagen(created._id, fileToUpload);
       }
-      successMsg.value = 'Servicio creado.';
+      successMsg.value = `${labelTipoForm.value} creado.`;
     }
-    cerrarModal();
+    forceCerrarModal();
     await cargarServicios();
   } catch (err: unknown) {
-    console.error('Error al guardar servicio:', err);
+    console.error('Error al guardar ítem de catálogo:', err);
     errorCrear.value = extractError(
       err,
-      'No fue posible guardar el servicio',
+      `No fue posible guardar el ${labelTipoForm.value.toLowerCase()}`,
     );
   } finally {
     isSubmitting.value = false;
@@ -1740,13 +2015,6 @@ const reactivar = async (servicio: Servicio) => {
   }
 };
 
-watch(
-  () => formulario.value.tipo,
-  (tipo) => {
-    if (tipo !== 'producto') clearImagenPendiente();
-  },
-);
-
 watch(activeTenantId, () => {
   if (filterTimeout) {
     clearTimeout(filterTimeout);
@@ -1755,8 +2023,9 @@ watch(activeTenantId, () => {
   resetFilters();
   hasLoadedOnce.value = false;
   categorias.value = [];
-  if (mostrarModal.value) cerrarModal();
+  if (mostrarModal.value) forceCerrarModal();
   mostrarConfirmDesactivar.value = false;
+  mostrarConfirmDescartar.value = false;
   servicioADesactivar.value = null;
   successMsg.value = null;
   actionError.value = null;
@@ -1769,6 +2038,7 @@ watch(activeTenantId, () => {
 
 // Cargar datos al montar el componente
 onMounted(async () => {
+  window.addEventListener('dragend', onGlobalDragEnd);
   if (shouldResetListQueryForTenant(activeTenantId.value)) {
     resetFilters();
   } else {
@@ -1796,6 +2066,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('dragend', onGlobalDragEnd);
   clearFilterDebounce();
 });
 </script>

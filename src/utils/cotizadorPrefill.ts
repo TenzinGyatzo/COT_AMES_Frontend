@@ -85,7 +85,8 @@ export async function hydrateCotizadorFromDraft(
 ): Promise<void> {
   const { draft } = ctx;
 
-  ctx.sinVigencia.value = !!draft.sinVigencia;
+  // UI positiva: usarVigencia = !sinVigencia; ausente → usar vigencia (ON)
+  ctx.sinVigencia.value = draft.sinVigencia === true;
   ctx.vigenciaDias.value = ctx.vigenciaDefaultDias;
   ctx.emailsPara.value = [...(draft.emailsPara || [])];
   ctx.emailsCc.value = [...(draft.emailsCc || [])].filter(

@@ -499,87 +499,8 @@
           </div>
         </div>
 
-        <!-- Opciones de visualización: base / available / effective -->
-        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div
-            class="p-4 rounded-2xl border"
-            :class="
-              bancariosUtiles
-                ? 'bg-medical-blue-50/50 border-medical-blue-100 cursor-pointer'
-                : 'bg-gray-50 border-gray-200 cursor-not-allowed'
-            "
-            role="group"
-            :aria-disabled="!bancariosUtiles"
-            @click="bancariosUtiles && setIncluirDatosBancarios(!incluirDatosBancarios)"
-          >
-            <div class="flex items-start group">
-              <div class="relative shrink-0">
-                <input
-                  id="opt-incluir-bancarios"
-                  type="checkbox"
-                  class="sr-only peer"
-                  :checked="displayIncluirDatosBancarios"
-                  :disabled="!bancariosUtiles"
-                  :aria-disabled="!bancariosUtiles"
-                  @click.stop
-                  @change="
-                    setIncluirDatosBancarios(
-                      ($event.target as HTMLInputElement).checked,
-                    )
-                  "
-                />
-                <div
-                  class="w-11 h-6 rounded-full peer peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-medical-blue-400 peer-focus-visible:ring-offset-1 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
-                  :class="[
-                    displayIncluirDatosBancarios
-                      ? 'bg-medical-blue-600'
-                      : 'bg-gray-200',
-                    bancariosUtiles
-                      ? 'after:transition-all peer-checked:after:transition-all'
-                      : 'opacity-70',
-                  ]"
-                ></div>
-              </div>
-              <div class="ml-4 min-w-0">
-                <label
-                  for="opt-incluir-bancarios"
-                  class="block text-sm font-bold"
-                  :class="
-                    bancariosUtiles
-                      ? 'text-gray-800 group-hover:text-medical-blue-700 cursor-pointer'
-                      : 'text-gray-600 cursor-not-allowed'
-                  "
-                  @click.stop
-                >
-                  Incluir datos bancarios en el PDF
-                </label>
-                <p
-                  class="text-xs mt-0.5"
-                  :class="
-                    bancariosUtiles
-                      ? 'text-medical-blue-600/70'
-                      : 'text-gray-500'
-                  "
-                >
-                  Incluye los datos bancarios configurados en el PDF.
-                </p>
-                <p
-                  v-if="!bancariosUtiles"
-                  class="text-xs text-gray-500 mt-1.5"
-                >
-                  No tienes datos bancarios configurados.
-                  <RouterLink
-                    to="/admin/configuracion"
-                    class="text-medical-blue-600 underline underline-offset-2 hover:text-medical-blue-700"
-                    @click.stop
-                  >
-                    Ir a Configuración
-                  </RouterLink>
-                </p>
-              </div>
-            </div>
-          </div>
-
+        <!-- Opciones: Descripciones | Imágenes / Vigencia | Bancarios -->
+        <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
             class="p-4 rounded-2xl border"
             :class="
@@ -658,7 +579,7 @@
           </div>
 
           <div
-            class="p-4 rounded-2xl border md:col-span-2"
+            class="p-4 rounded-2xl border"
             :class="
               imagenesDisponibles
                 ? 'bg-medical-blue-50/50 border-medical-blue-100 cursor-pointer'
@@ -731,6 +652,162 @@
               </div>
             </div>
           </div>
+
+          <div
+            class="p-4 rounded-2xl border bg-medical-blue-50/50 border-medical-blue-100 cursor-pointer"
+            role="group"
+            @click="setUsarVigencia(!usarVigencia)"
+          >
+            <div class="flex items-start group">
+              <div class="relative shrink-0">
+                <input
+                  id="opt-usar-vigencia"
+                  type="checkbox"
+                  class="sr-only peer"
+                  :checked="usarVigencia"
+                  @click.stop
+                  @change="
+                    setUsarVigencia(($event.target as HTMLInputElement).checked)
+                  "
+                />
+                <div
+                  class="w-11 h-6 rounded-full peer peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-medical-blue-400 peer-focus-visible:ring-offset-1 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:transition-all"
+                  :class="usarVigencia ? 'bg-medical-blue-600' : 'bg-gray-200'"
+                ></div>
+              </div>
+              <div class="ml-4 min-w-0">
+                <label
+                  for="opt-usar-vigencia"
+                  class="block text-sm font-bold text-gray-800 group-hover:text-medical-blue-700 cursor-pointer"
+                  @click.stop
+                >
+                  Usar vigencia
+                </label>
+                <p class="text-xs mt-0.5 text-medical-blue-600/70">
+                  Incluye una fecha de vencimiento en la cotización y el PDF.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="p-4 rounded-2xl border"
+            :class="
+              bancariosUtiles
+                ? 'bg-medical-blue-50/50 border-medical-blue-100 cursor-pointer'
+                : 'bg-gray-50 border-gray-200 cursor-not-allowed'
+            "
+            role="group"
+            :aria-disabled="!bancariosUtiles"
+            @click="bancariosUtiles && setIncluirDatosBancarios(!incluirDatosBancarios)"
+          >
+            <div class="flex items-start group">
+              <div class="relative shrink-0">
+                <input
+                  id="opt-incluir-bancarios"
+                  type="checkbox"
+                  class="sr-only peer"
+                  :checked="displayIncluirDatosBancarios"
+                  :disabled="!bancariosUtiles"
+                  :aria-disabled="!bancariosUtiles"
+                  @click.stop
+                  @change="
+                    setIncluirDatosBancarios(
+                      ($event.target as HTMLInputElement).checked,
+                    )
+                  "
+                />
+                <div
+                  class="w-11 h-6 rounded-full peer peer-focus-visible:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-medical-blue-400 peer-focus-visible:ring-offset-1 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5"
+                  :class="[
+                    displayIncluirDatosBancarios
+                      ? 'bg-medical-blue-600'
+                      : 'bg-gray-200',
+                    bancariosUtiles
+                      ? 'after:transition-all peer-checked:after:transition-all'
+                      : 'opacity-70',
+                  ]"
+                ></div>
+              </div>
+              <div class="ml-4 min-w-0">
+                <label
+                  for="opt-incluir-bancarios"
+                  class="block text-sm font-bold"
+                  :class="
+                    bancariosUtiles
+                      ? 'text-gray-800 group-hover:text-medical-blue-700 cursor-pointer'
+                      : 'text-gray-600 cursor-not-allowed'
+                  "
+                  @click.stop
+                >
+                  Incluir datos bancarios en el PDF
+                </label>
+                <p
+                  class="text-xs mt-0.5"
+                  :class="
+                    bancariosUtiles
+                      ? 'text-medical-blue-600/70'
+                      : 'text-gray-500'
+                  "
+                >
+                  Incluye los datos bancarios configurados en el PDF.
+                </p>
+                <p
+                  v-if="!bancariosUtiles"
+                  class="text-xs text-gray-500 mt-1.5"
+                >
+                  No tienes datos bancarios configurados.
+                  <RouterLink
+                    to="/admin/configuracion"
+                    class="text-medical-blue-600 underline underline-offset-2 hover:text-medical-blue-700"
+                    @click.stop
+                  >
+                    Ir a Configuración
+                  </RouterLink>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Días de vigencia (fuera de tarjetas; atenuado si vigencia OFF) -->
+        <div
+          class="mb-6 space-y-2"
+          :class="{ 'opacity-50': !usarVigencia }"
+        >
+          <label
+            for="vigenciaDias"
+            class="block text-sm text-gray-700 ml-1"
+            :aria-disabled="!usarVigencia"
+          >
+            <template v-if="usarVigencia">
+              Esta cotización tendrá una vigencia de
+              <input
+                id="vigenciaDias"
+                v-model.number="vigenciaDias"
+                type="number"
+                min="1"
+                max="365"
+                class="mx-1 w-20 inline-block px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none text-gray-700 text-center font-bold"
+              />
+              días
+            </template>
+            <template v-else>
+              Vigencia desactivada — no se aplicará vencimiento (el PDF muestra
+              —).
+              <input
+                id="vigenciaDias"
+                v-model.number="vigenciaDias"
+                type="number"
+                min="1"
+                max="365"
+                disabled
+                class="sr-only"
+                tabindex="-1"
+                aria-hidden="true"
+              />
+            </template>
+          </label>
         </div>
 
         <!-- Destinatarios Para/CC (Story 6.6 / 6.15) -->
@@ -785,49 +862,6 @@
               </span>
             </label>
           </div>
-        </div>
-
-        <!-- Vigencia N días (Story 6.15) -->
-        <div class="mb-2 space-y-3">
-          <h3 class="text-sm font-bold text-gray-800">Vigencia</h3>
-          <div
-            class="space-y-2"
-            :class="{ 'opacity-50': sinVigencia }"
-          >
-            <label
-              for="vigenciaDias"
-              class="block text-sm text-gray-700 ml-1"
-            >
-              Esta cotización tendrá una vigencia de
-              <input
-                id="vigenciaDias"
-                v-model.number="vigenciaDias"
-                type="number"
-                min="1"
-                max="365"
-                :disabled="sinVigencia"
-                class="mx-1 w-20 inline-block px-2 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-medical-blue-400 focus:bg-white outline-none text-gray-700 text-center font-bold disabled:cursor-not-allowed"
-              />
-              días
-            </label>
-          </div>
-          <label class="inline-flex items-center cursor-pointer group ml-1">
-            <div class="relative">
-              <input
-                v-model="sinVigencia"
-                type="checkbox"
-                class="sr-only peer"
-              />
-              <div
-                class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-medical-blue-600"
-              ></div>
-            </div>
-            <span
-              class="ml-3 text-sm text-gray-700 group-hover:text-medical-blue-700 transition-colors"
-            >
-              No usar vigencia para esta cotización
-            </span>
-          </label>
         </div>
       </div>
 
@@ -1152,7 +1186,9 @@ const datosCliente = ref({
 });
 /** Story 6.15 — N días de vigencia (reemplaza date picker). */
 const vigenciaDias = ref(30);
+/** Persistencia API: `sinVigencia`. UI positiva: `usarVigencia = !sinVigencia`. */
 const sinVigencia = ref(false);
+const usarVigencia = computed(() => !sinVigencia.value);
 let vigenciaDefaultDias = 30;
 /** Story 6.6 — destinatarios de correo (≠ solicitante emailContacto). */
 const emailsPara = ref<string[]>([]);
@@ -1928,6 +1964,10 @@ function setIncluirImagenesPdf(value: boolean) {
   if (!imagenesDisponibles.value) return;
   visualizacionBasesTouched = true;
   incluirImagenesPdf.value = value;
+}
+
+function setUsarVigencia(value: boolean) {
+  sinVigencia.value = !value;
 }
 
 watch(

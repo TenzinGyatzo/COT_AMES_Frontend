@@ -864,6 +864,16 @@
         </div>
       </div>
 
+      <CotizacionRecordatorioWizardBloque v-model="recordatorioRecetaDraft" />
+
+      <div
+        v-if="recordatorioUpsertWarn"
+        class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900"
+        role="alert"
+      >
+        {{ recordatorioUpsertWarn }}
+      </div>
+
       <div
         v-if="error"
         class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded-xl flex items-center gap-3"
@@ -941,6 +951,7 @@
       :initial-emails-cc="emailsCc"
       :is-resend-busy="isResendingEmail"
       :email-credentials-configured="emailCredentialsConfigured"
+      :recordatorio-warn="recordatorioUpsertWarn || null"
       @close="cerrarModal"
       @ver-cotizaciones="verCotizaciones"
       @ver-detalles="verDetalles"
@@ -1082,6 +1093,7 @@ import TablaServiciosCotizador from '../../components/cotizador/TablaServiciosCo
 import type { ItemOverrideFields } from '../../components/cotizador/TablaServiciosCotizador.vue';
 import PlantillaSeccionesEditor from '../../components/plantillas/PlantillaSeccionesEditor.vue';
 import EmailChipsInput from '../../components/cotizador/EmailChipsInput.vue';
+import CotizacionRecordatorioWizardBloque from '../../components/cotizaciones/CotizacionRecordatorioWizardBloque.vue';
 import { useCotizador } from '../../composables/useCotizador';
 import { useCorreosNotificacion } from '../../composables/useCorreosNotificacion';
 import { useModalDismiss } from '../../composables/useModalDismiss';
@@ -1089,6 +1101,7 @@ import type {
   Cliente,
   Contacto,
   Plantilla,
+  RecetaRecordatorio,
   SeccionPlantilla,
   Servicio,
 } from '../../types/backend';
@@ -1105,6 +1118,7 @@ import {
   getTenantConfig,
   updatePlantilla,
   updateServicio,
+  upsertRecordatorioCotizacion,
 } from '../../services/admin-api.service';
 import {
   generateCotizacionPdfBlob,
@@ -1115,6 +1129,7 @@ import { hasBancariosUtiles } from '../../utils/bancarios.util';
 import type { CotizacionDetalleDto } from '../../types/backend';
 import { useCotizadorDraftStore } from '../../store/cotizadorDraft';
 import { hydrateCotizadorFromDraft } from '../../utils/cotizadorPrefill';
+import { extractError } from '../../utils/extractError';
 
 const router = useRouter();
 const cotizadorDraftStore = useCotizadorDraftStore();
@@ -1228,6 +1243,8 @@ const guardandoPersonalizar = ref(false);
 const mensajeValidacion = ref('');
 const isCreating = ref(false);
 const ultimaRespuesta = ref<any>(null);
+const recordatorioRecetaDraft = ref<RecetaRecordatorio | null>(null);
+const recordatorioUpsertWarn = ref('');
 const showRevisionModal = ref(false);
 const isPreviewPdfBusy = ref(false);
 
@@ -2511,9 +2528,44 @@ const confirmarGeneracion = async () => {
   isSendingEmail.value = false;
   try {
     const response = await createAdminCotizacion(payload);
-    ultimaRespuesta.value = response;
     mensajeValidacion.value = '';
     pendingCreate.value = null;
+
+    const recetaDraft = recordatorioRecetaDraft.value;
+    recordatorioUpsertWarn.value = '';
+    if (recetaDraft) {
+      const cotId = response._id || (response as { id?: string }).id;
+      if (!cotId) {
+        recordatorioUpsertWarn.value =
+          'La cotización se creó, pero no se pudo programar el aviso.';
+      } else {
+        try {
+          const body =
+            recetaDraft.familia === 'fecha_exacta'
+              ? {
+                  receta: {
+                    familia: 'fecha_exacta' as const,
+                    fechaExacta: String(recetaDraft.fechaExacta).slice(0, 10),
+                  },
+                }
+              : {
+                  receta: {
+                    familia: recetaDraft.familia,
+                    preset: recetaDraft.preset,
+                  },
+                };
+          await upsertRecordatorioCotizacion(String(cotId), body);
+          recordatorioRecetaDraft.value = null;
+        } catch (remErr: unknown) {
+          recordatorioUpsertWarn.value = extractError(
+            remErr,
+            'No se pudo programar el aviso',
+          );
+        }
+      }
+    }
+
+    ultimaRespuesta.value = response;
 
     if (repetirCancelarOriginal.value && repetirSourceId.value) {
       try {
@@ -2726,6 +2778,9 @@ const cerrarModal = () => {
   repetirSourceId.value = '';
   repetirCancelarOriginal.value = false;
   avisoCancelacionOriginal.value = null;
+  if (!recordatorioUpsertWarn.value) {
+    recordatorioRecetaDraft.value = null;
+  }
 };
 
 const verCotizaciones = () => {

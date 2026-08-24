@@ -72,6 +72,8 @@ export interface TenantConfigResponse {
   defaultIncluirImagenesPdf?: boolean | null;
   /** Preferencia «usar vigencia» al crear; ausente/null ≠ false. */
   defaultUsarVigencia?: boolean | null;
+  /** IANA TZ del tenant (Story 9.1 / AD-30). */
+  zonaHoraria?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -475,4 +477,66 @@ export interface CotizacionDetalleDto {
   notasInternas?: NotaInternaCotizacion[];
   createdAt?: Date | string;
   updatedAt?: Date | string;
+}
+
+/** Story 9.1/9.2 — familias canónicas de Receta. */
+export type FamiliaReceta =
+  | 'relativo_hoy'
+  | 'relativo_aniversario'
+  | 'fecha_exacta';
+
+export type PresetRelativoHoy =
+  | '1_mes'
+  | '3_meses'
+  | '6_meses'
+  | '11_meses'
+  | '1_ano'
+  | '2_anos';
+
+export type PresetRelativoAniversario =
+  | '2_semanas_antes'
+  | '1_mes_antes'
+  | '2_meses_antes';
+
+export type EstadoRecordatorio =
+  | 'programado'
+  | 'disparado'
+  | 'cancelado'
+  | 'cerrado';
+
+export interface RecetaRecordatorio {
+  familia: FamiliaReceta;
+  preset?: string;
+  /** Date-only YYYY-MM-DD en body; ISO Date en response. */
+  fechaExacta?: string | Date;
+}
+
+export interface UpsertRecordatorioPayload {
+  receta: RecetaRecordatorio;
+}
+
+export interface RecordatorioRecotizacion {
+  _id?: string;
+  tenantId?: string;
+  cotizacionId?: string;
+  estado: EstadoRecordatorio;
+  receta: RecetaRecordatorio;
+  fechaDisparoUtc: string | Date;
+  everDisparado: boolean;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
+/** Story 10.2 / AD-35 — fila canónica de recordatorio disparado. */
+export interface RecordatorioDisparadoItem {
+  recordatorioId: string;
+  cotizacionId: string;
+  folio: string;
+  identidad: string | null;
+  fechaDisparo: string | Date;
+  recetaResumen: string;
+}
+
+export interface RecordatoriosDisparadosResponse {
+  items: RecordatorioDisparadoItem[];
 }

@@ -106,6 +106,37 @@
           </div>
         </div>
 
+        <!-- Aviso recordatorio (Story 9.3) -->
+        <div
+          v-if="recordatorioWarn"
+          class="mb-4 flex items-start gap-3 p-4 bg-amber-50 rounded-xl border border-amber-200 text-amber-900"
+          role="alert"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5 text-amber-600 mt-0.5 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div>
+            <p class="text-sm font-bold">No se pudo programar el aviso</p>
+            <p class="text-xs text-amber-800/90">{{ recordatorioWarn }}</p>
+            <p class="text-xs text-amber-700/80 mt-1">
+              La cotización sí se guardó. Puedes programar el aviso desde el
+              detalle.
+            </p>
+          </div>
+        </div>
+
         <!-- Mensajes Dinámicos de Email (Solo para Admin) — resultado real Story 6.8 -->
         <div
           v-if="mostrarMensajeEmail"
@@ -387,6 +418,8 @@ interface Props {
   isResendBusy?: boolean;
   /** null/undefined = desconocido (no bloquear); false = disable reintento */
   emailCredentialsConfigured?: boolean | null;
+  /** Story 9.3 — fallo PUT recordatorio post-create */
+  recordatorioWarn?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -398,6 +431,7 @@ const props = withDefaults(defineProps<Props>(), {
   initialEmailsCc: () => [],
   isResendBusy: false,
   emailCredentialsConfigured: null,
+  recordatorioWarn: null,
 });
 
 const emit = defineEmits<{

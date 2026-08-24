@@ -10,14 +10,24 @@
       {{ error }}
     </div>
 
-    <!-- Estado de carga -->
+    <!-- Recordatorios disparados (Story 10.3) — independiente de contadores -->
+    <RecordatoriosDisparadosSection
+      class="mb-6"
+      :items="disparadosItems"
+      :loading="disparadosLoading"
+      :error="disparadosError"
+      :closing-id="disparadosClosingId"
+      @cerrar="onCerrarDisparado"
+    />
+
+    <!-- Estado de carga contadores -->
     <BaseSectionLoader
       v-if="isLoadingDashboard"
       message="Cargando resumen..."
     />
 
     <!-- Contadores -->
-    <div v-else-if="dashboardCounters" class="space-y-6">
+    <div v-if="!isLoadingDashboard && dashboardCounters" class="space-y-6">
       <!-- Métricas Principales -->
       <div>
         <h2 class="text-lg font-semibold text-gray-800 mb-4">
@@ -345,7 +355,7 @@
 
     <!-- Estado vacío (sin contadores pero sin error) -->
     <div
-      v-else-if="!isLoadingDashboard"
+      v-else-if="!isLoadingDashboard && !dashboardCounters"
       class="bg-white shadow-md rounded-lg p-8 text-center border border-gray-200"
     >
       <p class="text-gray-500">No se pudieron cargar los contadores</p>
@@ -354,11 +364,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useAdmin } from '../../composables/useAdmin';
+import { useRecordatoriosDisparados } from '../../composables/useRecordatoriosDisparados';
 import { useAuthStore } from '../../store/auth';
 import { getTenants, getTenantConfig } from '../../services/admin-api.service';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
+import RecordatoriosDisparadosSection from '../../components/cotizaciones/RecordatoriosDisparadosSection.vue';
+import type { RecordatorioDisparadoItem } from '../../types/backend';
 
 const {
   dashboardCounters,
@@ -371,6 +384,31 @@ const {
 const authStore = useAuthStore();
 const pageTitle = ref('Administración');
 let titleResolveGeneration = 0;
+
+const {
+  items: disparadosItems,
+  loading: disparadosLoading,
+  error: disparadosError,
+  fetchDisparados,
+  resetDisparados,
+  cerrar: cerrarDisparado,
+} = useRecordatoriosDisparados();
+const disparadosClosingId = ref<string | null>(null);
+
+function scrollToDisparadosIfHash() {
+  if (window.location.hash !== '#recordatorios-disparados') return;
+  void nextTick(() => {
+    document
+      .getElementById('recordatorios-disparados')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+async function onCerrarDisparado(item: RecordatorioDisparadoItem) {
+  disparadosClosingId.value = item.recordatorioId;
+  await cerrarDisparado(item.recordatorioId);
+  disparadosClosingId.value = null;
+}
 
 function formatTenantTitle(
   nombre?: string | null,
@@ -430,6 +468,7 @@ watch(
     if (authStore.isAdminSistema) {
       void resolveAdministracionTitle();
     }
+    void fetchDisparados();
   },
 );
 
@@ -437,16 +476,17 @@ watch(
 onMounted(async () => {
   void resolveAdministracionTitle();
   try {
-    await obtenerDashboardCounters();
+    await Promise.all([obtenerDashboardCounters(), fetchDisparados()]);
   } catch (err) {
-    // El error ya se maneja en el store
     console.error('Error al cargar contadores del dashboard:', err);
   }
+  scrollToDisparadosIfHash();
 });
 
 // Limpiar estado al desmontar
 onUnmounted(() => {
   titleResolveGeneration += 1;
   limpiarDashboardCounters();
+  resetDisparados();
 });
 </script>

@@ -31,6 +31,21 @@ export default {
             900: '#001111',
           },
         },
+        // Story 9.2 / UX-DR1 — badge Programado (info) + tokens reminder (ámbar)
+        info: {
+          soft: '#eff6ff',
+          border: '#93c5fd',
+          text: '#1d4ed8',
+        },
+        reminder: {
+          soft: '#fffbeb',
+          border: '#fcd34d',
+          text: '#92400e',
+          muted: '#78716c',
+        },
+      },
+      fontSize: {
+        'recipe-preview': ['0.8125rem', { lineHeight: '1.4' }],
       },
     },
   },

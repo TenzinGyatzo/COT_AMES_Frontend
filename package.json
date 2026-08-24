@@ -11,7 +11,8 @@
     "test:pdf-mapper": "npx --yes tsx src/utils/pdf/plantillas/mapPlantillasSnapshot.selftest.ts",
     "test:conceptos-table": "npx --yes tsx src/utils/pdf/conceptosTableLayout.selftest.ts",
     "test:product-images": "npx --yes tsx src/utils/resolveProductImageUrls.selftest.ts",
-    "test:pdf-opts-detalle": "npx --yes tsx src/utils/pdfOptsFromDetalle.selftest.ts"
+    "test:pdf-opts-detalle": "npx --yes tsx src/utils/pdfOptsFromDetalle.selftest.ts",
+    "test:fecha-disparo-preview": "npx --yes tsx src/utils/fecha-disparo-preview.selftest.ts"
   },
   "dependencies": {
     "@tiptap/extension-text-align": "^3.28.0",
@@ -21,6 +22,7 @@
     "@tiptap/vue-3": "^3.28.0",
     "axios": "^1.13.2",
     "exceljs": "^4.4.0",
+    "luxon": "^3.7.2",
     "pdfmake": "^0.2.20",
     "pinia": "^3.0.4",
     "vue": "^3.5.24",
@@ -28,6 +30,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@types/luxon": "^3.7.5",
     "@types/node": "^20.11.0",
     "@types/pdfmake": "^0.2.12",
     "@vitejs/plugin-vue": "^5.0.4",

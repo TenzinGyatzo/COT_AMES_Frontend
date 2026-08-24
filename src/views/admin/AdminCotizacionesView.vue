@@ -10,6 +10,14 @@
       {{ error }}
     </div>
 
+    <div
+      v-if="disparadosError"
+      class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
+      role="alert"
+    >
+      {{ disparadosError }}
+    </div>
+
     <!-- Filtros -->
     <div class="mb-6 bg-white shadow-md rounded-lg p-4">
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -130,59 +138,77 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <tr
+              <template
                 v-for="cotizacion in resumenCotizaciones"
                 :key="cotizacion.id"
-                class="hover:bg-gray-50"
               >
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-mono"
-                >
-                  {{ cotizacion.folio }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {{ formatDate(cotizacion.fecha) }}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                  <span
-                    :class="getEstadoBadgeClass(cotizacion.estado)"
-                    class="px-2 py-1 text-xs font-semibold rounded-full"
+                <tr class="hover:bg-gray-50">
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-mono"
                   >
-                    {{ getEstadoLabel(cotizacion.estado) }}
-                  </span>
-                </td>
-                <td class="px-6 py-4 text-sm text-gray-900">
-                  {{ cotizacion.empresa || '-' }}
-                </td>
-                <td
-                  class="hidden lg:table-cell px-6 py-4 text-sm text-gray-900"
-                >
-                  {{ cotizacion.nombreSolicitante || '-' }}
-                </td>
-                <td
-                  class="hidden lg:table-cell px-6 py-4 text-sm text-gray-900"
-                >
-                  {{ cotizacion.creadoPorNombre?.trim() || '-' }}
-                </td>
-                <td
-                  class="table-cell md:hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right"
-                >
-                  {{ formatMoney(cotizacion.montoTotal) }}
-                </td>
-                <td
-                  class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"
-                >
-                  <router-link
-                    :to="{
-                      name: 'admin-cotizacion-detalle',
-                      params: { id: cotizacion.id },
-                    }"
-                    class="text-medical-blue-600 hover:text-medical-blue-900"
+                    {{ cotizacion.folio }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {{ formatDate(cotizacion.fecha) }}
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span
+                      :class="getEstadoBadgeClass(cotizacion.estado)"
+                      class="px-2 py-1 text-xs font-semibold rounded-full"
+                    >
+                      {{ getEstadoLabel(cotizacion.estado) }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900">
+                    {{ cotizacion.empresa || '-' }}
+                  </td>
+                  <td
+                    class="hidden lg:table-cell px-6 py-4 text-sm text-gray-900"
                   >
-                    Ver detalle
-                  </router-link>
-                </td>
-              </tr>
+                    {{ cotizacion.nombreSolicitante || '-' }}
+                  </td>
+                  <td
+                    class="hidden lg:table-cell px-6 py-4 text-sm text-gray-900"
+                  >
+                    {{ cotizacion.creadoPorNombre?.trim() || '-' }}
+                  </td>
+                  <td
+                    class="table-cell md:hidden lg:table-cell px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right"
+                  >
+                    {{ formatMoney(cotizacion.montoTotal) }}
+                  </td>
+                  <td
+                    class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"
+                  >
+                    <router-link
+                      :to="{
+                        name: 'admin-cotizacion-detalle',
+                        params: { id: cotizacion.id },
+                      }"
+                      class="text-medical-blue-600 hover:text-medical-blue-900"
+                    >
+                      Ver detalle
+                    </router-link>
+                  </td>
+                </tr>
+                <tr
+                  v-if="disparadoByCotizacionId.get(cotizacion.id)"
+                  :key="`${cotizacion.id}-disparado`"
+                >
+                  <td colspan="8" class="px-4 py-3 bg-gray-50">
+                    <RecordatorioDisparadoFila
+                      :item="disparadoByCotizacionId.get(cotizacion.id)!"
+                      :busy="
+                        disparadosClosingId ===
+                        disparadoByCotizacionId.get(cotizacion.id)!.recordatorioId
+                      "
+                      variant="compact"
+                      @repetir="onRepetirDisparado"
+                      @cerrar="onCerrarDisparadoListado"
+                    />
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -236,10 +262,13 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAdmin } from '../../composables/useAdmin';
+import { useRecordatoriosDisparados } from '../../composables/useRecordatoriosDisparados';
 import type { AdminCotizacionesFilters } from '../../services/admin-api.service';
+import type { RecordatorioDisparadoItem } from '../../types/backend';
 import { formatMoney } from '../../utils/currency';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import ListLoadingOverlay from '../../components/base/ListLoadingOverlay.vue';
+import RecordatorioDisparadoFila from '../../components/cotizaciones/RecordatorioDisparadoFila.vue';
 import {
   compactQuery,
   queryDate,
@@ -261,6 +290,28 @@ const {
   error,
   obtenerCotizacionesAdmin,
 } = useAdmin();
+
+const {
+  disparadoByCotizacionId,
+  error: disparadosError,
+  fetchDisparados,
+  resetDisparados,
+  cerrar: cerrarDisparado,
+} = useRecordatoriosDisparados();
+const disparadosClosingId = ref<string | null>(null);
+
+function onRepetirDisparado(item: RecordatorioDisparadoItem) {
+  void router.push({
+    name: 'admin-cotizacion-detalle',
+    params: { id: item.cotizacionId },
+  });
+}
+
+async function onCerrarDisparadoListado(item: RecordatorioDisparadoItem) {
+  disparadosClosingId.value = item.recordatorioId;
+  await cerrarDisparado(item.recordatorioId);
+  disparadosClosingId.value = null;
+}
 
 const ESTADOS = [
   'vigente',
@@ -474,7 +525,7 @@ watch(activeTenantId, () => {
   hasLoadedOnce.value = false;
   void (async () => {
     await syncQuery();
-    await loadCotizaciones();
+    await Promise.all([loadCotizaciones(), fetchDisparados()]);
   })();
 });
 
@@ -484,7 +535,7 @@ onMounted(() => {
   } else {
     applyQueryToState();
   }
-  void loadCotizaciones();
+  void Promise.all([loadCotizaciones(), fetchDisparados()]);
 });
 
 onUnmounted(() => {
@@ -492,5 +543,6 @@ onUnmounted(() => {
     clearTimeout(searchTimeout);
     searchTimeout = null;
   }
+  resetDisparados();
 });
 </script>

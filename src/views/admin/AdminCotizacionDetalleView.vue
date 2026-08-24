@@ -204,6 +204,12 @@
         </div>
       </div>
 
+      <CotizacionRecordatorioBloque
+        v-if="cotizacionId"
+        :cotizacion-id="cotizacionId"
+        :fecha-creacion="cotizacionDetalle.fechaCreacion"
+      />
+
       <!-- Información General -->
       <div class="bg-white shadow-md rounded-lg p-4 md:p-6">
         <h2
@@ -819,6 +825,79 @@
       </div>
     </div>
 
+    <!-- Story 11.2 — Toque al Repetir (un nivel) -->
+    <div
+      v-if="showRepetirToque"
+      class="fixed inset-0 z-[100] flex items-center justify-center px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="repetir-toque-title"
+    >
+      <div
+        class="fixed inset-0 bg-gray-500/75 backdrop-blur-sm"
+        aria-hidden="true"
+        @pointerdown="onRepetirToqueBackdropDown"
+        @pointerup="onRepetirToqueBackdropUp"
+        @pointercancel="onRepetirToqueBackdropCancel"
+      ></div>
+      <div
+        class="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+      >
+        <h3
+          id="repetir-toque-title"
+          class="text-lg font-semibold text-gray-900"
+        >
+          ¿Quieres el mismo recordatorio en la cotización nueva?
+        </h3>
+        <p class="mt-2 text-sm text-gray-600">
+          Si aceptas, te avisaremos de la cotización nueva con el mismo plazo.
+        </p>
+        <p
+          v-if="repetirToqueResumenReceta"
+          class="mt-2 text-sm text-gray-600"
+        >
+          Cómo estaba programado:
+          <span class="font-medium text-gray-800">{{
+            repetirToqueResumenReceta
+          }}</span>
+        </p>
+        <p
+          v-if="repetirToqueEsFechaExacta"
+          class="mt-2 text-sm text-gray-600"
+        >
+          La fecha anterior no se copia. Si aceptas, eliges un día nuevo.
+        </p>
+        <div class="mt-5 flex flex-col gap-2">
+          <button
+            type="button"
+            class="w-full rounded-md border border-medical-blue-200 bg-medical-blue-50 px-4 py-2.5 text-sm font-medium text-medical-blue-800 hover:bg-medical-blue-100 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="aceptarRepetirToque"
+          >
+            Sí, avisarme de nuevo
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="rechazarRepetirToque"
+          >
+            No, solo crear la cotización
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <RecordatorioRecetaSelector
+      :open="showRepetirRecetaSelector"
+      mode="create"
+      :zona-horaria="repetirZonaHoraria"
+      :fecha-creacion="repetirFechaCreacionNueva"
+      :saving="isProcessing"
+      @close="cerrarRepetirRecetaSelector"
+      @save="onRepetirRecetaSeleccionada"
+    />
+
     <!-- Story 6.12 — resolver warnings (excluir / sustituir) -->
     <div
       v-if="showRepetirWarnings"
@@ -939,6 +1018,9 @@ import BaseButtonLoader from '../../components/base/BaseButtonLoader.vue';
 import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ModalEnviarCotizacionCorreo from '../../components/common/ModalEnviarCotizacionCorreo.vue';
 import CotizacionNotasInternas from '../../components/cotizaciones/CotizacionNotasInternas.vue';
+import CotizacionRecordatorioBloque from '../../components/cotizaciones/CotizacionRecordatorioBloque.vue';
+import RecordatorioRecetaSelector from '../../components/cotizaciones/RecordatorioRecetaSelector.vue';
+import { useModalDismiss } from '../../composables/useModalDismiss';
 import type { CotizacionDetalleDto } from '../../types/backend';
 
 const route = useRoute();
@@ -1394,9 +1476,15 @@ import {
   repetirCotizacion,
   previewRepetirCotizacion,
   getServicios,
+  getRecordatorioCotizacion,
   type ModoPreciosRepetir,
   type RepetirCotizacionWarning,
 } from '../../services/admin-api.service';
+import type {
+  RecetaRecordatorio,
+  RecordatorioRecotizacion,
+} from '../../types/backend';
+import { resumenRecetaLabel } from '../../utils/fecha-disparo-preview';
 import { useCotizadorDraftStore } from '../../store/cotizadorDraft';
 
 const isProcessing = ref(false);
@@ -1422,10 +1510,20 @@ const puedeRepetir = computed(() => {
 
 const showRepetirModo = ref(false);
 const showRepetirDestino = ref(false);
+const showRepetirToque = ref(false);
+const showRepetirRecetaSelector = ref(false);
 const showRepetirWarnings = ref(false);
 const repetirModo = ref<ModoPreciosRepetir | null>(null);
 const repetirViaWizard = ref(false);
 const repetirCancelarOriginal = ref(false);
+const repetirRecordatorioOrigen = ref<RecordatorioRecotizacion | null>(null);
+const repetirRearmePayload = ref<{
+  rearmarRecordatorio?: boolean;
+  recetaRecordatorio?: RecetaRecordatorio;
+}>({});
+const repetirZonaHoraria = ref<string | undefined>(undefined);
+/** Ancla aniversario de la COT nueva (~ ahora al repetir). */
+const repetirFechaCreacionNueva = ref<Date>(new Date());
 const fuenteYaCancelada = computed(
   () => cotizacionDetalle.value?.estado === 'cancelada',
 );
@@ -1440,6 +1538,22 @@ const omitirIds = reactive<Record<string, boolean>>({});
 const sustitucionesMap = reactive<Record<string, string>>({});
 const serviciosActivos = ref<Servicio[]>([]);
 const cotizadorDraftStore = useCotizadorDraftStore();
+
+const repetirToqueResumenReceta = computed(() => {
+  const rec = repetirRecordatorioOrigen.value?.receta;
+  if (!rec) return '';
+  return resumenRecetaLabel(rec, repetirZonaHoraria.value);
+});
+
+const repetirToqueEsFechaExacta = computed(
+  () => repetirRecordatorioOrigen.value?.receta.familia === 'fecha_exacta',
+);
+
+const {
+  onBackdropPointerDown: onRepetirToqueBackdropDown,
+  onBackdropPointerUp: onRepetirToqueBackdropUp,
+  onBackdropPointerCancel: onRepetirToqueBackdropCancel,
+} = useModalDismiss(rechazarRepetirToque, () => showRepetirToque.value);
 
 const puedeConfirmarWarnings = computed(() => {
   if (!repetirWarnings.value.length) return false;
@@ -1498,12 +1612,16 @@ function abrirRepetir() {
   repetirWarnings.value = [];
   repetirModo.value = null;
   repetirViaWizard.value = false;
+  repetirRecordatorioOrigen.value = null;
+  repetirRearmePayload.value = {};
   repetirCancelarOriginal.value = defaultCancelarOriginal(
     cotizacionDetalle.value?.estado,
   );
   Object.keys(omitirIds).forEach((k) => delete omitirIds[k]);
   Object.keys(sustitucionesMap).forEach((k) => delete sustitucionesMap[k]);
   showRepetirDestino.value = false;
+  showRepetirToque.value = false;
+  showRepetirRecetaSelector.value = false;
   showRepetirModo.value = true;
 }
 
@@ -1511,12 +1629,44 @@ function cerrarRepetir() {
   if (isProcessing.value) return;
   showRepetirModo.value = false;
   showRepetirDestino.value = false;
+  showRepetirToque.value = false;
+  showRepetirRecetaSelector.value = false;
   showRepetirWarnings.value = false;
   repetirModo.value = null;
   repetirViaWizard.value = false;
+  repetirRecordatorioOrigen.value = null;
+  repetirRearmePayload.value = {};
   repetirWarnings.value = [];
   Object.keys(omitirIds).forEach((k) => delete omitirIds[k]);
   Object.keys(sustitucionesMap).forEach((k) => delete sustitucionesMap[k]);
+}
+
+function recordatorioRequiereToque(
+  rec: RecordatorioRecotizacion | null,
+): rec is RecordatorioRecotizacion {
+  return rec?.estado === 'programado' || rec?.estado === 'disparado';
+}
+
+async function ensureRepetirZonaHoraria() {
+  if (repetirZonaHoraria.value !== undefined) return;
+  try {
+    const cfg = await getTenantConfig();
+    repetirZonaHoraria.value = cfg.zonaHoraria;
+  } catch {
+    repetirZonaHoraria.value = undefined;
+  }
+}
+
+async function fetchRecordatorioOrigen(): Promise<RecordatorioRecotizacion | null> {
+  if (!cotizacionDetalle.value?._id) return null;
+  try {
+    return await getRecordatorioCotizacion(String(cotizacionDetalle.value._id));
+  } catch (err) {
+    const status = (err as { response?: { status?: number } })?.response
+      ?.status;
+    if (status === 404) return null;
+    throw err;
+  }
 }
 
 function elegirRepetirModo(modo: ModoPreciosRepetir) {
@@ -1532,8 +1682,81 @@ function volverRepetirModo() {
 }
 
 function confirmarRepetirDestino(viaWizard: boolean) {
-  if (!repetirModo.value) return;
+  if (!repetirModo.value || isProcessing.value) return;
   repetirViaWizard.value = viaWizard;
+  if (viaWizard) {
+    repetirRearmePayload.value = {};
+    void ejecutarRepetirAccion({ modoPrecios: repetirModo.value });
+    return;
+  }
+  void iniciarRepetirCrearAhora();
+}
+
+async function iniciarRepetirCrearAhora() {
+  if (!repetirModo.value || isProcessing.value) return;
+  isProcessing.value = true;
+  actionError.value = null;
+  try {
+    repetirFechaCreacionNueva.value = new Date();
+    await ensureRepetirZonaHoraria();
+    const rec = await fetchRecordatorioOrigen();
+    if (recordatorioRequiereToque(rec)) {
+      repetirRecordatorioOrigen.value = rec;
+      showRepetirDestino.value = false;
+      showRepetirToque.value = true;
+      isProcessing.value = false;
+      return;
+    }
+    repetirRearmePayload.value = {};
+    isProcessing.value = false;
+    await ejecutarRepetirAccion({ modoPrecios: repetirModo.value });
+  } catch (error) {
+    actionError.value = extractError(
+      error,
+      'No se pudo consultar el recordatorio de la cotización origen.',
+    );
+    isProcessing.value = false;
+  }
+}
+
+function aceptarRepetirToque() {
+  if (isProcessing.value || !repetirModo.value || !repetirRecordatorioOrigen.value) {
+    return;
+  }
+  if (repetirRecordatorioOrigen.value.receta.familia === 'fecha_exacta') {
+    showRepetirToque.value = false;
+    showRepetirRecetaSelector.value = true;
+    return;
+  }
+  repetirRearmePayload.value = { rearmarRecordatorio: true };
+  showRepetirToque.value = false;
+  void ejecutarRepetirAccion({ modoPrecios: repetirModo.value });
+}
+
+function rechazarRepetirToque() {
+  if (isProcessing.value) return;
+  if (!repetirModo.value) {
+    showRepetirToque.value = false;
+    return;
+  }
+  repetirRearmePayload.value = { rearmarRecordatorio: false };
+  showRepetirToque.value = false;
+  void ejecutarRepetirAccion({ modoPrecios: repetirModo.value });
+}
+
+function cerrarRepetirRecetaSelector() {
+  if (isProcessing.value) return;
+  showRepetirRecetaSelector.value = false;
+  showRepetirToque.value = true;
+}
+
+function onRepetirRecetaSeleccionada(receta: RecetaRecordatorio) {
+  if (!repetirModo.value) return;
+  repetirRearmePayload.value = {
+    rearmarRecordatorio: true,
+    recetaRecordatorio: receta,
+  };
+  showRepetirRecetaSelector.value = false;
   void ejecutarRepetirAccion({ modoPrecios: repetirModo.value });
 }
 
@@ -1599,6 +1822,8 @@ async function ejecutarRepetirAccion(payload: {
   omitirServicioIds?: string[];
   sustituciones?: Array<{ fromServicioId: string; toServicioId: string }>;
   cancelarOriginal?: boolean;
+  rearmarRecordatorio?: boolean;
+  recetaRecordatorio?: RecetaRecordatorio;
 }) {
   if (!cotizacionDetalle.value || isProcessing.value) return;
   isProcessing.value = true;
@@ -1610,6 +1835,7 @@ async function ejecutarRepetirAccion(payload: {
     payload.cancelarOriginal ??
     (mostrarOpcionCancelarOriginal.value && repetirCancelarOriginal.value);
   const requestPayload = {
+    ...repetirRearmePayload.value,
     ...payload,
     ...(cancelarOriginal ? { cancelarOriginal: true } : {}),
   };
@@ -1618,6 +1844,8 @@ async function ejecutarRepetirAccion(payload: {
       const preview = await previewRepetirCotizacion(fuenteId, requestPayload);
       showRepetirModo.value = false;
       showRepetirDestino.value = false;
+      showRepetirToque.value = false;
+      showRepetirRecetaSelector.value = false;
       showRepetirWarnings.value = false;
       cotizadorDraftStore.setDraft({
         sourceCotizacionId: String(fuenteId),
@@ -1635,6 +1863,8 @@ async function ejecutarRepetirAccion(payload: {
     const emailResult = await enviarCorreoTrasRepetir(nueva);
     showRepetirModo.value = false;
     showRepetirDestino.value = false;
+    showRepetirToque.value = false;
+    showRepetirRecetaSelector.value = false;
     showRepetirWarnings.value = false;
     const query: Record<string, string> = { repetirEmail: emailResult };
     if (cancelarOriginal) {
@@ -1671,6 +1901,8 @@ async function ejecutarRepetirAccion(payload: {
       }
       showRepetirModo.value = false;
       showRepetirDestino.value = false;
+      showRepetirToque.value = false;
+      showRepetirRecetaSelector.value = false;
       showRepetirWarnings.value = true;
       await loadServiciosActivos();
       return;

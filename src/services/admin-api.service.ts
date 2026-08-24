@@ -15,6 +15,9 @@ import type {
   Tenant,
   TenantConfigResponse,
   DashboardEntityTotals,
+  RecordatorioRecotizacion,
+  RecordatoriosDisparadosResponse,
+  UpsertRecordatorioPayload,
 } from '../types/backend';
 
 export interface AdminClientesFilters {
@@ -415,6 +418,10 @@ export type RepetirCotizacionPayload = {
   sinVigencia?: boolean;
   /** Si true, cancela la fuente tras crear (default false en API). */
   cancelarOriginal?: boolean;
+  /** Story 11.1 / 11.2 — rearmar recordatorio en COT nueva. */
+  rearmarRecordatorio?: boolean;
+  /** Obligatorio si rearmar y familia fecha_exacta; opcional en desfase. */
+  recetaRecordatorio?: import('../types/backend').RecetaRecordatorio;
 };
 
 export type RepetirCotizacionResponseDto = {
@@ -505,6 +512,56 @@ export async function eliminarNotaInternaCotizacion(
 ): Promise<CotizacionDetalleDto> {
   const { data } = await httpClient.delete<CotizacionDetalleDto>(
     `/cotizaciones/${id}/notas-internas/${notaId}`,
+  );
+  return data;
+}
+
+/** Story 9.2 — GET recordatorio por COT. 404 = Ausente. */
+export async function getRecordatorioCotizacion(
+  id: string,
+): Promise<RecordatorioRecotizacion> {
+  const { data } = await httpClient.get<RecordatorioRecotizacion>(
+    `/cotizaciones/${id}/recordatorio`,
+  );
+  return data;
+}
+
+/** Story 9.1/9.2 — PUT upsert Receta (sin fechaDisparoUtc del cliente). */
+export async function upsertRecordatorioCotizacion(
+  id: string,
+  payload: UpsertRecordatorioPayload,
+): Promise<RecordatorioRecotizacion> {
+  const { data } = await httpClient.put<RecordatorioRecotizacion>(
+    `/cotizaciones/${id}/recordatorio`,
+    payload,
+  );
+  return data;
+}
+
+/** Story 9.1/9.2 — DELETE cancela programado → cancelado. */
+export async function deleteRecordatorioCotizacion(
+  id: string,
+): Promise<RecordatorioRecotizacion> {
+  const { data } = await httpClient.delete<RecordatorioRecotizacion>(
+    `/cotizaciones/${id}/recordatorio`,
+  );
+  return data;
+}
+
+/** Story 10.2 — GET bandeja tenant de recordatorios disparados. */
+export async function getRecordatoriosDisparados(): Promise<RecordatoriosDisparadosResponse> {
+  const { data } = await httpClient.get<RecordatoriosDisparadosResponse>(
+    '/cotizaciones/recordatorios/disparados',
+  );
+  return data;
+}
+
+/** Story 10.2 — POST cerrar recordatorio disparado. */
+export async function cerrarRecordatorioDisparado(
+  recordatorioId: string,
+): Promise<{ estado: string }> {
+  const { data } = await httpClient.post<{ estado: string }>(
+    `/cotizaciones/recordatorios/${recordatorioId}/cerrar`,
   );
   return data;
 }

@@ -171,7 +171,7 @@
                 :disabled="isProcessing"
                 @click="abrirRepetir"
               >
-                Repetir
+                Volver a cotizar
               </button>
               <div class="relative">
                 <button
@@ -208,6 +208,7 @@
         v-if="cotizacionId"
         :cotizacion-id="cotizacionId"
         :fecha-creacion="cotizacionDetalle.fechaCreacion"
+        :nombre-cliente="getClienteNombre()"
       />
 
       <!-- Información General -->
@@ -699,27 +700,46 @@
           id="repetir-modo-title"
           class="text-lg font-semibold text-gray-900"
         >
-          Repetir cotización
+          Crear una nueva cotización
         </h3>
         <p class="mt-2 text-sm text-gray-600">
-          Elija cómo calcular los precios de la nueva cotización.
+          Elige cómo calcular los precios de la nueva cotización. La cotización
+          original no se reescribe.
         </p>
         <div class="mt-5 flex flex-col gap-2">
           <button
             type="button"
-            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
-            :disabled="isProcessing"
-            @click="elegirRepetirModo('originales')"
-          >
-            Precios originales
-          </button>
-          <button
-            type="button"
-            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-left text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
             :disabled="isProcessing"
             @click="elegirRepetirModo('actualizados')"
           >
-            Precios actualizados
+            <span class="block">Precios actuales</span>
+            <span class="mt-0.5 block text-xs font-normal text-gray-500">
+              Usa los precios vigentes del catálogo.
+            </span>
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-left text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="elegirRepetirModo('originales')"
+          >
+            <span class="block">Precios originales</span>
+            <span class="mt-0.5 block text-xs font-normal text-gray-500">
+              Conserva los precios de esta cotización.
+            </span>
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-md border border-gray-300 px-4 py-2.5 text-left text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+            :disabled="isProcessing"
+            @click="elegirRevisarYModificar"
+          >
+            <span class="block">Revisar y modificar</span>
+            <span class="mt-0.5 block text-xs font-normal text-gray-500">
+              Revisa los precios originales para ajustarlos
+              antes de crear.
+            </span>
           </button>
           <button
             type="button"
@@ -759,7 +779,7 @@
           <span class="font-medium text-gray-800">{{
             repetirModo === 'originales'
               ? 'Precios originales'
-              : 'Precios actualizados'
+              : 'Precios actuales'
           }}</span>
         </p>
         <div
@@ -850,7 +870,8 @@
           ¿Quieres el mismo recordatorio en la cotización nueva?
         </h3>
         <p class="mt-2 text-sm text-gray-600">
-          Si aceptas, te avisaremos de la cotización nueva con el mismo plazo.
+          Si aceptas, programaremos el mismo recordatorio en la cotización
+          nueva.
         </p>
         <p
           v-if="repetirToqueResumenReceta"
@@ -874,7 +895,7 @@
             :disabled="isProcessing"
             @click="aceptarRepetirToque"
           >
-            Sí, avisarme de nuevo
+            Sí, programar el mismo recordatorio
           </button>
           <button
             type="button"
@@ -894,6 +915,7 @@
       :zona-horaria="repetirZonaHoraria"
       :fecha-creacion="repetirFechaCreacionNueva"
       :saving="isProcessing"
+      :nombre-cliente="getClienteNombre()"
       @close="cerrarRepetirRecetaSelector"
       @save="onRepetirRecetaSeleccionada"
     />
@@ -986,7 +1008,7 @@
             :loading="isProcessing"
             @click="confirmarRepetirConResoluciones"
           >
-            {{ repetirViaWizard ? 'Continuar al cotizador' : 'Confirmar repetición' }}
+            {{ repetirViaWizard ? 'Continuar al cotizador' : 'Crear cotización' }}
           </BaseButtonLoader>
         </div>
       </div>
@@ -1169,17 +1191,29 @@ function aplicarFlashRepetirEmail() {
   }
 }
 
-// Cargar cotización al montar; re-cargar si cambia :id (p. ej. tras Repetir)
+// Cargar cotización al montar; re-cargar si cambia :id (p. ej. tras Volver a cotizar)
 onMounted(() => {
-  void cargarDetallePorRuta();
-  void refreshEmailCredentialsFlag();
+  void (async () => {
+    await cargarDetallePorRuta();
+    void refreshEmailCredentialsFlag();
+    abrirVolverACotizarSiQuery();
+  })();
 });
 
 watch(
   () => route.params.id,
   (next, prev) => {
     if (next && next !== prev) {
-      void cargarDetallePorRuta();
+      void cargarDetallePorRuta().then(() => abrirVolverACotizarSiQuery());
+    }
+  },
+);
+
+watch(
+  () => route.query.volverACotizar,
+  (q) => {
+    if (q === '1' && cotizacionDetalle.value) {
+      abrirVolverACotizarSiQuery();
     }
   },
 );
@@ -1484,7 +1518,7 @@ import type {
   RecetaRecordatorio,
   RecordatorioRecotizacion,
 } from '../../types/backend';
-import { resumenRecetaLabel } from '../../utils/fecha-disparo-preview';
+import { resumenRecetaLabel, formatFechaRecordatorioLarga } from '../../utils/fecha-disparo-preview';
 import { useCotizadorDraftStore } from '../../store/cotizadorDraft';
 
 const isProcessing = ref(false);
@@ -1542,6 +1576,11 @@ const cotizadorDraftStore = useCotizadorDraftStore();
 const repetirToqueResumenReceta = computed(() => {
   const rec = repetirRecordatorioOrigen.value?.receta;
   if (!rec) return '';
+  if (rec.familia === 'relativo_aniversario') {
+    const fecha = repetirRecordatorioOrigen.value?.fechaDisparoUtc;
+    if (!fecha) return '';
+    return formatFechaRecordatorioLarga(fecha, repetirZonaHoraria.value);
+  }
   return resumenRecetaLabel(rec, repetirZonaHoraria.value);
 });
 
@@ -1604,6 +1643,15 @@ function parseRepetirWarnings(err: unknown): RepetirCotizacionWarning[] | null {
     return data.message.warnings;
   }
   return null;
+}
+
+function abrirVolverACotizarSiQuery() {
+  if (route.query.volverACotizar !== '1') return;
+  if (!puedeRepetir.value) return;
+  abrirRepetir();
+  const nextQuery = { ...route.query };
+  delete nextQuery.volverACotizar;
+  void router.replace({ query: nextQuery });
 }
 
 function abrirRepetir() {
@@ -1673,6 +1721,14 @@ function elegirRepetirModo(modo: ModoPreciosRepetir) {
   repetirModo.value = modo;
   showRepetirModo.value = false;
   showRepetirDestino.value = true;
+}
+
+function elegirRevisarYModificar() {
+  if (isProcessing.value) return;
+  repetirModo.value = 'originales';
+  repetirCancelarOriginal.value = false;
+  showRepetirModo.value = false;
+  confirmarRepetirDestino(true);
 }
 
 function volverRepetirModo() {
@@ -1910,7 +1966,7 @@ async function ejecutarRepetirAccion(payload: {
     console.error('Error al repetir cotización:', error);
     actionError.value = extractError(
       error,
-      'Ocurrió un error al repetir la cotización.',
+      'Ocurrió un error al crear la nueva cotización.',
     );
   } finally {
     isProcessing.value = false;

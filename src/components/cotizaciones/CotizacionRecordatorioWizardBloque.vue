@@ -12,11 +12,11 @@
     >
       <div>
         <h3 class="text-sm font-bold text-gray-900">
-          Recordatorio para recotizar
+          Recordatorio para volver a cotizar
         </h3>
         <p class="text-xs text-gray-500">
-          Opcional. Te recordamos más adelante para volver a cotizar. El
-          cliente no se entera.
+          Opcional. Programa una fecha para que Aestimare te recuerde contactar
+          a {{ clienteLabel }}. El cliente no será contactado automáticamente.
         </p>
       </div>
       <svg
@@ -62,7 +62,7 @@
             class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-white"
             @click="selectorOpen = true"
           >
-            Cambiar cuándo avisarme
+            Cambiar fecha
           </button>
           <button
             type="button"
@@ -76,15 +76,15 @@
 
       <template v-else>
         <p class="mb-3 text-sm text-gray-600">
-          Si quieres, agenda un aviso al guardar. No hace falta entrar después
-          al detalle.
+          Si quieres, programa un recordatorio al guardar. No hace falta entrar
+          después al detalle.
         </p>
         <button
           type="button"
           class="rounded-md border border-medical-blue-300 bg-white px-3 py-1.5 text-sm font-medium text-medical-blue-800 hover:bg-medical-blue-50"
           @click="selectorOpen = true"
         >
-          Elegir cuándo avisarme
+          Programar recordatorio
         </button>
       </template>
     </div>
@@ -95,6 +95,7 @@
       :zona-horaria="zonaHoraria"
       :fecha-creacion="fechaCreacionPreview"
       :initial-receta="draftReceta"
+      :nombre-cliente="nombreCliente"
       @close="selectorOpen = false"
       @save="onSaveReceta"
     />
@@ -107,6 +108,7 @@ import RecordatorioRecetaSelector from './RecordatorioRecetaSelector.vue';
 import { getTenantConfig } from '../../services/admin-api.service';
 import type { RecetaRecordatorio } from '../../types/backend';
 import {
+  clienteDisplayName,
   formatDisparoEstimado,
   resumenRecetaLabel,
   calcularFechaDisparoPreview,
@@ -116,10 +118,16 @@ const draftReceta = defineModel<RecetaRecordatorio | null>({
   default: null,
 });
 
+const props = defineProps<{
+  nombreCliente?: string | null;
+}>();
+
 const expanded = ref(false);
 const selectorOpen = ref(false);
 const zonaHoraria = ref<string | undefined>(undefined);
 const zonaWarn = ref('');
+
+const clienteLabel = computed(() => clienteDisplayName(props.nombreCliente));
 
 /** Ancla preview aniversario ≈ fechaCreacion al crear (AD-29). */
 const fechaCreacionPreview = ref<Date>(new Date());
@@ -143,7 +151,7 @@ const previewLine = computed(() => {
   if (calc.code === 'not_future') {
     return 'Esa fecha ya pasó. Elige otra opción.';
   }
-  return calc.message || 'Elige una opción para ver cuándo te avisamos.';
+  return calc.message || 'Elige una opción para ver cuándo recibirás el recordatorio.';
 });
 
 async function loadZona() {

@@ -4,7 +4,6 @@
  */
 import { DateTime, type DurationLike } from 'luxon';
 import type {
-  FamiliaReceta,
   PresetRelativoAniversario,
   PresetRelativoHoy,
   RecetaRecordatorio,
@@ -28,12 +27,12 @@ export const PRESETS_RELATIVO_ANIVERSARIO = [
 ] as const satisfies readonly PresetRelativoAniversario[];
 
 export const PRESET_LABELS_HOY: Record<PresetRelativoHoy, string> = {
-  '1_mes': '1 mes',
-  '3_meses': '3 meses',
-  '6_meses': '6 meses',
-  '11_meses': '11 meses',
-  '1_ano': '1 año',
-  '2_anos': '2 años',
+  '1_mes': 'En 1 mes',
+  '3_meses': 'En 3 meses',
+  '6_meses': 'En 6 meses',
+  '11_meses': 'En 11 meses',
+  '1_ano': 'En 1 año',
+  '2_anos': 'En 2 años',
 };
 
 export const PRESET_LABELS_ANIVERSARIO: Record<
@@ -112,7 +111,7 @@ export function calcularFechaDisparoPreview(params: {
         ok: false,
         eligible: false,
         code: 'invalid_receta',
-        message: 'Elige dentro de cuánto tiempo te avisamos.',
+        message: 'Elige dentro de cuánto tiempo quieres el recordatorio.',
       };
     }
     target = now
@@ -127,7 +126,7 @@ export function calcularFechaDisparoPreview(params: {
         ok: false,
         eligible: false,
         code: 'invalid_receta',
-        message: 'Elige con cuánta anticipación te avisamos.',
+        message: 'Elige con cuánta anticipación quieres el recordatorio.',
       };
     }
     if (!params.fechaCreacion) {
@@ -170,7 +169,7 @@ export function calcularFechaDisparoPreview(params: {
         ok: false,
         eligible: false,
         code: 'invalid_receta',
-        message: 'Elige el día en que quieres el aviso.',
+        message: 'Elige el día en que quieres el recordatorio.',
       };
     }
     const parsed =
@@ -191,7 +190,7 @@ export function calcularFechaDisparoPreview(params: {
       ok: false,
       eligible: false,
       code: 'invalid_receta',
-      message: 'Elige cómo quieres que te avisemos.',
+      message: 'Elige cómo quieres recibir el recordatorio.',
     };
   }
 
@@ -228,7 +227,7 @@ export function resumenRecetaLabel(
   if (receta.familia === 'relativo_hoy' && receta.preset) {
     const label =
       PRESET_LABELS_HOY[receta.preset as PresetRelativoHoy] ?? receta.preset;
-    return `En ${label} a partir de hoy`;
+    return label;
   }
   if (receta.familia === 'relativo_aniversario' && receta.preset) {
     const label =
@@ -263,7 +262,7 @@ export function fechaExactaToDateInput(
   return dt.isValid ? (dt.toISODate() ?? '') : '';
 }
 
-export function formatDisparoEstimado(
+export function formatFechaRecordatorioLarga(
   fecha: Date | string,
   zonaHoraria?: string | null,
 ): string {
@@ -272,25 +271,25 @@ export function formatDisparoEstimado(
     fecha instanceof Date
       ? DateTime.fromJSDate(fecha, { zone: 'utc' }).setZone(zone)
       : DateTime.fromISO(String(fecha), { zone: 'utc' }).setZone(zone);
-  const label = dt.isValid
-    ? dt.setLocale('es-MX').toFormat('d MMM yyyy')
-    : String(fecha);
-  return `Te avisaremos el ${label}`;
+  if (!dt.isValid) return '—';
+  return dt.setLocale('es-MX').toFormat("d 'de' MMMM 'de' yyyy");
+}
+
+export function formatDisparoEstimado(
+  fecha: Date | string,
+  zonaHoraria?: string | null,
+): string {
+  return `Recibirás el recordatorio el ${formatFechaRecordatorioLarga(fecha, zonaHoraria)}`;
 }
 
 export function formatResumenOperativo(
   fecha: Date | string,
   zonaHoraria?: string | null,
 ): string {
-  const zone = resolveTenantZone(zonaHoraria);
-  const dt =
-    fecha instanceof Date
-      ? DateTime.fromJSDate(fecha, { zone: 'utc' }).setZone(zone)
-      : DateTime.fromISO(String(fecha), { zone: 'utc' }).setZone(zone);
-  const label = dt.isValid
-    ? dt.setLocale('es-MX').toFormat('d MMM yyyy')
-    : String(fecha);
-  return `Te avisaremos el ${label}`;
+  return `Te recordaremos el ${formatFechaRecordatorioLarga(fecha, zonaHoraria)}`;
 }
 
-export type FamiliaUi = FamiliaReceta;
+export function clienteDisplayName(nombre?: string | null): string {
+  const t = typeof nombre === 'string' ? nombre.trim() : '';
+  return t || 'este cliente';
+}

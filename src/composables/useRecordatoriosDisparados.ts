@@ -32,7 +32,7 @@ export function useRecordatoriosDisparados() {
       items.value = res.items ?? [];
     } catch (e) {
       if (generation !== fetchGeneration) return;
-      error.value = extractError(e, 'No se pudieron cargar los pendientes de recotizar');
+      error.value = extractError(e, 'No se pudieron cargar los seguimientos pendientes');
       items.value = [];
     } finally {
       if (generation === fetchGeneration) {

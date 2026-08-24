@@ -864,7 +864,10 @@
         </div>
       </div>
 
-      <CotizacionRecordatorioWizardBloque v-model="recordatorioRecetaDraft" />
+      <CotizacionRecordatorioWizardBloque
+        v-model="recordatorioRecetaDraft"
+        :nombre-cliente="datosCliente.empresa"
+      />
 
       <div
         v-if="recordatorioUpsertWarn"
@@ -1852,7 +1855,7 @@ onMounted(async () => {
     repetirModoLabel.value =
       repetirDraft.modoPrecios === 'originales'
         ? 'precios originales'
-        : 'precios actualizados';
+        : 'precios actuales';
     repetirBannerVisible.value = true;
   }
 });
@@ -2537,7 +2540,7 @@ const confirmarGeneracion = async () => {
       const cotId = response._id || (response as { id?: string }).id;
       if (!cotId) {
         recordatorioUpsertWarn.value =
-          'La cotización se creó, pero no se pudo programar el aviso.';
+          'La cotización se creó, pero no se pudo programar el recordatorio.';
       } else {
         try {
           const body =
@@ -2559,7 +2562,7 @@ const confirmarGeneracion = async () => {
         } catch (remErr: unknown) {
           recordatorioUpsertWarn.value = extractError(
             remErr,
-            'No se pudo programar el aviso',
+            'No se pudo programar el recordatorio',
           );
         }
       }

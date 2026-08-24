@@ -5,6 +5,7 @@
 import {
   calcularFechaDisparoPreview,
   fechaExactaToDateInput,
+  formatFechaRecordatorioLarga,
   resolveTenantZone,
   DEFAULT_TENANT_ZONE,
 } from './fecha-disparo-preview';
@@ -60,5 +61,12 @@ const feInput = fechaExactaToDateInput(
   zone,
 );
 assert(feInput === '2030-03-15', 'fechaExactaToDateInput tenant day');
+
+const larga = formatFechaRecordatorioLarga(
+  new Date('2026-09-24T06:00:00.000Z'),
+  zone,
+);
+assert(larga.includes('2026'), 'fecha larga año');
+assert(larga.includes('septiembre') || larga.includes('Septiembre'), 'fecha larga mes');
 
 console.log('fecha-disparo-preview.selftest OK');

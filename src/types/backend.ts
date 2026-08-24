@@ -535,6 +535,10 @@ export interface RecordatorioDisparadoItem {
   identidad: string | null;
   fechaDisparo: string | Date;
   recetaResumen: string;
+  nombreContacto?: string | null;
+  telefonoContacto?: string | null;
+  emailContacto?: string | null;
+  fechaCreacion?: string | Date | null;
 }
 
 export interface RecordatoriosDisparadosResponse {

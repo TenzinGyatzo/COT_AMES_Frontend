@@ -10,13 +10,18 @@
       {{ error }}
     </div>
 
-    <div
-      v-if="disparadosError"
-      class="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700"
-      role="alert"
-    >
-      {{ disparadosError }}
-    </div>
+    <RecordatoriosDisparadosSection
+      class="mb-6"
+      :items="disparadosItems"
+      :loading="disparadosLoading"
+      :error="disparadosError"
+      :closing-id="disparadosClosingId"
+      @cerrar="onCerrarDisparadoListado"
+    />
+
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+      Todas las cotizaciones
+    </h2>
 
     <!-- Filtros -->
     <div class="mb-6 bg-white shadow-md rounded-lg p-4">
@@ -138,11 +143,11 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
-              <template
+              <tr
                 v-for="cotizacion in resumenCotizaciones"
                 :key="cotizacion.id"
+                class="hover:bg-gray-50"
               >
-                <tr class="hover:bg-gray-50">
                   <td
                     class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-mono"
                   >
@@ -191,24 +196,6 @@
                     </router-link>
                   </td>
                 </tr>
-                <tr
-                  v-if="disparadoByCotizacionId.get(cotizacion.id)"
-                  :key="`${cotizacion.id}-disparado`"
-                >
-                  <td colspan="8" class="px-4 py-3 bg-gray-50">
-                    <RecordatorioDisparadoFila
-                      :item="disparadoByCotizacionId.get(cotizacion.id)!"
-                      :busy="
-                        disparadosClosingId ===
-                        disparadoByCotizacionId.get(cotizacion.id)!.recordatorioId
-                      "
-                      variant="compact"
-                      @repetir="onRepetirDisparado"
-                      @cerrar="onCerrarDisparadoListado"
-                    />
-                  </td>
-                </tr>
-              </template>
             </tbody>
           </table>
         </div>
@@ -268,7 +255,7 @@ import type { RecordatorioDisparadoItem } from '../../types/backend';
 import { formatMoney } from '../../utils/currency';
 import BaseSectionLoader from '../../components/base/BaseSectionLoader.vue';
 import ListLoadingOverlay from '../../components/base/ListLoadingOverlay.vue';
-import RecordatorioDisparadoFila from '../../components/cotizaciones/RecordatorioDisparadoFila.vue';
+import RecordatoriosDisparadosSection from '../../components/cotizaciones/RecordatoriosDisparadosSection.vue';
 import {
   compactQuery,
   queryDate,
@@ -292,20 +279,14 @@ const {
 } = useAdmin();
 
 const {
-  disparadoByCotizacionId,
+  items: disparadosItems,
+  loading: disparadosLoading,
   error: disparadosError,
   fetchDisparados,
   resetDisparados,
   cerrar: cerrarDisparado,
 } = useRecordatoriosDisparados();
 const disparadosClosingId = ref<string | null>(null);
-
-function onRepetirDisparado(item: RecordatorioDisparadoItem) {
-  void router.push({
-    name: 'admin-cotizacion-detalle',
-    params: { id: item.cotizacionId },
-  });
-}
 
 async function onCerrarDisparadoListado(item: RecordatorioDisparadoItem) {
   disparadosClosingId.value = item.recordatorioId;

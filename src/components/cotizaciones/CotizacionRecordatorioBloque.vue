@@ -3,18 +3,6 @@
     class="rounded-lg border border-gray-200 bg-gray-50 p-4"
     data-testid="bloque-recordatorio"
   >
-    <div class="mb-3 flex items-start justify-between gap-2">
-      <div>
-        <h2 class="text-base font-semibold text-gray-900 md:text-lg">
-          Recordatorio para recotizar
-        </h2>
-        <p class="mt-0.5 text-xs text-gray-500">
-          Te avisamos por correo interno para que no se te olvide volver a
-          cotizar. El cliente no recibe nada.
-        </p>
-      </div>
-    </div>
-
     <div
       v-if="loadError"
       class="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700"
@@ -37,76 +25,104 @@
       {{ actionError }}
     </div>
     <div
-      v-if="successMessage"
+      v-if="successKind"
       class="mb-3 rounded-md bg-green-50 px-3 py-2 text-sm text-green-700"
+      role="status"
     >
-      {{ successMessage }}
+      <template v-if="successKind === 'eliminado'">
+        Recordatorio eliminado.
+      </template>
+      <template v-else>
+        Recordatorio
+        {{ successKind === 'actualizado' ? 'actualizado' : 'programado' }}
+        para el
+        <strong>{{ successFecha }}</strong>.
+      </template>
     </div>
 
     <div v-if="loading" class="py-4 text-sm text-gray-500">Cargando…</div>
 
-    <template v-else-if="loadError">
-      <!-- Sin CTA: un GET fallido no debe ofrecer Programar (riesgo de sobrescribir). -->
+    <template v-else-if="loadError" />
+
+    <template v-else-if="showAtendido">
+      <h2 class="text-base font-semibold text-gray-900 md:text-lg">
+        Seguimiento atendido
+      </h2>
+      <p class="mt-1 text-sm text-gray-600">
+        Ya marcaste este seguimiento como atendido. La cotización original no
+        fue modificada.
+      </p>
     </template>
 
     <template v-else-if="blockedPostDisparo">
-      <p class="text-sm text-gray-600">
-        Esta cotización ya tiene un aviso pendiente. Lo encuentras en Inicio, en
-        «Pendientes de recotizar».
+      <h2 class="text-base font-semibold text-gray-900 md:text-lg">
+        Seguimiento pendiente
+      </h2>
+      <p class="mt-1 text-sm text-gray-600">
+        La fecha de este recordatorio ya llegó. Continúa en
+        <strong>Dashboard</strong>, en «Seguimientos pendientes».
       </p>
     </template>
 
     <template v-else-if="showProgramado">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div class="space-y-1">
-          <span
-            class="inline-block rounded-md border border-info-border bg-info-soft px-2.5 py-1 text-xs font-semibold text-info-text"
-          >
-            Programado
-          </span>
-          <p class="text-sm font-medium text-gray-900">
-            {{ resumenOperativo }}
-          </p>
-          <p class="text-recipe-preview text-gray-600">
-            {{ resumenReceta }}
-          </p>
-          <p class="text-recipe-preview text-gray-600">
-            Recibirás un correo interno ese día.
-          </p>
-        </div>
-        <div class="flex shrink-0 gap-2">
-          <button
-            type="button"
-            class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-white disabled:opacity-50"
-            :disabled="busy"
-            @click="openSelector('edit')"
-          >
-            Editar
-          </button>
-          <BaseButtonLoader
-            type="button"
-            variant="secondary"
-            size="sm"
-            :loading="cancelling"
-            :disabled="busy"
-            @click="onCancelar"
-          >
-            Quitar
-          </BaseButtonLoader>
-        </div>
+      <h2 class="text-base font-semibold text-gray-900 md:text-lg">
+        Recordatorio programado
+      </h2>
+      <p class="mt-1 text-sm text-gray-700">
+        Te recordaremos contactar a
+        <strong>{{ clienteLabel }}</strong> el
+        <strong>{{ fechaProgramada }}</strong>. Ese día enviaremos un correo a
+        ti y a los destinatarios configurados para notificaciones.
+      </p>
+      <p class="mt-2 text-sm text-gray-500">
+        Aestimare no enviará ningún mensaje al cliente.
+      </p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          class="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-white focus:outline-none focus:ring-2 focus:ring-medical-blue-500 disabled:opacity-50"
+          :disabled="busy"
+          @click="openSelector('edit')"
+        >
+          Cambiar fecha
+        </button>
+        <BaseButtonLoader
+          type="button"
+          variant="secondary"
+          size="sm"
+          :loading="cancelling"
+          :disabled="busy"
+          @click="confirmEliminarOpen = true"
+        >
+          Eliminar recordatorio
+        </BaseButtonLoader>
       </div>
     </template>
 
     <template v-else>
-      <BaseButtonLoader
-        type="button"
-        variant="primary"
-        size="sm"
-        :disabled="busy"
-        @click="openSelector('create')"
-      >
-        Programar aviso
-      </BaseButtonLoader>
+      <h2 class="text-base font-semibold text-gray-900 md:text-lg">
+        ¿Este cliente podría necesitar una nueva cotización más adelante?
+      </h2>
+      <p class="mt-1 text-sm text-gray-700">
+        Programa una fecha para que Aestimare te recuerde contactar a
+        <strong>{{ clienteLabel }}</strong>. Ese día enviaremos un correo a ti
+        y a los destinatarios configurados para notificaciones. Después podrás
+        crear una nueva cotización a partir de esta.
+      </p>
+      <p class="mt-2 text-sm text-gray-500">
+        Aestimare no enviará ningún mensaje al cliente.
+      </p>
+      <div class="mt-3">
+        <BaseButtonLoader
+          type="button"
+          variant="primary"
+          size="sm"
+          :disabled="busy"
+          @click="openSelector('create')"
+        >
+          Programar recordatorio
+        </BaseButtonLoader>
+      </div>
     </template>
 
     <RecordatorioRecetaSelector
@@ -116,8 +132,23 @@
       :fecha-creacion="fechaCreacion"
       :initial-receta="showProgramado ? recordatorio?.receta : null"
       :saving="saving"
+      :nombre-cliente="props.nombreCliente"
+      :fecha-disparo="recordatorio?.fechaDisparoUtc"
       @close="selectorOpen = false"
       @save="onSave"
+    />
+
+    <ConfirmationModal
+      :show="confirmEliminarOpen"
+      title="¿Eliminar este recordatorio?"
+      message="Dejará de estar programado. La cotización original no será modificada."
+      confirm-text="Eliminar recordatorio"
+      cancel-text="Cancelar"
+      type="warning"
+      :loading="cancelling"
+      @confirm="onCancelar"
+      @cancel="confirmEliminarOpen = false"
+      @dismiss="confirmEliminarOpen = false"
     />
   </div>
 </template>
@@ -125,6 +156,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import BaseButtonLoader from '../base/BaseButtonLoader.vue';
+import ConfirmationModal from '../common/ConfirmationModal.vue';
 import RecordatorioRecetaSelector from './RecordatorioRecetaSelector.vue';
 import {
   deleteRecordatorioCotizacion,
@@ -138,13 +170,14 @@ import type {
 } from '../../types/backend';
 import { extractError } from '../../utils/extractError';
 import {
-  formatResumenOperativo,
-  resumenRecetaLabel,
+  clienteDisplayName,
+  formatFechaRecordatorioLarga,
 } from '../../utils/fecha-disparo-preview';
 
 const props = defineProps<{
   cotizacionId: string;
   fechaCreacion?: string | Date | null;
+  nombreCliente?: string | null;
 }>();
 
 const loading = ref(true);
@@ -154,18 +187,25 @@ const cancelling = ref(false);
 const loadError = ref('');
 const zonaWarn = ref('');
 const actionError = ref('');
-const successMessage = ref('');
+const successKind = ref<'programado' | 'actualizado' | 'eliminado' | ''>('');
+const successFecha = ref('');
 const recordatorio = ref<RecordatorioRecotizacion | null>(null);
 const zonaHoraria = ref<string | undefined>(undefined);
 const selectorOpen = ref(false);
 const selectorMode = ref<'create' | 'edit'>('create');
+const confirmEliminarOpen = ref(false);
+
+const clienteLabel = computed(() => clienteDisplayName(props.nombreCliente));
 
 const blockedPostDisparo = computed(() => {
   const r = recordatorio.value;
   if (!r) return false;
+  if (r.estado === 'cerrado' || r.estado === 'cancelado') return false;
   if (r.everDisparado === true) return true;
-  return r.estado === 'disparado' || r.estado === 'cerrado';
+  return r.estado === 'disparado';
 });
+
+const showAtendido = computed(() => recordatorio.value?.estado === 'cerrado');
 
 const showProgramado = computed(
   () =>
@@ -174,15 +214,9 @@ const showProgramado = computed(
     !blockedPostDisparo.value,
 );
 
-const resumenReceta = computed(() =>
-  recordatorio.value
-    ? resumenRecetaLabel(recordatorio.value.receta, zonaHoraria.value)
-    : '',
-);
-
-const resumenOperativo = computed(() => {
+const fechaProgramada = computed(() => {
   if (!recordatorio.value?.fechaDisparoUtc) return '';
-  return formatResumenOperativo(
+  return formatFechaRecordatorioLarga(
     recordatorio.value.fechaDisparoUtc,
     zonaHoraria.value,
   );
@@ -211,7 +245,7 @@ async function loadRecordatorio() {
     if (status === 404) {
       recordatorio.value = null;
     } else {
-      loadError.value = extractError(err, 'No se pudo cargar el aviso');
+      loadError.value = extractError(err, 'No se pudo cargar el recordatorio');
       recordatorio.value = null;
     }
   } finally {
@@ -233,16 +267,17 @@ watch(
 
 function openSelector(mode: 'create' | 'edit') {
   actionError.value = '';
-  successMessage.value = '';
+  successKind.value = '';
   selectorMode.value = mode;
   selectorOpen.value = true;
 }
 
 async function onSave(receta: RecetaRecordatorio) {
+  const wasEdit = selectorMode.value === 'edit';
   saving.value = true;
   busy.value = true;
   actionError.value = '';
-  successMessage.value = '';
+  successKind.value = '';
   try {
     const body =
       receta.familia === 'fecha_exacta'
@@ -263,9 +298,19 @@ async function onSave(receta: RecetaRecordatorio) {
       body,
     );
     selectorOpen.value = false;
-    successMessage.value = 'Aviso programado.';
+    successFecha.value = recordatorio.value?.fechaDisparoUtc
+      ? formatFechaRecordatorioLarga(
+          recordatorio.value.fechaDisparoUtc,
+          zonaHoraria.value,
+        )
+      : '';
+    successKind.value = wasEdit ? 'actualizado' : 'programado';
   } catch (err) {
-    actionError.value = extractError(err, 'No se pudo guardar el aviso');
+    selectorOpen.value = false;
+    actionError.value = extractError(
+      err,
+      'No se pudo guardar el recordatorio',
+    );
   } finally {
     saving.value = false;
     busy.value = false;
@@ -276,16 +321,16 @@ async function onCancelar() {
   cancelling.value = true;
   busy.value = true;
   actionError.value = '';
-  successMessage.value = '';
+  successKind.value = '';
   try {
     await deleteRecordatorioCotizacion(props.cotizacionId);
-    // Tras cancelar sin disparo: UI vuelve a CTA (tratar como ausente).
     recordatorio.value = null;
-    successMessage.value = 'Aviso cancelado.';
+    confirmEliminarOpen.value = false;
+    successKind.value = 'eliminado';
   } catch (err) {
     actionError.value = extractError(
       err,
-      'No se pudo quitar el aviso',
+      'No se pudo eliminar el recordatorio',
     );
   } finally {
     cancelling.value = false;

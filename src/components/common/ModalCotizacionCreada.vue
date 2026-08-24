@@ -128,11 +128,11 @@
             />
           </svg>
           <div>
-            <p class="text-sm font-bold">No se pudo programar el aviso</p>
+            <p class="text-sm font-bold">No se pudo programar el recordatorio</p>
             <p class="text-xs text-amber-800/90">{{ recordatorioWarn }}</p>
             <p class="text-xs text-amber-700/80 mt-1">
-              La cotización sí se guardó. Puedes programar el aviso desde el
-              detalle.
+              La cotización sí se guardó. Puedes programar el recordatorio desde
+              el detalle.
             </p>
           </div>
         </div>

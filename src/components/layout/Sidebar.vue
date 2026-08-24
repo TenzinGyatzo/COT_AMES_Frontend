@@ -41,11 +41,32 @@
     ]"
   >
     <div class="flex flex-col h-full">
-      <!-- Logo -->
+      <!-- Marca → Inicio -->
       <div
-        class="p-6 border-b border-gray-700 flex items-center justify-between"
+        class="p-4 border-b border-gray-700 flex items-center justify-between"
       >
-        <span class="text-2xl font-bold text-white tracking-tight">Aestimare</span>
+        <router-link
+          to="/admin"
+          aria-label="Ir al Dashboard"
+          active-class=""
+          exact-active-class=""
+          class="flex items-center gap-2.5 rounded-md px-1.5 py-1.5 text-white hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-500 md:flex-1 md:justify-center xl:flex-none xl:justify-start"
+          @click="closeSidebar"
+        >
+          <img
+            src="/Aestimare/Avatar-oscuro.svg"
+            alt=""
+            aria-hidden="true"
+            width="36"
+            height="36"
+            class="h-9 w-9 shrink-0"
+          />
+          <span
+            class="text-2xl font-bold text-white tracking-tight whitespace-nowrap inline md:hidden xl:inline"
+          >
+            Aestimare
+          </span>
+        </router-link>
         <button
           @click="closeSidebar"
           class="md:hidden text-gray-400 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-medical-blue-500 rounded"
@@ -78,7 +99,7 @@
               : 'text-gray-300 hover:bg-gray-700 hover:text-white'
           "
         >
-          Dashboard
+          Inicio
         </router-link>
         <router-link
           to="/admin/clientes"

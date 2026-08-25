@@ -82,9 +82,10 @@
           <span v-else>1</span>
         </div>
         <div>
-          <h2 class="text-xl font-bold text-gray-800">Identidad</h2>
+          <h2 class="text-xl font-bold text-gray-800">Cliente y solicitante</h2>
           <p class="text-sm text-gray-500">
-            Cliente y solicitante opcionales.
+            Indica para quién se prepara la cotización. Ambos datos son
+            opcionales.
           </p>
         </div>
       </div>
@@ -115,7 +116,7 @@
               "
               @click="setClienteModo(false)"
             >
-              Registrado
+              Guardado
             </button>
             <button
               type="button"
@@ -130,45 +131,45 @@
               "
               @click="setClienteModo(true)"
             >
-              Temporal
+              Solo esta cotización
             </button>
           </div>
 
           <div v-if="!cotizarSinCliente" class="space-y-1.5">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <label
-                for="clienteCrm"
-                class="text-sm font-medium text-gray-600"
-                >Cliente del catálogo
-                <span class="text-gray-400 font-normal">(Opcional)</span></label
-              >
-              <button
-                type="button"
-                class="text-sm font-medium text-medical-blue-700 hover:text-medical-blue-800 hover:underline"
-                @click="abrirModalCliente"
-              >
-                + Nuevo cliente
-              </button>
-            </div>
-            <select
-              id="clienteCrm"
-              v-model="clienteId"
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm"
-              @change="onClienteChange"
+            <SearchCombobox
+              input-id="clienteCrm"
+              label="Cliente"
+              hide-label
+              :model-value="clienteId"
+              :items="clienteComboboxItems"
+              placeholder="Buscar cliente por nombre o RFC…"
+              :loading="loadingClientes"
+              empty-no-items="No encontramos clientes con esa búsqueda."
+              empty-no-match="No encontramos clientes con esa búsqueda."
+              action-label="* Registrar nuevo cliente"
+              clear-aria-label="Quitar cliente"
+              @update:model-value="onClienteSeleccionado"
+              @action="abrirModalCliente"
+            />
+            <div
+              v-if="clienteSeleccionado"
+              class="text-sm leading-snug text-gray-800"
             >
-              <option value="">— Sin cliente —</option>
-              <option v-for="c in clientes" :key="c._id" :value="c._id">
-                {{ c.empresa }}
-              </option>
-            </select>
+              <p class="font-semibold">{{ clienteSeleccionado.empresa }}</p>
+              <p
+                v-if="clienteSeleccionado.rfc"
+                class="text-xs text-gray-500 mt-0.5"
+              >
+                RFC: {{ clienteSeleccionado.rfc }}
+              </p>
+            </div>
           </div>
 
           <div v-else class="space-y-1.5">
             <label
               for="empresaGuest"
               class="text-sm font-medium text-gray-600"
-              >Nombre de la empresa
-              <span class="text-gray-400 font-normal">(Opcional)</span></label
+              >Nombre del cliente (opcional)</label
             >
             <input
               id="empresaGuest"
@@ -178,43 +179,37 @@
               placeholder="Ej. Transportes del Norte"
             />
             <p class="text-xs text-gray-500 leading-relaxed">
-              Se utilizará únicamente en esta cotización y no se agregará al
-              catálogo de clientes.
+              Se utilizará únicamente en esta cotización y no se guardará en
+              Clientes.
             </p>
           </div>
         </div>
 
-        <!-- Contacto solicitante -->
+        <!-- Solicitante -->
         <div class="min-w-0 flex flex-col gap-2">
-          <h3 class="text-sm font-bold text-gray-800">
-            Contacto solicitante
-          </h3>
+          <h3 class="text-sm font-bold text-gray-800">Solicitante</h3>
 
           <div
+            v-if="!cotizarSinCliente"
             class="inline-flex w-full rounded-xl border border-gray-200 bg-gray-100 p-1"
             role="radiogroup"
-            aria-label="Modo de contacto solicitante"
-            :aria-describedby="
-              cotizarSinCliente ? 'contacto-modo-disabled-help' : undefined
-            "
+            aria-label="Modo de solicitante"
             @keydown="onContactoModoKeydown"
           >
             <button
               type="button"
               role="radio"
               :aria-checked="!cotizarSinContacto"
-              :aria-disabled="cotizarSinCliente"
-              :disabled="cotizarSinCliente"
               :tabindex="contactoModoTabIndex(false)"
-              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:text-gray-400"
+              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1"
               :class="
                 !cotizarSinContacto
                   ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
-                  : 'text-gray-600 hover:text-gray-800 disabled:hover:text-gray-400'
+                  : 'text-gray-600 hover:text-gray-800'
               "
               @click="setContactoModo(false)"
             >
-              Registrado
+              Guardado
             </button>
             <button
               type="button"
@@ -229,64 +224,56 @@
               "
               @click="setContactoModo(true)"
             >
-              Temporal
+              Solo esta cotización
             </button>
           </div>
 
           <div v-if="!cotizarSinContacto" class="space-y-1.5">
-            <div class="flex flex-wrap items-center justify-between gap-2">
-              <label
-                for="contactoCrm"
-                class="text-sm font-medium text-gray-600"
-                >Contacto del catálogo
-                <span class="text-gray-400 font-normal">(Opcional)</span></label
-              >
-              <button
-                type="button"
-                :disabled="!clienteId"
-                class="text-sm font-medium text-medical-blue-700 hover:text-medical-blue-800 hover:underline disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
-                :title="
-                  !clienteId
-                    ? 'Selecciona un cliente primero'
-                    : 'Nuevo contacto'
-                "
-                @click="abrirModalContacto"
-              >
-                + Nuevo contacto
-              </button>
-            </div>
-            <select
-              id="contactoCrm"
-              v-model="contactoId"
+            <SearchCombobox
+              input-id="contactoCrm"
+              label="Solicitante"
+              hide-label
+              :model-value="contactoId"
+              :items="contactoComboboxItems"
               :disabled="!clienteId"
-              class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-medical-blue-400 focus:bg-white transition-all outline-none text-gray-700 shadow-sm disabled:opacity-50"
-              @change="onContactoChange"
+              placeholder="Buscar solicitante por nombre, correo o teléfono…"
+              :loading="loadingContactos"
+              disabled-placeholder="Selecciona primero un cliente guardado para ver sus contactos."
+              empty-no-items="Este cliente todavía no tiene contactos guardados."
+              empty-no-match="No encontramos solicitantes con esa búsqueda."
+              action-label="* Registrar nuevo contacto"
+              clear-aria-label="Quitar solicitante"
+              @update:model-value="onContactoSeleccionado"
+              @action="abrirModalContacto"
+            />
+            <div
+              v-if="contactoSeleccionado"
+              class="text-sm leading-snug text-gray-800"
             >
-              <option value="">— Sin solicitante —</option>
-              <option v-for="ct in contactos" :key="ct._id" :value="ct._id">
-                {{ ct.nombre }}
-              </option>
-            </select>
-            <p
-              v-if="!clienteId"
-              class="text-xs text-gray-500 leading-relaxed"
-            >
-              Selecciona un cliente registrado para listar sus contactos.
-            </p>
-            <p
-              v-else-if="contactos.length === 0 && !loadingContactos"
-              class="text-xs text-gray-500 leading-relaxed"
-            >
-              Sin contactos activos. Usa «+ Nuevo contacto» para agregar uno.
-            </p>
+              <p class="font-semibold">{{ contactoSeleccionado.nombre }}</p>
+              <p
+                v-if="contactoConfirmacionSecundaria"
+                class="text-xs text-gray-500 mt-0.5 break-words"
+              >
+                <a
+                  v-if="contactoSeleccionado.correo"
+                  class="text-medical-blue-700 hover:underline"
+                  :href="`mailto:${contactoSeleccionado.correo}`"
+                >{{ contactoSeleccionado.correo }}</a
+                ><template v-if="contactoSeleccionado.correo && contactoSeleccionado.telefono">
+                  ·
+                </template><template v-if="contactoSeleccionado.telefono">{{
+                  contactoSeleccionado.telefono
+                }}</template>
+              </p>
+            </div>
           </div>
 
           <div v-else class="space-y-1.5">
             <label
               for="solicitanteGuest"
               class="text-sm font-medium text-gray-600"
-              >Nombre del solicitante
-              <span class="text-gray-400 font-normal">(Opcional)</span></label
+              >Nombre del solicitante (opcional)</label
             >
             <input
               id="solicitanteGuest"
@@ -296,8 +283,8 @@
               placeholder="Ej. Laura Martínez"
             />
             <p class="text-xs text-gray-500 leading-relaxed">
-              Se utilizará únicamente en esta cotización y no se agregará al
-              catálogo de contactos.
+              Se utilizará únicamente en esta cotización y no se guardará entre
+              los contactos del cliente.
             </p>
           </div>
         </div>
@@ -1091,6 +1078,8 @@ import ConfirmationModal from '../../components/common/ConfirmationModal.vue';
 import ModalClienteForm from '../../components/common/ModalClienteForm.vue';
 import type { ClienteFormFields } from '../../components/common/ModalClienteForm.vue';
 import ModalContactoForm from '../../components/common/ModalContactoForm.vue';
+import SearchCombobox from '../../components/common/SearchCombobox.vue';
+import type { SearchComboboxItem } from '../../components/common/SearchCombobox.vue';
 import type { ContactoFormFields } from '../../components/common/ModalContactoForm.vue';
 import TablaServiciosCotizador from '../../components/cotizador/TablaServiciosCotizador.vue';
 import type { ItemOverrideFields } from '../../components/cotizador/TablaServiciosCotizador.vue';
@@ -1180,6 +1169,44 @@ const contactos = ref<Contacto[]>([]);
 const clienteId = ref('');
 const contactoId = ref('');
 const loadingContactos = ref(false);
+const loadingClientes = ref(false);
+
+const clienteComboboxItems = computed<SearchComboboxItem[]>(() =>
+  clientes.value
+    .filter((c): c is Cliente & { _id: string } => Boolean(c._id))
+    .map((c) => ({
+      id: c._id,
+      primary: c.empresa,
+      secondary: c.rfc?.trim() || undefined,
+      searchFields: [c.empresa, c.razonSocial, c.rfc],
+    })),
+);
+
+const contactoComboboxItems = computed<SearchComboboxItem[]>(() =>
+  contactos.value
+    .filter((ct): ct is Contacto & { _id: string } => Boolean(ct._id))
+    .map((ct) => ({
+      id: ct._id,
+      primary: ct.nombre,
+      secondary: [ct.correo, ct.telefono].filter((v) => v?.trim()).join(' · ') || undefined,
+      searchFields: [ct.nombre, ct.correo, ct.telefono],
+    })),
+);
+
+const clienteSeleccionado = computed(
+  () => clientes.value.find((c) => c._id && c._id === clienteId.value) ?? null,
+);
+
+const contactoSeleccionado = computed(
+  () =>
+    contactos.value.find((ct) => ct._id && ct._id === contactoId.value) ?? null,
+);
+
+const contactoConfirmacionSecundaria = computed(() => {
+  const ct = contactoSeleccionado.value;
+  if (!ct) return false;
+  return Boolean(ct.correo?.trim() || ct.telefono?.trim());
+});
 let contactosSeq = 0;
 
 /** Story 6.14 — gate Identidad */
@@ -1364,6 +1391,18 @@ function onContactoModoKeydown(event: KeyboardEvent) {
     ) as HTMLElement | null;
     checked?.focus();
   });
+}
+
+function onClienteSeleccionado(id: string) {
+  if (clienteId.value === id) return;
+  clienteId.value = id;
+  void onClienteChange();
+}
+
+function onContactoSeleccionado(id: string) {
+  if (contactoId.value === id) return;
+  contactoId.value = id;
+  onContactoChange();
 }
 
 function onCotizarSinClienteChange() {
@@ -2022,11 +2061,14 @@ watch(
 );
 
 const cargarClientes = async () => {
+  loadingClientes.value = true;
   try {
     const res = await getClientes({ activo: true, page: 1, limit: 100 });
     clientes.value = res.data || [];
   } catch {
     clientes.value = [];
+  } finally {
+    loadingClientes.value = false;
   }
 };
 

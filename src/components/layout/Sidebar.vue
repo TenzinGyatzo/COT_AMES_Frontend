@@ -53,14 +53,14 @@
           class="flex items-center gap-2.5 rounded-md px-1.5 py-1.5 text-white hover:bg-gray-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-500 md:flex-1 md:justify-center xl:flex-none xl:justify-start"
           @click="closeSidebar"
         >
-          <img
-            src="/Aestimare/Avatar-oscuro.svg"
+          <!-- <img
+            src="/Aestimare/Avatar-claro.svg"
             alt=""
             aria-hidden="true"
             width="36"
             height="36"
             class="h-9 w-9 shrink-0"
-          />
+          /> -->
           <span
             class="text-2xl font-bold text-white tracking-tight whitespace-nowrap inline md:hidden xl:inline"
           >

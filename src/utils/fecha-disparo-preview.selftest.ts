@@ -29,7 +29,7 @@ assert(hoy.ok === true, 'relativo_hoy ok');
 assert(
   hoy.ok &&
     hoy.fechaDisparoUtc.getTime() ===
-      new Date('2026-07-15T06:00:00.000Z').getTime(),
+      new Date('2026-07-15T14:00:00.000Z').getTime(),
   'relativo_hoy date',
 );
 
@@ -55,15 +55,21 @@ assert(
   'aniversario no futuro',
 );
 
-// UTC Instant start-of-day Mexico (UTC-6) → día civil tenant
+// UTC Instant 14:00 = día civil tenant en UTC-6 y UTC-7
 const feInput = fechaExactaToDateInput(
-  new Date('2030-03-15T06:00:00.000Z'),
+  new Date('2030-03-15T14:00:00.000Z'),
   zone,
 );
 assert(feInput === '2030-03-15', 'fechaExactaToDateInput tenant day');
 
+const feInputPacific = fechaExactaToDateInput(
+  new Date('2030-03-15T14:00:00.000Z'),
+  'America/Tijuana',
+);
+assert(feInputPacific === '2030-03-15', 'fechaExactaToDateInput UTC-7 same day');
+
 const larga = formatFechaRecordatorioLarga(
-  new Date('2026-09-24T06:00:00.000Z'),
+  new Date('2026-09-24T14:00:00.000Z'),
   zone,
 );
 assert(larga.includes('2026'), 'fecha larga año');

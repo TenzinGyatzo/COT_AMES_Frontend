@@ -11,6 +11,13 @@ import type {
 
 export const DEFAULT_TENANT_ZONE = 'America/Mexico_City';
 
+/**
+ * Hora UTC del disparo sobre el día civil del tenant.
+ * 14:00 UTC = 08:00 en UTC-6 (CDMX) = 07:00 en UTC-7 (Pacífico en verano).
+ * Espejo de backend/.../fecha-disparo.calc.ts
+ */
+export const HORA_DISPARO_UTC = 14;
+
 export const PRESETS_RELATIVO_HOY = [
   '1_mes',
   '3_meses',
@@ -77,6 +84,24 @@ export function resolveTenantZone(zonaHoraria?: string | null): string {
     return zonaHoraria.trim();
   }
   return DEFAULT_TENANT_ZONE;
+}
+
+/**
+ * Día civil en zona del tenant → 14:00 UTC de esa misma fecha (HORA_DISPARO_UTC).
+ */
+export function atHoraDisparoUtc(civilDayInTenantZone: DateTime): DateTime {
+  return DateTime.fromObject(
+    {
+      year: civilDayInTenantZone.year,
+      month: civilDayInTenantZone.month,
+      day: civilDayInTenantZone.day,
+      hour: HORA_DISPARO_UTC,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    },
+    { zone: 'utc' },
+  );
 }
 
 export function calcularFechaDisparoPreview(params: {
@@ -203,7 +228,17 @@ export function calcularFechaDisparoPreview(params: {
     };
   }
 
-  if (target.toMillis() <= now.toMillis()) {
+  const disparoUtc = atHoraDisparoUtc(target);
+  if (!disparoUtc.isValid) {
+    return {
+      ok: false,
+      eligible: false,
+      code: 'invalid_receta',
+      message: 'No se pudo calcular la fecha. Intenta de nuevo.',
+    };
+  }
+
+  if (disparoUtc.toMillis() <= now.toMillis()) {
     return {
       ok: false,
       eligible: false,
@@ -215,7 +250,7 @@ export function calcularFechaDisparoPreview(params: {
   return {
     ok: true,
     eligible: true,
-    fechaDisparoUtc: target.toUTC().toJSDate(),
+    fechaDisparoUtc: disparoUtc.toJSDate(),
   };
 }
 
@@ -243,7 +278,7 @@ export function resumenRecetaLabel(
 }
 
 /**
- * Convierte `fechaExacta` persistida (Date UTC = start-of-day tenant, o ISO)
+ * Convierte `fechaExacta` persistida (Date UTC = 14:00 UTC del día civil, o ISO)
  * al valor `YYYY-MM-DD` del Reloj del tenant para inputs type="date".
  */
 export function fechaExactaToDateInput(

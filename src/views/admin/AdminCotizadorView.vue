@@ -189,43 +189,69 @@
         <div class="min-w-0 flex flex-col gap-2">
           <h3 class="text-sm font-bold text-gray-800">Solicitante</h3>
 
-          <div
-            v-if="!cotizarSinCliente"
-            class="inline-flex w-full rounded-xl border border-gray-200 bg-gray-100 p-1"
-            role="radiogroup"
-            aria-label="Modo de solicitante"
-            @keydown="onContactoModoKeydown"
-          >
-            <button
-              type="button"
-              role="radio"
-              :aria-checked="!cotizarSinContacto"
-              :tabindex="contactoModoTabIndex(false)"
-              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1"
+          <div>
+            <div
+              class="inline-flex w-full rounded-xl border p-1"
               :class="
-                !cotizarSinContacto
-                  ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
-                  : 'text-gray-600 hover:text-gray-800'
+                cotizarSinCliente
+                  ? 'border-gray-200 bg-gray-50 opacity-60'
+                  : 'border-gray-200 bg-gray-100'
               "
-              @click="setContactoModo(false)"
-            >
-              Guardado
-            </button>
-            <button
-              type="button"
-              role="radio"
-              :aria-checked="cotizarSinContacto"
-              :tabindex="contactoModoTabIndex(true)"
-              class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1"
-              :class="
-                cotizarSinContacto
-                  ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
-                  : 'text-gray-600 hover:text-gray-800'
+              role="radiogroup"
+              aria-label="Modo de solicitante"
+              :aria-disabled="cotizarSinCliente || undefined"
+              :aria-describedby="
+                cotizarSinCliente ? 'solicitante-modo-locked-help' : undefined
               "
-              @click="setContactoModo(true)"
+              @keydown="onContactoModoKeydown"
             >
-              Solo esta cotización
-            </button>
+              <button
+                type="button"
+                role="radio"
+                :aria-checked="!cotizarSinContacto"
+                :aria-disabled="cotizarSinCliente || undefined"
+                :disabled="cotizarSinCliente"
+                :tabindex="contactoModoTabIndex(false)"
+                class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed"
+                :class="
+                  cotizarSinCliente
+                    ? 'text-gray-400'
+                    : !cotizarSinContacto
+                      ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                      : 'text-gray-600 hover:text-gray-800'
+                "
+                @click="setContactoModo(false)"
+              >
+                Guardado
+              </button>
+              <button
+                type="button"
+                role="radio"
+                :aria-checked="cotizarSinContacto"
+                :aria-disabled="cotizarSinCliente || undefined"
+                :disabled="cotizarSinCliente"
+                :tabindex="contactoModoTabIndex(true)"
+                class="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-medical-blue-400 focus-visible:ring-offset-1 disabled:cursor-not-allowed"
+                :class="
+                  cotizarSinCliente
+                    ? 'bg-gray-100 text-gray-500 ring-1 ring-gray-200'
+                    : cotizarSinContacto
+                      ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200'
+                      : 'text-gray-600 hover:text-gray-800'
+                "
+                @click="setContactoModo(true)"
+              >
+                Solo esta cotización
+              </button>
+            </div>
+            <p
+              v-if="cotizarSinCliente"
+              id="solicitante-modo-locked-help"
+              class="sr-only"
+            >
+              Con un cliente solo para esta cotización, el solicitante también
+              queda en este modo.
+            </p>
           </div>
 
           <div v-if="!cotizarSinContacto" class="space-y-1.5">
@@ -1348,10 +1374,8 @@ function setContactoModo(temporal: boolean) {
 }
 
 function contactoModoTabIndex(temporalOption: boolean): number {
-  if (cotizarSinCliente.value) {
-    return temporalOption ? 0 : -1;
-  }
-  return (cotizarSinContacto.value === temporalOption) ? 0 : -1;
+  if (cotizarSinCliente.value) return -1;
+  return cotizarSinContacto.value === temporalOption ? 0 : -1;
 }
 
 function onClienteModoKeydown(event: KeyboardEvent) {

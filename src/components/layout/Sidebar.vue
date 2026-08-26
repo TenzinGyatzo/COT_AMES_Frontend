@@ -232,6 +232,8 @@
         </router-link>
       </nav>
 
+      <p class="block md:hidden xl:block px-4 pb-2 text-right text-xs text-gray-400">v{{ appVersion }}</p>
+
       <!-- Pie: contexto tenant + logout -->
       <div class="p-4 border-t border-gray-700 space-y-3">
         <div v-if="authStore.isAdminSistema">
@@ -324,8 +326,6 @@
         >
           Cerrar Sesión
         </button>
-
-        <p class="block md:hidden xl:block text-xs text-gray-400">v{{ appVersion }}</p>
       </div>
     </div>
   </aside>

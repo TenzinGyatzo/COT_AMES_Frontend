@@ -32,6 +32,7 @@ import AdminPlantillasView from '../views/admin/AdminPlantillasView.vue';
 import AdminConfiguracionView from '../views/admin/AdminConfiguracionView.vue';
 import AdminOnboardTenantView from '../views/admin/AdminOnboardTenantView.vue';
 import AdminTenantsView from '../views/admin/AdminTenantsView.vue';
+import AdminAuditoriaView from '../views/admin/AdminAuditoriaView.vue';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -163,6 +164,15 @@ const routes: RouteRecordRaw[] = [
         meta: {
           requiresAuth: true,
           allowedRoles: ['admin_sistema'],
+        },
+      },
+      {
+        path: 'auditoria',
+        name: 'admin-auditoria',
+        component: AdminAuditoriaView,
+        meta: {
+          requiresAuth: true,
+          allowedRoles: ['admin_sistema', 'admin_tenant'],
         },
       },
     ],

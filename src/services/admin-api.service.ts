@@ -18,6 +18,8 @@ import type {
   RecordatorioRecotizacion,
   RecordatoriosDisparadosResponse,
   UpsertRecordatorioPayload,
+  PaginatedAuditEventsResponse,
+  AdminAuditFilters,
 } from '../types/backend';
 
 export interface AdminClientesFilters {
@@ -1048,5 +1050,26 @@ export async function updateUser(
 
 export async function deactivateUser(id: string): Promise<AdminUser> {
   const { data } = await httpClient.delete<AdminUser>(`/users/${id}`);
+  return data;
+}
+
+export async function getAuditEvents(
+  filters: AdminAuditFilters = {},
+): Promise<PaginatedAuditEventsResponse> {
+  const params: Record<string, string | number | boolean> = {};
+  if (filters.fechaDesde) params.fechaDesde = filters.fechaDesde;
+  if (filters.fechaHasta) params.fechaHasta = filters.fechaHasta;
+  if (filters.actorId) params.actorId = filters.actorId;
+  if (filters.actionType) params.actionType = filters.actionType;
+  if (filters.resourceType) params.resourceType = filters.resourceType;
+  if (filters.resourceId) params.resourceId = filters.resourceId;
+  if (filters.result) params.result = filters.result;
+  if (filters.includePlatform) params.includePlatform = true;
+  params.page = filters.page ?? 1;
+  params.limit = filters.limit ?? 20;
+  const { data } = await httpClient.get<PaginatedAuditEventsResponse>(
+    '/audit-events',
+    { params },
+  );
   return data;
 }

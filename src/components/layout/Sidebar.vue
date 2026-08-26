@@ -207,6 +207,18 @@
           Usuarios
         </router-link>
         <router-link
+          v-if="authStore.isAdminSistema || authStore.isAdminTenant"
+          to="/admin/auditoria"
+          class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"
+          :class="
+            $route.name === 'admin-auditoria'
+              ? 'bg-medical-blue-600 text-white'
+              : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+          "
+        >
+          Auditoría
+        </router-link>
+        <router-link
           v-if="authStore.isAdminSistema"
           to="/admin/tenants"
           class="block px-4 py-2 rounded-md text-sm font-medium transition-colors"

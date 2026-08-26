@@ -544,3 +544,46 @@ export interface RecordatorioDisparadoItem {
 export interface RecordatoriosDisparadosResponse {
   items: RecordatorioDisparadoItem[];
 }
+
+/** Evento de auditoría de seguridad (append-only). */
+export interface AuditActorSnapshot {
+  email?: string;
+  nombre?: string;
+  rol?: string;
+}
+
+export interface AuditEvent {
+  _id: string;
+  tenantId?: string;
+  actorId?: string;
+  actorSnapshot: AuditActorSnapshot;
+  timestamp: string;
+  actionType: string;
+  resourceType: string;
+  resourceId?: string;
+  result: string;
+  payload?: Record<string, unknown>;
+  ip?: string;
+  userAgent?: string;
+}
+
+export interface PaginatedAuditEventsResponse {
+  data: AuditEvent[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AdminAuditFilters {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  actorId?: string;
+  actionType?: string;
+  resourceType?: string;
+  resourceId?: string;
+  result?: 'success' | 'failure';
+  includePlatform?: boolean;
+  page?: number;
+  limit?: number;
+}

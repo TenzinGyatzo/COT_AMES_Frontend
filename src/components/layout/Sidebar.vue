@@ -324,6 +324,8 @@
         >
           Cerrar Sesión
         </button>
+
+        <p class="block md:hidden xl:block text-xs text-gray-400">v{{ appVersion }}</p>
       </div>
     </div>
   </aside>
@@ -335,6 +337,8 @@ import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../store/auth';
 import { getTenants, getTenantConfig } from '../../services/admin-api.service';
 import type { Tenant } from '../../types/backend';
+
+const appVersion = __APP_VERSION__;
 
 const router = useRouter();
 const route = useRoute();

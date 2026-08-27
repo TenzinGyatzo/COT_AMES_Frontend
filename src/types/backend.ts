@@ -292,12 +292,20 @@ export interface LoginResponse {
   user: User;
 }
 
+export interface ConfidentialityAgreementSection {
+  title: string;
+  body: string;
+}
+
 export interface ConfidentialityStatus {
   required: boolean;
   accepted: boolean;
   currentVersion: string;
   agreementText?: string;
   footerConsent?: string;
+  intro?: string;
+  sections?: ConfidentialityAgreementSection[];
+  declaration?: string;
 }
 
 export interface ConfidentialityAcceptance {

@@ -3,7 +3,12 @@
  */
 
 import { defineStore } from 'pinia';
-import type { User, LoginResponse, AmesRole } from '../types/backend';
+import type {
+  ConfidentialityAgreementSection,
+  LoginResponse,
+  AmesRole,
+  User,
+} from '../types/backend';
 import httpClient from '../services/http';
 import { getTenants } from '../services/admin-api.service';
 import {
@@ -24,6 +29,9 @@ interface AuthState {
   ndaCurrentVersion: string;
   ndaAgreementText: string;
   ndaFooterConsent: string;
+  ndaIntro: string;
+  ndaSections: ConfidentialityAgreementSection[];
+  ndaDeclaration: string;
 }
 
 const STORAGE_KEY_TOKEN = 'auth_token';
@@ -74,6 +82,9 @@ export const useAuthStore = defineStore('auth', {
     ndaCurrentVersion: '',
     ndaAgreementText: '',
     ndaFooterConsent: '',
+    ndaIntro: '',
+    ndaSections: [],
+    ndaDeclaration: '',
   }),
 
   getters: {
@@ -277,6 +288,9 @@ export const useAuthStore = defineStore('auth', {
       this.ndaCurrentVersion = '';
       this.ndaAgreementText = '';
       this.ndaFooterConsent = '';
+      this.ndaIntro = '';
+      this.ndaSections = [];
+      this.ndaDeclaration = '';
     },
 
     async refreshConfidentialityStatus(): Promise<void> {
@@ -291,6 +305,9 @@ export const useAuthStore = defineStore('auth', {
         this.ndaCurrentVersion = status.currentVersion;
         this.ndaAgreementText = status.agreementText ?? '';
         this.ndaFooterConsent = status.footerConsent ?? '';
+        this.ndaIntro = status.intro ?? '';
+        this.ndaSections = status.sections ?? [];
+        this.ndaDeclaration = status.declaration ?? '';
         this.ndaStatusKnown = true;
       } catch {
         if (!this.ndaAccepted) {

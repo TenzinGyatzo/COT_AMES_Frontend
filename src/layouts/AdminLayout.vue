@@ -6,7 +6,7 @@
       <div class="p-4 md:p-8">
         <!-- AC3 / Story 2.2: admin_sistema sin administración activa -->
         <div
-          v-if="needsTenantSelection"
+          v-if="authStore.canLoadSensitiveData && needsTenantSelection"
           role="status"
           class="mb-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
         >
@@ -16,7 +16,7 @@
           </p>
         </div>
         <!-- Remount al cambiar tenant admin → refresca listados (UX EXPERIENCE) -->
-        <router-view :key="viewKey" />
+        <router-view v-if="authStore.canLoadSensitiveData" :key="viewKey" />
       </div>
     </main>
   </div>

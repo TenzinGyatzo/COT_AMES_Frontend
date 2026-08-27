@@ -442,6 +442,7 @@ function syncActiveTenantWithOptions() {
 }
 
 async function loadTenants() {
+  if (!authStore.canLoadSensitiveData) return;
   // GET /tenants = solo admin_sistema (AD-16 / Story 2.1).
   // Operativo y admin_tenant: identidad vía getTenantConfig (sin catálogo).
   if (!authStore.isAdminSistema) {
@@ -465,6 +466,7 @@ async function loadTenants() {
 
 /** Carga nombre/clave del tenant fijo. Cache local del componente (Ask First: no composable). */
 async function loadFixedTenantIdentity(force = false) {
+  if (!authStore.canLoadSensitiveData) return;
   if (!isFixedTenantUser()) {
     fixedTenantNombre.value = null;
     fixedTenantClave.value = null;
@@ -527,10 +529,20 @@ watch(
   },
 );
 
+watch(
+  () => authStore.canLoadSensitiveData,
+  (ok) => {
+    if (!ok) return;
+    void loadTenants();
+    void loadFixedTenantIdentity(true);
+  },
+);
+
 /** Tras onboard (4.1): activeTenantId nuevo aún no está en el catálogo local → recargar. */
 watch(
   () => authStore.activeTenantId,
   (id) => {
+    if (!authStore.canLoadSensitiveData) return;
     if (
       authStore.isAdminSistema &&
       id &&
@@ -544,6 +556,7 @@ watch(
 watch(
   () => authStore.user?.tenantId,
   () => {
+    if (!authStore.canLoadSensitiveData) return;
     if (!isFixedTenantUser()) return;
     fixedTenantIdentityLoaded.value = false;
     void loadFixedTenantIdentity(true);

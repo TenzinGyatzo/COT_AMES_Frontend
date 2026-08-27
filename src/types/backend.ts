@@ -292,6 +292,24 @@ export interface LoginResponse {
   user: User;
 }
 
+export interface ConfidentialityStatus {
+  required: boolean;
+  accepted: boolean;
+  currentVersion: string;
+  agreementText?: string;
+  footerConsent?: string;
+}
+
+export interface ConfidentialityAcceptance {
+  userId?: string;
+  tenantId?: string;
+  acceptedAt?: string;
+  ip?: string;
+  version: string;
+  agreementText?: string;
+  source?: string;
+}
+
 // Tipo para métricas de clientes
 export interface ClientMetricDto {
   clienteId: string;

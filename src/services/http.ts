@@ -8,6 +8,7 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import { useAuthStore } from '../store/auth';
+import { isConfidentialityRequiredError } from './confidentiality-error';
 
 const httpClient = axios.create({
   baseURL: API_BASE_URL,
@@ -108,6 +109,12 @@ function isPublicCotizacionUrl(url?: string): boolean {
 httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (isConfidentialityRequiredError(error)) {
+      const authStore = useAuthStore();
+      authStore.markConfidentialityRequired();
+      return Promise.reject(error);
+    }
+
     // 401 en login/register/público no es "sesión vencida": no limpiar store
     if (
       error.response?.status === 401 &&

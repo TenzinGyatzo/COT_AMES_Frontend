@@ -6,6 +6,10 @@ import { defineStore } from 'pinia';
 import type { User, LoginResponse, AmesRole } from '../types/backend';
 import httpClient from '../services/http';
 import { getTenants } from '../services/admin-api.service';
+import {
+  acceptConfidentiality,
+  getConfidentialityStatus,
+} from '../services/confidentiality-api.service';
 
 interface AuthState {
   accessToken: string | null;
@@ -14,6 +18,12 @@ interface AuthState {
   error: string | null;
   /** Tenant activo para admin_sistema (header X-Tenant-Id). Selector UI: Story 1.7. */
   activeTenantId: string | null;
+  ndaStatusKnown: boolean;
+  ndaRequired: boolean;
+  ndaAccepted: boolean;
+  ndaCurrentVersion: string;
+  ndaAgreementText: string;
+  ndaFooterConsent: string;
 }
 
 const STORAGE_KEY_TOKEN = 'auth_token';
@@ -58,6 +68,12 @@ export const useAuthStore = defineStore('auth', {
     isLoading: false,
     error: null,
     activeTenantId: null,
+    ndaStatusKnown: false,
+    ndaRequired: false,
+    ndaAccepted: false,
+    ndaCurrentVersion: '',
+    ndaAgreementText: '',
+    ndaFooterConsent: '',
   }),
 
   getters: {
@@ -86,6 +102,14 @@ export const useAuthStore = defineStore('auth', {
     isAdmin(): boolean {
       return this.isAmesUser;
     },
+
+    showConfidentialityGate(): boolean {
+      return this.ndaStatusKnown && this.ndaRequired && !this.ndaAccepted;
+    },
+
+    canLoadSensitiveData(): boolean {
+      return this.isAuthenticated && this.ndaStatusKnown && this.ndaAccepted;
+    },
   },
 
   actions: {
@@ -108,6 +132,10 @@ export const useAuthStore = defineStore('auth', {
     async ensureAdminTenantContext(): Promise<void> {
       if (this.user?.rol !== 'admin_sistema') {
         this.setActiveTenantId(null);
+        return;
+      }
+
+      if (!this.ndaAccepted) {
         return;
       }
 
@@ -159,7 +187,10 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem(STORAGE_KEY_TOKEN, this.accessToken);
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.user));
 
-      await this.ensureAdminTenantContext();
+      await this.refreshConfidentialityStatus();
+      if (this.ndaAccepted) {
+        await this.ensureAdminTenantContext();
+      }
     },
 
     async login(email: string, password: string): Promise<void> {
@@ -186,6 +217,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.error = null;
       this.activeTenantId = null;
+      this.resetConfidentialityState();
 
       localStorage.removeItem(STORAGE_KEY_TOKEN);
       localStorage.removeItem(STORAGE_KEY_USER);
@@ -224,14 +256,70 @@ export const useAuthStore = defineStore('auth', {
         this.user = parsedUser;
 
         if (parsedUser.rol === 'admin_sistema') {
-          // Restaura provisionalmente; ensure revalida contra catálogo.
           this.activeTenantId = localStorage.getItem(STORAGE_KEY_TENANT);
-          await this.ensureAdminTenantContext();
         } else {
           this.setActiveTenantId(null);
         }
+
+        await this.refreshConfidentialityStatus();
+        if (this.ndaAccepted) {
+          await this.ensureAdminTenantContext();
+        }
       } catch {
         this.logout();
+      }
+    },
+
+    resetConfidentialityState(): void {
+      this.ndaStatusKnown = false;
+      this.ndaRequired = false;
+      this.ndaAccepted = false;
+      this.ndaCurrentVersion = '';
+      this.ndaAgreementText = '';
+      this.ndaFooterConsent = '';
+    },
+
+    async refreshConfidentialityStatus(): Promise<void> {
+      if (!this.accessToken) {
+        this.resetConfidentialityState();
+        return;
+      }
+      try {
+        const status = await getConfidentialityStatus();
+        this.ndaRequired = status.required;
+        this.ndaAccepted = status.accepted;
+        this.ndaCurrentVersion = status.currentVersion;
+        this.ndaAgreementText = status.agreementText ?? '';
+        this.ndaFooterConsent = status.footerConsent ?? '';
+        this.ndaStatusKnown = true;
+      } catch {
+        if (!this.ndaAccepted) {
+          this.ndaRequired = true;
+          this.ndaAccepted = false;
+          this.ndaStatusKnown = true;
+        }
+      }
+    },
+
+    markConfidentialityRequired(): void {
+      if (this.ndaAccepted) {
+        void this.refreshConfidentialityStatus();
+        return;
+      }
+      this.ndaRequired = true;
+      this.ndaAccepted = false;
+      this.ndaStatusKnown = true;
+      void this.refreshConfidentialityStatus();
+    },
+
+    async acceptConfidentialityAgreement(): Promise<void> {
+      await acceptConfidentiality(this.ndaCurrentVersion || undefined);
+      this.ndaAccepted = true;
+      this.ndaRequired = true;
+      this.ndaStatusKnown = true;
+      await this.refreshConfidentialityStatus();
+      if (this.ndaAccepted) {
+        await this.ensureAdminTenantContext();
       }
     },
   },

@@ -27,6 +27,10 @@ export interface ValidateTokenResponse {
   valid: boolean;
 }
 
+export interface VerifyPasswordResponse {
+  ok: boolean;
+}
+
 const authApiService = {
   async requestPasswordResetAdmin(
     payload: RequestPasswordResetPayload,
@@ -54,6 +58,14 @@ const authApiService = {
     const response = await httpClient.post<PasswordResetResponse>(
       '/auth/password-reset/reset',
       payload,
+    );
+    return response.data;
+  },
+
+  async verifyPassword(password: string): Promise<VerifyPasswordResponse> {
+    const response = await httpClient.post<VerifyPasswordResponse>(
+      '/auth/verify-password',
+      { password },
     );
     return response.data;
   },

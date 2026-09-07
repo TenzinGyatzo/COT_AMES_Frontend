@@ -9,12 +9,19 @@ import type {
   AmesRole,
   User,
 } from '../types/backend';
+import {
+  IDLE_TIMEOUT_MS,
+  STORAGE_KEY_LAST_ACTIVITY,
+  STORAGE_KEY_SESSION_LOCKED,
+} from '../constants/session';
 import httpClient from '../services/http';
 import { getTenants } from '../services/admin-api.service';
+import authApiService from '../services/auth-api.service';
 import {
   acceptConfidentiality,
   getConfidentialityStatus,
 } from '../services/confidentiality-api.service';
+import { resolveRestoredLock } from '../utils/session-idle';
 
 interface AuthState {
   accessToken: string | null;
@@ -32,6 +39,8 @@ interface AuthState {
   ndaIntro: string;
   ndaSections: ConfidentialityAgreementSection[];
   ndaDeclaration: string;
+  sessionLocked: boolean;
+  lastActivityAt: number | null;
 }
 
 const STORAGE_KEY_TOKEN = 'auth_token';
@@ -85,6 +94,8 @@ export const useAuthStore = defineStore('auth', {
     ndaIntro: '',
     ndaSections: [],
     ndaDeclaration: '',
+    sessionLocked: false,
+    lastActivityAt: null,
   }),
 
   getters: {
@@ -197,6 +208,7 @@ export const useAuthStore = defineStore('auth', {
 
       localStorage.setItem(STORAGE_KEY_TOKEN, this.accessToken);
       localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(this.user));
+      this.resetIdleState();
 
       await this.refreshConfidentialityStatus();
       if (this.ndaAccepted) {
@@ -229,6 +241,7 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       this.activeTenantId = null;
       this.resetConfidentialityState();
+      this.clearIdleState();
 
       localStorage.removeItem(STORAGE_KEY_TOKEN);
       localStorage.removeItem(STORAGE_KEY_USER);
@@ -270,6 +283,11 @@ export const useAuthStore = defineStore('auth', {
           this.activeTenantId = localStorage.getItem(STORAGE_KEY_TENANT);
         } else {
           this.setActiveTenantId(null);
+        }
+
+        this.restoreIdleState();
+        if (this.sessionLocked) {
+          return;
         }
 
         await this.refreshConfidentialityStatus();
@@ -338,6 +356,89 @@ export const useAuthStore = defineStore('auth', {
       if (this.ndaAccepted) {
         await this.ensureAdminTenantContext();
       }
+    },
+
+    persistIdleState(): void {
+      if (this.lastActivityAt != null) {
+        localStorage.setItem(
+          STORAGE_KEY_LAST_ACTIVITY,
+          String(this.lastActivityAt),
+        );
+      } else {
+        localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
+      }
+      if (this.sessionLocked) {
+        localStorage.setItem(STORAGE_KEY_SESSION_LOCKED, '1');
+      } else {
+        localStorage.removeItem(STORAGE_KEY_SESSION_LOCKED);
+      }
+    },
+
+    resetIdleState(): void {
+      this.sessionLocked = false;
+      this.lastActivityAt = Date.now();
+      this.persistIdleState();
+    },
+
+    clearIdleState(): void {
+      this.sessionLocked = false;
+      this.lastActivityAt = null;
+      localStorage.removeItem(STORAGE_KEY_LAST_ACTIVITY);
+      localStorage.removeItem(STORAGE_KEY_SESSION_LOCKED);
+    },
+
+    restoreIdleState(): void {
+      const rawTs = localStorage.getItem(STORAGE_KEY_LAST_ACTIVITY);
+      const lockedFlag = localStorage.getItem(STORAGE_KEY_SESSION_LOCKED) === '1';
+      const last = rawTs != null && rawTs !== '' ? Number(rawTs) : NaN;
+      const restored = resolveRestoredLock(
+        Number.isFinite(last) ? last : null,
+        lockedFlag,
+        Date.now(),
+        IDLE_TIMEOUT_MS,
+      );
+      this.lastActivityAt = restored.lastActivityAt;
+      this.sessionLocked = restored.sessionLocked;
+      this.persistIdleState();
+    },
+
+    async hydrateAfterUnlock(): Promise<void> {
+      if (!this.ndaStatusKnown) {
+        await this.refreshConfidentialityStatus();
+        if (this.ndaAccepted) {
+          await this.ensureAdminTenantContext();
+        }
+      }
+    },
+
+    touchActivity(at: number): void {
+      if (!this.accessToken || this.sessionLocked) {
+        return;
+      }
+      this.lastActivityAt = at;
+      localStorage.setItem(STORAGE_KEY_LAST_ACTIVITY, String(at));
+    },
+
+    lockSession(): void {
+      if (!this.accessToken) {
+        return;
+      }
+      this.sessionLocked = true;
+      localStorage.setItem(STORAGE_KEY_SESSION_LOCKED, '1');
+    },
+
+    syncLastActivityFromStorage(at: number): void {
+      this.lastActivityAt = at;
+    },
+
+    syncLockedFromStorage(locked: boolean): void {
+      this.sessionLocked = locked;
+    },
+
+    async unlockWithPassword(password: string): Promise<void> {
+      await authApiService.verifyPassword(password);
+      this.resetIdleState();
+      await this.hydrateAfterUnlock();
     },
   },
 });

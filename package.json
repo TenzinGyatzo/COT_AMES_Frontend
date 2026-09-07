@@ -12,7 +12,8 @@
     "test:conceptos-table": "npx --yes tsx src/utils/pdf/conceptosTableLayout.selftest.ts",
     "test:product-images": "npx --yes tsx src/utils/resolveProductImageUrls.selftest.ts",
     "test:pdf-opts-detalle": "npx --yes tsx src/utils/pdfOptsFromDetalle.selftest.ts",
-    "test:fecha-disparo-preview": "npx --yes tsx src/utils/fecha-disparo-preview.selftest.ts"
+    "test:fecha-disparo-preview": "npx --yes tsx src/utils/fecha-disparo-preview.selftest.ts",
+    "test:session-idle": "npx --yes tsx src/utils/session-idle.selftest.ts"
   },
   "dependencies": {
     "@tiptap/extension-text-align": "^3.28.0",

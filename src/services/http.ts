@@ -52,6 +52,18 @@ function isPlatformTenantsUrl(url?: string): boolean {
 httpClient.interceptors.request.use(
   (config) => {
     const authStore = useAuthStore();
+
+    if (
+      authStore.sessionLocked &&
+      !isVerifyPasswordUrl(config.url) &&
+      !isAuthCredentialRequest(config.url) &&
+      !isPublicCotizacionUrl(config.url)
+    ) {
+      const error = new Error('Sesión bloqueada por inactividad');
+      (error as Error & { code?: string }).code = SESSION_IDLE_LOCKED_CODE;
+      return Promise.reject(error);
+    }
+
     const token = authStore.accessToken;
 
     if (token) {
@@ -105,6 +117,13 @@ function isPublicCotizacionUrl(url?: string): boolean {
   path = path.split('?')[0] ?? path;
   return path.includes('/cotizaciones/public/');
 }
+
+function isVerifyPasswordUrl(url?: string): boolean {
+  if (!url) return false;
+  return url.includes('/auth/verify-password');
+}
+
+export const SESSION_IDLE_LOCKED_CODE = 'ERR_SESSION_IDLE_LOCKED';
 
 httpClient.interceptors.response.use(
   (response) => response,

@@ -13,7 +13,8 @@
     "test:product-images": "npx --yes tsx src/utils/resolveProductImageUrls.selftest.ts",
     "test:pdf-opts-detalle": "npx --yes tsx src/utils/pdfOptsFromDetalle.selftest.ts",
     "test:fecha-disparo-preview": "npx --yes tsx src/utils/fecha-disparo-preview.selftest.ts",
-    "test:session-idle": "npx --yes tsx src/utils/session-idle.selftest.ts"
+    "test:session-idle": "npx --yes tsx src/utils/session-idle.selftest.ts",
+    "test:password-policy": "npx --yes tsx src/constants/password.selftest.ts"
   },
   "dependencies": {
     "@tiptap/extension-text-align": "^3.28.0",

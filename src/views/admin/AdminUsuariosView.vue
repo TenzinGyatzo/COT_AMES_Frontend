@@ -187,9 +187,11 @@
               v-model="form.password"
               :required="!editando"
               type="password"
-              minlength="6"
+              :minlength="PASSWORD_MIN_LENGTH"
+              :maxlength="PASSWORD_MAX_LENGTH"
               class="w-full border border-gray-300 rounded-md px-3 py-2"
             />
+            <p class="mt-1 text-xs text-gray-500">{{ PASSWORD_POLICY_MESSAGE }}</p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1"
@@ -266,6 +268,12 @@ import {
 } from '../../services/admin-api.service';
 import type { Tenant } from '../../types/backend';
 import { extractError } from '../../utils/extractError';
+import {
+  evaluateUserPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
+} from '../../constants/password';
 import {
   boolQuery,
   compactQuery,
@@ -499,6 +507,14 @@ async function guardar() {
       formError.value =
         'Seleccione una administración en el pie del menú antes de crear usuarios del tenant';
       return;
+    }
+
+    if (!editando.value || form.password) {
+      const policyError = evaluateUserPassword(form.password);
+      if (policyError) {
+        formError.value = policyError;
+        return;
+      }
     }
 
     const tenantForPayload = resolveFormTenantId();

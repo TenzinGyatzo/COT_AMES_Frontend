@@ -136,11 +136,12 @@
             v-model="form.admin.password"
             type="password"
             required
-            minlength="6"
+            :minlength="PASSWORD_MIN_LENGTH"
+            :maxlength="PASSWORD_MAX_LENGTH"
             autocomplete="new-password"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
           />
-          <p class="mt-1 text-xs text-gray-500">Mínimo 6 caracteres.</p>
+          <p class="mt-1 text-xs text-gray-500">{{ PASSWORD_POLICY_MESSAGE }}</p>
         </div>
       </fieldset>
 
@@ -162,6 +163,12 @@ import {
   type OnboardTenantResponse,
 } from '../../services/admin-api.service';
 import { useAuthStore } from '../../store/auth';
+import {
+  evaluateUserPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
+} from '../../constants/password';
 
 const authStore = useAuthStore();
 
@@ -191,6 +198,11 @@ function onClaveInput(event: Event) {
 
 async function onSubmit() {
   if (submitting.value) return;
+  const policyError = evaluateUserPassword(form.admin.password);
+  if (policyError) {
+    error.value = policyError;
+    return;
+  }
   submitting.value = true;
   error.value = null;
   try {

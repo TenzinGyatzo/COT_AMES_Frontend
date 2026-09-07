@@ -33,9 +33,10 @@
               v-model="password"
               :type="showPassword ? 'text' : 'password'"
               required
-              minlength="8"
+              :minlength="PASSWORD_MIN_LENGTH"
+              :maxlength="PASSWORD_MAX_LENGTH"
               class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Nueva contraseña"
             />
             <button
               type="button"
@@ -81,6 +82,7 @@
               </svg>
             </button>
           </div>
+          <p class="mt-1 text-xs text-gray-500">{{ PASSWORD_POLICY_MESSAGE }}</p>
         </div>
 
         <div>
@@ -95,7 +97,8 @@
             v-model="confirmPassword"
             :type="showPassword ? 'text' : 'password'"
             required
-            minlength="8"
+            :minlength="PASSWORD_MIN_LENGTH"
+            :maxlength="PASSWORD_MAX_LENGTH"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medical-blue-500"
             placeholder="Confirma tu contraseña"
           />
@@ -192,6 +195,12 @@
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import authApiService from '../services/auth-api.service';
+import {
+  evaluateUserPassword,
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_POLICY_MESSAGE,
+} from '../constants/password';
 
 const route = useRoute();
 
@@ -246,8 +255,9 @@ const handleSubmit = async () => {
     return;
   }
 
-  if (password.value.length < 8) {
-    error.value = 'La contraseña debe tener al menos 8 caracteres';
+  const policyError = evaluateUserPassword(password.value);
+  if (policyError) {
+    error.value = policyError;
     return;
   }
 

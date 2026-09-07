@@ -5,7 +5,10 @@
     aria-modal="true"
     aria-labelledby="session-idle-lock-title"
   >
-    <div class="fixed inset-0 bg-gray-900" aria-hidden="true"></div>
+    <div
+      class="fixed inset-0 bg-medical-blue-900 bg-opacity-75 backdrop-blur-sm"
+      aria-hidden="true"
+    ></div>
 
     <div class="relative flex min-h-screen items-center justify-center px-4 py-8">
       <div
